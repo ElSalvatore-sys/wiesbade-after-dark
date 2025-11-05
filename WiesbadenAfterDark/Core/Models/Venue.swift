@@ -268,6 +268,11 @@ extension Venue {
 
 // MARK: - Mock Data
 extension Venue {
+    /// Generic mock venue (returns Das Wohnzimmer)
+    static func mock() -> Venue {
+        return mockDasWohnzimmer()
+    }
+
     /// Das Wohnzimmer mock venue with real data
     static func mockDasWohnzimmer() -> Venue {
         return Venue(

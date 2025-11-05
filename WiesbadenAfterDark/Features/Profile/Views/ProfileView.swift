@@ -38,6 +38,22 @@ struct ProfileView: View {
                         .background(Color.textTertiary.opacity(0.2))
                         .padding(.horizontal, Theme.Spacing.lg)
 
+                    // Wallet Passes section
+                    if let userId = authViewModel.authState.user?.id {
+                        WalletPassesSection(userId: userId)
+
+                        Divider()
+                            .background(Color.textTertiary.opacity(0.2))
+                            .padding(.horizontal, Theme.Spacing.lg)
+
+                        // Check-In History section
+                        CheckInHistorySection(userId: userId)
+
+                        Divider()
+                            .background(Color.textTertiary.opacity(0.2))
+                            .padding(.horizontal, Theme.Spacing.lg)
+                    }
+
                     // Settings section
                     SettingsSection()
 
@@ -317,6 +333,152 @@ private struct SettingsRow: View {
                 }
             }
             .padding(Theme.Spacing.md)
+        }
+    }
+}
+
+// MARK: - Wallet Passes Section
+private struct WalletPassesSection: View {
+    let userId: UUID
+
+    @State private var viewModel: CheckInViewModel
+    @State private var showAllPasses = false
+
+    init(userId: UUID) {
+        self.userId = userId
+        self._viewModel = State(initialValue: CheckInViewModel(
+            checkInService: MockCheckInService.shared,
+            walletPassService: MockWalletPassService.shared
+        ))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            HStack {
+                Text("Wallet Passes")
+                    .font(Typography.titleMedium)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.textPrimary)
+
+                Spacer()
+
+                if !viewModel.walletPasses.isEmpty {
+                    NavigationLink(destination: MyPassesView(userId: userId)) {
+                        Text("See All")
+                            .font(Typography.captionMedium)
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+
+            if viewModel.walletPasses.isEmpty {
+                // Empty state
+                VStack(spacing: Theme.Spacing.md) {
+                    Image(systemName: "wallet.pass")
+                        .font(.system(size: 32))
+                        .foregroundColor(.textTertiary)
+
+                    Text("No Wallet Passes")
+                        .font(Typography.bodyMedium)
+                        .foregroundColor(.textSecondary)
+
+                    Text("Generate passes from venue rewards tabs")
+                        .font(Typography.captionMedium)
+                        .foregroundColor(.textTertiary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Theme.Spacing.xl)
+                .background(Color.cardBackground)
+                .cornerRadius(Theme.CornerRadius.lg)
+                .padding(.horizontal, Theme.Spacing.lg)
+            } else {
+                // Show first 2 passes
+                VStack(spacing: Theme.Spacing.md) {
+                    ForEach(viewModel.walletPasses.prefix(2)) { pass in
+                        NavigationLink(destination: WalletPassDetailView(pass: pass)) {
+                            WalletPassCard(pass: pass, mode: .compact)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.lg)
+            }
+        }
+        .task {
+            await viewModel.fetchWalletPasses(userId: userId)
+        }
+    }
+}
+
+// MARK: - Check-In History Section
+private struct CheckInHistorySection: View {
+    let userId: UUID
+
+    @State private var viewModel: CheckInViewModel
+
+    init(userId: UUID) {
+        self.userId = userId
+        self._viewModel = State(initialValue: CheckInViewModel(
+            checkInService: MockCheckInService.shared,
+            walletPassService: MockWalletPassService.shared
+        ))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            HStack {
+                Text("Recent Check-Ins")
+                    .font(Typography.titleMedium)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.textPrimary)
+
+                Spacer()
+
+                if !viewModel.checkIns.isEmpty {
+                    NavigationLink(destination: CheckInHistoryView(userId: userId)) {
+                        Text("See All")
+                            .font(Typography.captionMedium)
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+
+            if viewModel.checkIns.isEmpty {
+                // Empty state
+                VStack(spacing: Theme.Spacing.md) {
+                    Image(systemName: "clock.badge.checkmark")
+                        .font(.system(size: 32))
+                        .foregroundColor(.textTertiary)
+
+                    Text("No Check-Ins Yet")
+                        .font(Typography.bodyMedium)
+                        .foregroundColor(.textSecondary)
+
+                    Text("Visit venues and check in to earn points")
+                        .font(Typography.captionMedium)
+                        .foregroundColor(.textTertiary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Theme.Spacing.xl)
+                .background(Color.cardBackground)
+                .cornerRadius(Theme.CornerRadius.lg)
+                .padding(.horizontal, Theme.Spacing.lg)
+            } else {
+                // Show first 3 check-ins
+                VStack(spacing: Theme.Spacing.md) {
+                    ForEach(viewModel.checkIns.prefix(3)) { checkIn in
+                        CheckInCard(checkIn: checkIn, mode: .compact)
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.lg)
+            }
+        }
+        .task {
+            await viewModel.fetchCheckInHistory(userId: userId)
         }
     }
 }

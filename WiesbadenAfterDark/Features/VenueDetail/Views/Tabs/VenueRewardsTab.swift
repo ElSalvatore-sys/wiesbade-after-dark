@@ -19,6 +19,9 @@ struct VenueRewardsTab: View {
         GridItem(.flexible(), spacing: Theme.Spacing.md)
     ]
 
+    @State private var showCheckInView = false
+    @State private var showWalletPassDetail = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
@@ -28,6 +31,19 @@ struct VenueRewardsTab: View {
                     PointsBalanceCard(membership: membership, venue: venue)
                         .padding(.horizontal, Theme.Spacing.lg)
                         .padding(.top, Theme.Spacing.md)
+
+                    // Quick Actions (Check-In & Wallet Pass)
+                    QuickActionsSection(
+                        venue: venue,
+                        membership: membership,
+                        onCheckInTap: {
+                            showCheckInView = true
+                        },
+                        onWalletPassTap: {
+                            showWalletPassDetail = true
+                        }
+                    )
+                    .padding(.horizontal, Theme.Spacing.lg)
 
                     // Rewards section
                     Text("Available Rewards")
@@ -62,6 +78,97 @@ struct VenueRewardsTab: View {
             .padding(.bottom, Theme.Spacing.xl)
         }
         .background(Color.appBackground)
+        .navigationDestination(isPresented: $showCheckInView) {
+            if let userId = authViewModel.authState.user?.id,
+               let membership = viewModel.membership {
+                CheckInView(
+                    venue: venue,
+                    membership: membership,
+                    event: nil,
+                    userId: userId
+                )
+            }
+        }
+        .sheet(isPresented: $showWalletPassDetail) {
+            NavigationStack {
+                if let userId = authViewModel.authState.user?.id {
+                    // TODO: Show existing pass if already generated
+                    Text("Wallet Pass - Coming Soon")
+                        .navigationTitle("Wallet Pass")
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Close") {
+                                    showWalletPassDetail = false
+                                }
+                            }
+                        }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Quick Actions Section
+
+private struct QuickActionsSection: View {
+    @Environment(AuthenticationViewModel.self) private var authViewModel
+
+    let venue: Venue
+    let membership: VenueMembership
+    let onCheckInTap: () -> Void
+    let onWalletPassTap: () -> Void
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            // Check-In Button
+            Button(action: onCheckInTap) {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title3)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Check In")
+                            .font(Typography.bodyMedium)
+                            .fontWeight(.semibold)
+
+                        Text("Earn points")
+                            .font(Typography.captionSmall)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                }
+                .foregroundStyle(.white)
+                .padding(Theme.Spacing.md)
+                .background(Color.primaryGradient)
+                .cornerRadius(Theme.CornerRadius.md)
+            }
+
+            // Wallet Pass Button
+            Button(action: onWalletPassTap) {
+                VStack(spacing: 8) {
+                    Image(systemName: "wallet.pass.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color.accentColor)
+
+                    Text("Pass")
+                        .font(Typography.captionSmall)
+                        .fontWeight(.medium)
+                        .foregroundStyle(Color.textPrimary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Theme.Spacing.md)
+                .background(Color.cardBackground)
+                .cornerRadius(Theme.CornerRadius.md)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
+                        .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                )
+            }
+            .frame(width: 90)
+        }
     }
 }
 

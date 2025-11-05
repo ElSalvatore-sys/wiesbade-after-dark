@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 /// Membership tier for user badges
-enum MembershipTier: String, Codable {
+enum MembershipTier: String, Codable, CaseIterable {
     case bronze = "Bronze"
     case silver = "Silver"
     case gold = "Gold"

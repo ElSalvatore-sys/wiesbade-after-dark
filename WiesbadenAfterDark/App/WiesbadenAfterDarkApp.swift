@@ -20,7 +20,10 @@ struct WiesbadenAfterDarkApp: App {
             Booking.self,
             CommunityPost.self,
             Reward.self,
-            VenueMembership.self
+            VenueMembership.self,
+            CheckIn.self,
+            WalletPass.self,
+            PointTransaction.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
