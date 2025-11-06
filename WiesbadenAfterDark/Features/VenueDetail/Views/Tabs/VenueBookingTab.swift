@@ -11,11 +11,15 @@ import SwiftUI
 struct VenueBookingTab: View {
     let venue: Venue
 
+    @Environment(AuthenticationViewModel.self) private var authViewModel
+
     @State private var selectedTableType: TableType = .standard
     @State private var selectedDate = Date()
     @State private var guestCount = 4
     @State private var specialRequests = ""
     @State private var showingConfirmation = false
+    @State private var showPaymentSheet = false
+    @State private var userPoints = 3000 // TODO: Load from user profile
 
     private let minDate = Date()
     private let maxDate = Calendar.current.date(byAdding: .month, value: 3, to: Date()) ?? Date()
@@ -169,6 +173,23 @@ struct VenueBookingTab: View {
         } message: {
             Text("Your reservation for \(guestCount) guests on \(formattedDate) has been submitted. You'll receive a confirmation shortly.")
         }
+        .sheet(isPresented: $showPaymentSheet) {
+            PaymentSheet(
+                booking: BookingDetails(
+                    venueId: venue.id,
+                    venueName: venue.name,
+                    tableType: selectedTableType,
+                    partySize: guestCount,
+                    date: selectedDate,
+                    timeSlot: "21:00 - 23:00", // TODO: Add time slot picker
+                    specialRequests: specialRequests.isEmpty ? nil : specialRequests,
+                    totalCost: selectedTableType.basePrice,
+                    pointsCost: selectedTableType.pointsCost,
+                    userPoints: userPoints
+                ),
+                userId: authViewModel.authState.user?.id ?? UUID()
+            )
+        }
     }
 
     private var formattedDate: String {
@@ -179,14 +200,17 @@ struct VenueBookingTab: View {
     }
 
     private func submitBooking() {
-        // TODO: Implement booking submission
-        print("📅 Booking submitted:")
-        print("   Table: \(selectedTableType.rawValue)")
-        print("   Date: \(formattedDate)")
-        print("   Guests: \(guestCount)")
-        print("   Requests: \(specialRequests)")
+        // Verify user is authenticated
+        guard let userId = authViewModel.authState.user?.id else {
+            print("❌ [VenueBooking] Cannot submit booking - user not authenticated!")
+            // In production, show an alert to the user
+            return
+        }
 
-        showingConfirmation = true
+        print("👤 [VenueBooking] Submitting booking for user: \(userId)")
+
+        // Show payment sheet
+        showPaymentSheet = true
     }
 }
 

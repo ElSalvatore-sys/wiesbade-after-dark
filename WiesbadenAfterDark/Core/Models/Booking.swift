@@ -42,9 +42,9 @@ enum TableType: String, Codable, CaseIterable {
 
     var pointsCost: Int {
         switch self {
-        case .standard: return 500
-        case .vip: return 1200
-        case .premium: return 2000
+        case .standard: return 1000
+        case .vip: return 2400
+        case .premium: return 4000
         }
     }
 
@@ -91,6 +91,13 @@ final class Booking: @unchecked Sendable {
     var paidWithPoints: Bool
     var pointsUsed: Int?
 
+    // MARK: - Payment Details
+
+    var paymentId: UUID?
+    var paymentStatus: PaymentStatus
+    var paymentMethod: PaymentMethodType?
+    var amountPaid: Decimal? // Actual cash amount paid (after points deduction)
+
     var status: BookingStatus
 
     var specialRequests: String?
@@ -112,6 +119,10 @@ final class Booking: @unchecked Sendable {
         totalCost: Decimal,
         paidWithPoints: Bool = false,
         pointsUsed: Int? = nil,
+        paymentId: UUID? = nil,
+        paymentStatus: PaymentStatus = .pending,
+        paymentMethod: PaymentMethodType? = nil,
+        amountPaid: Decimal? = nil,
         status: BookingStatus = .pending,
         specialRequests: String? = nil,
         confirmationCode: String? = nil,
@@ -128,6 +139,10 @@ final class Booking: @unchecked Sendable {
         self.totalCost = totalCost
         self.paidWithPoints = paidWithPoints
         self.pointsUsed = pointsUsed
+        self.paymentId = paymentId
+        self.paymentStatus = paymentStatus
+        self.paymentMethod = paymentMethod
+        self.amountPaid = amountPaid
         self.status = status
         self.specialRequests = specialRequests
         self.confirmationCode = confirmationCode

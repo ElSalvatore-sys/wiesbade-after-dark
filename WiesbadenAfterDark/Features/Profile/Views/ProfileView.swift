@@ -38,6 +38,15 @@ struct ProfileView: View {
                         .background(Color.textTertiary.opacity(0.2))
                         .padding(.horizontal, Theme.Spacing.lg)
 
+                    // Payments section
+                    if let userId = authViewModel.authState.user?.id {
+                        PaymentsSection(userId: userId)
+
+                        Divider()
+                            .background(Color.textTertiary.opacity(0.2))
+                            .padding(.horizontal, Theme.Spacing.lg)
+                    }
+
                     // Wallet Passes section
                     if let userId = authViewModel.authState.user?.id {
                         WalletPassesSection(userId: userId)
@@ -489,6 +498,116 @@ private extension User {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         return formatter.string(from: createdAt)
+    }
+}
+
+// MARK: - Payments Section
+private struct PaymentsSection: View {
+    let userId: UUID
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            // Section Header
+            HStack {
+                Text("Payments & Bookings")
+                    .font(Typography.headlineLarge)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.textPrimary)
+
+                Spacer()
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+
+            // Buy Points Button
+            NavigationLink(destination: BuyPointsView(userId: userId)) {
+                HStack(spacing: Theme.Spacing.md) {
+                    Image(systemName: "star.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.primary)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Buy Points")
+                            .font(Typography.bodyLarge)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.textPrimary)
+
+                        Text("Get bonus points on larger packages")
+                            .font(Typography.bodySmall)
+                            .foregroundColor(.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundColor(.textTertiary)
+                }
+                .padding(Theme.Spacing.md)
+                .background(Color.cardBackground)
+                .cornerRadius(Theme.CornerRadius.md)
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+
+            // My Bookings Button
+            NavigationLink(destination: MyBookingsView()) {
+                HStack(spacing: Theme.Spacing.md) {
+                    Image(systemName: "calendar.badge.checkmark")
+                        .font(.system(size: 24))
+                        .foregroundColor(.primary)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("My Bookings")
+                            .font(Typography.bodyLarge)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.textPrimary)
+
+                        Text("View upcoming and past bookings")
+                            .font(Typography.bodySmall)
+                            .foregroundColor(.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundColor(.textTertiary)
+                }
+                .padding(Theme.Spacing.md)
+                .background(Color.cardBackground)
+                .cornerRadius(Theme.CornerRadius.md)
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+
+            // Payment History Button
+            NavigationLink(destination: PaymentHistoryView(userId: userId)) {
+                HStack(spacing: Theme.Spacing.md) {
+                    Image(systemName: "creditcard")
+                        .font(.system(size: 24))
+                        .foregroundColor(.primary)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Payment History")
+                            .font(Typography.bodyLarge)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.textPrimary)
+
+                        Text("View all transactions")
+                            .font(Typography.bodySmall)
+                            .foregroundColor(.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundColor(.textTertiary)
+                }
+                .padding(Theme.Spacing.md)
+                .background(Color.cardBackground)
+                .cornerRadius(Theme.CornerRadius.md)
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+        }
     }
 }
 
