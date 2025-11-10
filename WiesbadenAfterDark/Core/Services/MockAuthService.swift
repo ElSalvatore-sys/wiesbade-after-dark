@@ -28,42 +28,56 @@ final class MockAuthService: AuthServiceProtocol {
 
     /// Simulates sending a verification code via SMS
     func sendVerificationCode(to phoneNumber: String) async throws {
-        print("📱 [MockAuthService] Sending verification code to: \(phoneNumber)")
+        #if DEBUG
+        SecureLogger.shared.auth("Sending verification code to: \(phoneNumber)")
+        #endif
 
         // Simulate network delay
         try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
 
         // In mock mode, we always succeed
-        print("✅ [MockAuthService] Verification code sent successfully")
-        print("💡 [MockAuthService] Any 6-digit code will work for verification")
+        #if DEBUG
+        SecureLogger.shared.auth("Verification code sent successfully", level: .success)
+        SecureLogger.shared.info("Any 6-digit code will work for verification", category: "MockAuth")
+        #endif
     }
 
     /// Simulates verifying the SMS code
     func verifyCode(_ code: String, for phoneNumber: String) async throws -> AuthToken {
-        print("🔐 [MockAuthService] Verifying code: \(code) for phone: \(phoneNumber)")
+        #if DEBUG
+        SecureLogger.shared.auth("Verifying code for phone: \(phoneNumber)")
+        #endif
 
         // Simulate network delay
         try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
 
         // Validate code format (6 digits)
         guard code.count == 6, code.allSatisfy({ $0.isNumber }) else {
-            print("❌ [MockAuthService] Invalid code format")
+            #if DEBUG
+            SecureLogger.shared.auth("Invalid code format", level: .error)
+            #endif
             throw AuthError.invalidVerificationCode
         }
 
         // In mock mode, accept any 6-digit code
-        print("✅ [MockAuthService] Code verified successfully")
+        #if DEBUG
+        SecureLogger.shared.auth("Code verified successfully", level: .success)
+        #endif
 
         // Generate mock token
         let token = AuthToken.mock()
-        print("🎫 [MockAuthService] Generated mock token: \(token.accessToken)")
+        #if DEBUG
+        SecureLogger.shared.auth("Generated mock token")
+        #endif
 
         return token
     }
 
     /// Validates a referral code
     func validateReferralCode(_ code: String) async throws -> Bool {
-        print("🎁 [MockAuthService] Validating referral code: \(code)")
+        #if DEBUG
+        SecureLogger.shared.info("Validating referral code: \(code)", category: "MockAuth")
+        #endif
 
         // Simulate network delay
         try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
@@ -71,11 +85,13 @@ final class MockAuthService: AuthServiceProtocol {
         // Check if code is in our valid list
         let isValid = validReferralCodes.contains(code.uppercased())
 
+        #if DEBUG
         if isValid {
-            print("✅ [MockAuthService] Referral code is valid")
+            SecureLogger.shared.success("Referral code is valid", category: "MockAuth")
         } else {
-            print("❌ [MockAuthService] Referral code is invalid")
+            SecureLogger.shared.info("Referral code is invalid", category: "MockAuth")
         }
+        #endif
 
         return isValid
     }
@@ -83,11 +99,13 @@ final class MockAuthService: AuthServiceProtocol {
     /// Creates a mock user account
     @MainActor
     func createAccount(phoneNumber: String, referralCode: String?) async throws -> User {
-        print("👤 [MockAuthService] Creating account for: \(phoneNumber)")
+        #if DEBUG
+        SecureLogger.shared.auth("Creating account for: \(phoneNumber)")
 
         if let code = referralCode {
-            print("🎁 [MockAuthService] Using referral code: \(code)")
+            SecureLogger.shared.info("Using referral code: \(code)", category: "MockAuth")
         }
+        #endif
 
         // Simulate network delay
         try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
@@ -111,8 +129,10 @@ final class MockAuthService: AuthServiceProtocol {
             preferredLanguage: "de"
         )
 
-        print("✅ [MockAuthService] Account created successfully")
-        print("🎫 [MockAuthService] User referral code: \(userReferralCode)")
+        #if DEBUG
+        SecureLogger.shared.auth("Account created successfully", level: .success)
+        SecureLogger.shared.info("User referral code: \(userReferralCode)", category: "MockAuth")
+        #endif
 
         return user
     }

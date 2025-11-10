@@ -19,29 +19,30 @@ enum Typography {
     static let titleMedium = Font.system(size: 24, weight: .bold, design: .rounded)
     static let titleSmall = Font.system(size: 20, weight: .semibold, design: .rounded)
 
-    // MARK: - Headline Styles
-    static let headlineLarge = Font.system(size: 18, weight: .semibold, design: .default)
-    static let headlineMedium = Font.system(size: 16, weight: .semibold, design: .default)
-    static let headlineSmall = Font.system(size: 14, weight: .semibold, design: .default)
+    // MARK: - Headline Styles (2025 Modern - Rounded Design)
+    static let headlineLarge = Font.system(size: 18, weight: .semibold, design: .rounded)
+    static let headlineMedium = Font.system(size: 16, weight: .semibold, design: .rounded)
+    static let headlineSmall = Font.system(size: 14, weight: .semibold, design: .rounded)
 
-    // MARK: - Body Styles
-    static let bodyLarge = Font.system(size: 17, weight: .regular, design: .default)
-    static let bodyMedium = Font.system(size: 15, weight: .regular, design: .default)
-    static let bodySmall = Font.system(size: 13, weight: .regular, design: .default)
+    // MARK: - Body Styles (2025 Modern - Rounded Design)
+    static let bodyLarge = Font.system(size: 17, weight: .regular, design: .rounded)
+    static let bodyMedium = Font.system(size: 15, weight: .regular, design: .rounded)
+    static let bodySmall = Font.system(size: 13, weight: .regular, design: .rounded)
 
-    // MARK: - Label Styles
-    static let labelLarge = Font.system(size: 14, weight: .medium, design: .default)
-    static let labelMedium = Font.system(size: 12, weight: .medium, design: .default)
-    static let labelSmall = Font.system(size: 11, weight: .medium, design: .default)
+    // MARK: - Label Styles (2025 Modern - Rounded Design)
+    static let labelLarge = Font.system(size: 14, weight: .medium, design: .rounded)
+    static let labelMedium = Font.system(size: 12, weight: .medium, design: .rounded)
+    static let labelSmall = Font.system(size: 11, weight: .medium, design: .rounded)
 
-    // MARK: - Caption Styles
-    static let captionLarge = Font.system(size: 13, weight: .regular, design: .default)
-    static let captionMedium = Font.system(size: 12, weight: .regular, design: .default)
-    static let captionSmall = Font.system(size: 11, weight: .regular, design: .default)
+    // MARK: - Caption Styles (2025 Modern - Rounded Design)
+    static let captionLarge = Font.system(size: 13, weight: .regular, design: .rounded)
+    static let captionMedium = Font.system(size: 12, weight: .regular, design: .rounded)
+    static let captionSmall = Font.system(size: 11, weight: .regular, design: .rounded)
 
     // MARK: - Special Styles
-    static let button = Font.system(size: 17, weight: .semibold, design: .default)
-    static let buttonSmall = Font.system(size: 15, weight: .semibold, design: .default)
+    static let button = Font.system(size: 17, weight: .semibold, design: .rounded)
+    static let buttonSmall = Font.system(size: 15, weight: .semibold, design: .rounded)
+    static let buttonMedium = Font.system(size: 16, weight: .semibold, design: .rounded)
     static let code = Font.system(size: 15, weight: .regular, design: .monospaced)
 }
 

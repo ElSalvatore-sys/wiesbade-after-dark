@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- ========================================
+	     PRIVACY MANIFEST (iOS 17+)
+	     Required for App Store submission
+	     ======================================== -->
+
+	<!-- Tracking preference -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<!-- Set to true if using third-party SDKs for tracking/advertising -->
+
+	<!-- Tracking domains (if NSPrivacyTracking is true) -->
+	<key>NSPrivacyTrackingDomains</key>
+	<array>
+		<!-- Add tracking domains here if applicable -->
+		<!-- Example: <string>analytics.example.com</string> -->
+	</array>
+
+	<!-- ========================================
+	     DATA COLLECTION
+	     Declare all data types collected by the app
+	     ======================================== -->
+
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array>
+
+		<!-- Phone Number -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePhoneNumber</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<!-- Data is linked to user's identity -->
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<!-- Data is NOT used for tracking -->
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used for authentication and account management -->
+			</array>
+		</dict>
+
+		<!-- Name (optional, user-provided) -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeName</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used for profile personalization -->
+			</array>
+		</dict>
+
+		<!-- Email Address (optional, user-provided) -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeEmailAddress</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used for notifications and account recovery -->
+			</array>
+		</dict>
+
+		<!-- Physical Address (venue addresses, not user address) -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePhysicalAddress</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<!-- Venue addresses are not linked to user identity -->
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used to display venue locations -->
+			</array>
+		</dict>
+
+		<!-- Precise Location -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePreciseLocation</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used to show nearby venues and verify check-ins -->
+			</array>
+		</dict>
+
+		<!-- Payment Info -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePaymentInfo</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used for processing table bookings and point purchases -->
+			</array>
+		</dict>
+
+		<!-- Purchase History -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used to show booking history and points transactions -->
+			</array>
+		</dict>
+
+		<!-- User ID -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeUserID</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used for account identification and session management -->
+			</array>
+		</dict>
+
+		<!-- Device ID (for check-ins and fraud prevention) -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used for check-in verification and fraud prevention -->
+			</array>
+		</dict>
+
+		<!-- Photos (optional, user-provided) -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePhotosorVideos</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used for profile pictures and community posts -->
+			</array>
+		</dict>
+
+		<!-- Product Interaction (venue visits, check-ins) -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
+
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<!-- Used to track venue popularity and award points -->
+			</array>
+		</dict>
+
+	</array>
+
+	<!-- ========================================
+	     API USAGE
+	     Declare required reason APIs used
+	     ======================================== -->
+
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+
+		<!-- User Defaults -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+				<!-- Accessing user defaults for app preferences and state -->
+			</array>
+		</dict>
+
+		<!-- File Timestamp -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+				<!-- Accessing file timestamps for SwiftData storage -->
+			</array>
+		</dict>
+
+		<!-- System Boot Time -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>35F9.1</string>
+				<!-- Measuring time intervals for session management -->
+			</array>
+		</dict>
+
+		<!-- Disk Space -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>E174.1</string>
+				<!-- Checking available disk space for local data storage -->
+			</array>
+		</dict>
+
+	</array>
+
+	<!-- ========================================
+	     DEVELOPER NOTES
+	     ======================================== -->
+
+	<!--
+	PRIVACY MANIFEST REQUIREMENTS (iOS 17+):
+
+	1. All apps submitted to the App Store must include a privacy manifest
+	2. Must declare all data types collected (even if optional/user-provided)
+	3. Must declare all "required reason" APIs used
+	4. Failure to include will result in App Store rejection
+
+	COMMON DATA TYPE PURPOSES:
+	- NSPrivacyCollectedDataTypePurposeAppFunctionality: Core app features
+	- NSPrivacyCollectedDataTypePurposeAnalytics: Analytics and improvement
+	- NSPrivacyCollectedDataTypePurposeProductPersonalization: Personalized experience
+	- NSPrivacyCollectedDataTypePurposeDeveloperAdvertising: First-party ads
+	- NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising: Third-party ads
+
+	REQUIRED REASON API CATEGORIES:
+	- NSPrivacyAccessedAPICategoryUserDefaults: UserDefaults access
+	- NSPrivacyAccessedAPICategoryFileTimestamp: File modification dates
+	- NSPrivacyAccessedAPICategorySystemBootTime: System uptime
+	- NSPrivacyAccessedAPICategoryDiskSpace: Storage queries
+	- NSPrivacyAccessedAPICategoryActiveKeyboards: Keyboard extensions
+
+	REASON CODES:
+	User Defaults:
+	- CA92.1: Access app's own user defaults
+
+	File Timestamp:
+	- C617.1: Timestamps for app's own files
+	- 3B52.1: Timestamps for displaying to user
+	- 0A2A.1: Timestamps for security purposes
+
+	System Boot Time:
+	- 35F9.1: Measuring time between app events
+	- 8FFB.1: Generating unique identifiers
+	- 3D61.1: App integrity verification
+
+	Disk Space:
+	- E174.1: Checking if sufficient space for app functionality
+	- 85F4.1: Informing user about storage usage
+
+	TRACKING vs. NON-TRACKING:
+	- Set NSPrivacyTracking to true if:
+		* Linking user data with third-party data for advertising
+		* Sharing user data with data brokers
+		* Using third-party SDKs for ad tracking
+
+	- Keep false if:
+		* Only using data for app functionality
+		* Analytics are first-party only
+		* No cross-app/website tracking
+
+	TESTING:
+	1. Build and run app
+	2. Check Xcode console for privacy manifest warnings
+	3. Validate in App Store Connect before submission
+	4. Use Apple's Privacy Nutrition Labels to verify
+
+	UPDATING:
+	- Review quarterly or when adding new features
+	- Update before each App Store submission
+	- Keep in sync with App Store Connect privacy questions
+	- Match Info.plist privacy descriptions
+
+	GDPR COMPLIANCE:
+	This manifest helps with GDPR compliance but is NOT sufficient alone.
+	You must also:
+	- Provide privacy policy URL
+	- Implement data deletion
+	- Allow data export
+	- Get explicit consent for data collection
+	- Respect user's privacy choices
+
+	DOCUMENTATION:
+	https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
+	-->
+
+</dict>
+</plist>

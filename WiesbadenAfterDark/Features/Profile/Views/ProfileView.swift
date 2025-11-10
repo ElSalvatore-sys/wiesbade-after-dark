@@ -104,8 +104,14 @@ private struct ProfileHeader: View {
 
     private var initials: String {
         guard let user = user else { return "?" }
-        // Use first letter of phone number as placeholder
-        return String(user.phoneNumber.prefix(1))
+        // Extract last 2 digits from phone number for unique identifier
+        let digits = user.phoneNumber.filter { $0.isNumber }
+        if digits.count >= 2 {
+            return String(digits.suffix(2))
+        } else if digits.count == 1 {
+            return String(digits)
+        }
+        return "WL" // Fallback: Wiesbaden Loyalty
     }
 
     var body: some View {
@@ -115,9 +121,10 @@ private struct ProfileHeader: View {
                 Circle()
                     .fill(Color.primaryGradient)
                     .frame(width: 100, height: 100)
+                    .shadow(color: Color.primary.opacity(0.3), radius: 12, x: 0, y: 4)
 
                 Text(initials)
-                    .font(.system(size: 40, weight: .bold))
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
             }
 

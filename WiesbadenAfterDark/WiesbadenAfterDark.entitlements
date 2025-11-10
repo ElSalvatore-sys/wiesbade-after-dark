@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- ========================================
+	     NFC TAG READING
+	     Required for: Venue check-ins via NFC
+	     ======================================== -->
+
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>TAG</string>
+	</array>
+
+	<!-- ========================================
+	     APPLE PAY / IN-APP PAYMENTS
+	     Required for: Payment processing
+	     ======================================== -->
+
+	<key>com.apple.developer.in-app-payments</key>
+	<array>
+		<!-- IMPORTANT: Replace with your actual merchant ID from Apple Developer Portal -->
+		<!-- Format: merchant.com.yourcompany.yourapp -->
+		<string>merchant.com.ea-solutions.wiesbaden-after-dark</string>
+	</array>
+
+	<!-- ========================================
+	     APPLE WALLET / PASSKIT
+	     Required for: Generating and managing venue passes
+	     ======================================== -->
+
+	<key>com.apple.developer.pass-type-identifiers</key>
+	<array>
+		<!-- IMPORTANT: Replace with your actual pass type ID from Apple Developer Portal -->
+		<!-- Format: pass.com.yourcompany.yourapp -->
+		<string>pass.com.ea-solutions.wiesbaden-after-dark</string>
+	</array>
+
+	<!-- ========================================
+	     ASSOCIATED DOMAINS (for universal links)
+	     Optional: For deep linking and web-to-app handoff
+	     ======================================== -->
+
+	<!--
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:wiesbaden-after-dark.com</string>
+		<string>applinks:www.wiesbaden-after-dark.com</string>
+		<string>activitycontinuation:wiesbaden-after-dark.com</string>
+	</array>
+	-->
+
+	<!-- ========================================
+	     APP GROUPS (for data sharing)
+	     Optional: For sharing data between app and extensions
+	     ======================================== -->
+
+	<!--
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.ea-solutions.wiesbaden-after-dark</string>
+	</array>
+	-->
+
+	<!-- ========================================
+	     PUSH NOTIFICATIONS
+	     Required for: Event reminders, booking confirmations
+	     ======================================== -->
+
+	<key>aps-environment</key>
+	<string>development</string>
+	<!-- Change to 'production' for App Store builds -->
+
+	<!-- ========================================
+	     SIGN IN WITH APPLE (if implementing)
+	     Optional: For Apple ID authentication
+	     ======================================== -->
+
+	<!--
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+	-->
+
+	<!-- ========================================
+	     iCLOUD (if using iCloud sync)
+	     Optional: For syncing user data across devices
+	     ======================================== -->
+
+	<!--
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.com.ea-solutions.wiesbaden-after-dark</string>
+	</array>
+
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudKit</string>
+		<string>CloudDocuments</string>
+	</array>
+
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.com.ea-solutions.wiesbaden-after-dark</string>
+	</array>
+
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)com.ea-solutions.WiesbadenAfterDark</string>
+	-->
+
+	<!-- ========================================
+	     HEALTHKIT (if tracking activity)
+	     Optional: For fitness/activity features
+	     ======================================== -->
+
+	<!--
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+
+	<key>com.apple.developer.healthkit.access</key>
+	<array>
+		<string>health-records</string>
+	</array>
+	-->
+
+	<!-- ========================================
+	     SIRI INTEGRATION (for shortcuts)
+	     Optional: For "Hey Siri, show me events near me"
+	     ======================================== -->
+
+	<!--
+	<key>com.apple.developer.siri</key>
+	<true/>
+	-->
+
+	<!-- ========================================
+	     DEVELOPER NOTES
+	     ======================================== -->
+
+	<!--
+	SETUP INSTRUCTIONS:
+
+	1. NFC Tag Reading:
+	   - Must request capability in Apple Developer Portal
+	   - Fill out NFC usage questionnaire
+	   - May take 1-2 business days for approval
+	   - Required for production builds
+
+	2. Apple Pay Merchant ID:
+	   - Create merchant ID in Apple Developer Portal
+	   - Navigate to: Certificates, IDs & Profiles → Identifiers → Merchant IDs
+	   - Click + to create new merchant ID
+	   - Format: merchant.com.ea-solutions.wiesbaden-after-dark
+	   - Create payment processing certificate
+	   - Configure merchant ID in Stripe dashboard
+
+	3. Wallet Pass Type ID:
+	   - Create pass type ID in Apple Developer Portal
+	   - Navigate to: Certificates, IDs & Profiles → Identifiers → Pass Type IDs
+	   - Click + to create new pass type ID
+	   - Format: pass.com.ea-solutions.wiesbaden-after-dark
+	   - Create pass signing certificate
+	   - Download certificate and add to Keychain
+
+	4. Push Notifications:
+	   - Change aps-environment to 'production' for App Store builds
+	   - Keep as 'development' for TestFlight and local testing
+	   - Configure APNs key or certificate in developer portal
+	   - Register device tokens in your backend
+
+	5. Bundle Identifier:
+	   - Must match the bundle ID in your Xcode project
+	   - Format: com.ea-solutions.WiesbadenAfterDark
+	   - Must match merchant ID and pass type ID prefixes
+
+	6. Team ID:
+	   - Required for some entitlements (App Groups, iCloud)
+	   - Found in Apple Developer Portal under Membership
+	   - Format: XXXXXXXXXX (10 characters)
+
+	IMPORTANT FOR APP STORE SUBMISSION:
+	- All merchant IDs and pass type IDs must be registered in Apple Developer Portal
+	- NFC capability must be approved before submission
+	- Push notification capability must be enabled
+	- Xcode project must have "Capabilities" tab properly configured
+	- All entitlements must match your provisioning profile
+
+	TESTING NOTES:
+	- NFC will NOT work in Simulator (requires physical device)
+	- Apple Pay works in Simulator for testing (uses test cards)
+	- Wallet passes can be tested in Simulator
+	- Push notifications require physical device or Simulator with APNs
+	-->
+
+</dict>
+</plist>

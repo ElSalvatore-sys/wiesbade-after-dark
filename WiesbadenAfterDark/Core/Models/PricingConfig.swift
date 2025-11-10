@@ -44,14 +44,14 @@ struct PricingConfig {
 
     // MARK: - Table Prices (Points)
 
-    static let standardTablePoints: Int = 1000
-    static let vipTablePoints: Int = 2400
-    static let premiumTablePoints: Int = 4000
+    static let standardTablePoints: Int = 500
+    static let vipTablePoints: Int = 1200
+    static let premiumTablePoints: Int = 2000
 
     // MARK: - Point Conversion
 
-    /// Conversion rate: 50 points = €1
-    static let pointsPerEuro: Decimal = 50
+    /// Conversion rate: 10 points = €1
+    static let pointsPerEuro: Decimal = 10
 
     /// Convert points to euros
     static func pointsToEuro(_ points: Int) -> Decimal {
@@ -69,27 +69,27 @@ struct PricingConfig {
     static let packages: [PointPackage] = [
         PointPackage(
             name: "Starter",
-            points: 500,
+            points: 100,
             price: 5.00,
             bonus: 0
         ),
         PointPackage(
             name: "Value",
-            points: 1000,
+            points: 200,
             price: 10.00,
-            bonus: 500
+            bonus: 100
         ),
         PointPackage(
             name: "Premium",
-            points: 2000,
+            points: 400,
             price: 20.00,
-            bonus: 1500
+            bonus: 300
         ),
         PointPackage(
             name: "Ultimate",
-            points: 5000,
+            points: 1000,
             price: 50.00,
-            bonus: 5000
+            bonus: 1000
         )
     ]
 

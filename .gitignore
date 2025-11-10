@@ -1,0 +1,302 @@
+# Wiesbaden After Dark - iOS Project .gitignore
+
+# ========================================
+# Xcode
+# ========================================
+
+## Build generated
+build/
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+
+## Various settings
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+## Obj-C/Swift specific
+*.hmap
+
+## App packaging
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# ========================================
+# Swift Package Manager
+# ========================================
+
+.build/
+Packages/
+Package.pins
+Package.resolved
+*.xcodeproj
+.swiftpm
+
+# ========================================
+# CocoaPods (if used in future)
+# ========================================
+
+Pods/
+Podfile.lock
+
+# ========================================
+# Carthage (if used in future)
+# ========================================
+
+Carthage/Build/
+Carthage/Checkouts/
+
+# ========================================
+# fastlane
+# ========================================
+
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+fastlane/.env
+fastlane/.env.*
+
+# ========================================
+# Secrets & Configuration
+# ========================================
+
+## Environment variables
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+## API Keys
+secrets.json
+secrets.plist
+GoogleService-Info.plist
+
+## Stripe Keys (CRITICAL)
+stripe_keys.swift
+stripe_config.json
+
+## Firebase
+firebase_app_id_file.json
+
+## Certificates & Provisioning Profiles
+*.mobileprovision
+*.cer
+*.p12
+*.certSigningRequest
+
+# ========================================
+# Sensitive Data Files
+# ========================================
+
+## Database files
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+
+## Keychain exports
+*.keychain
+*.keychain-db
+
+## User data
+UserData/
+TestData/
+
+# ========================================
+# macOS
+# ========================================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## Thumbnails
+._*
+
+## Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+## Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ========================================
+# IDEs
+# ========================================
+
+## Xcode
+*.xcworkspace
+!default.xcworkspace
+iOSInjectionProject/
+
+## AppCode
+.idea/
+
+## VSCode
+.vscode/
+
+## Vim
+*.swp
+*.swo
+*~
+
+# ========================================
+# Testing & Coverage
+# ========================================
+
+## Code coverage
+*.gcov
+*.gcda
+*.gcno
+coverage/
+htmlcov/
+.coverage
+
+## Test results
+TestResults/
+*.xcresult
+
+# ========================================
+# Documentation
+# ========================================
+
+## Generated docs
+docs/_build/
+*.docset
+
+# ========================================
+# Temporary Files
+# ========================================
+
+tmp/
+temp/
+*.tmp
+*.log
+*.cache
+
+# ========================================
+# Backup Files
+# ========================================
+
+*.backup
+*.bak
+*.orig
+
+# ========================================
+# App-Specific
+# ========================================
+
+## SwiftData stores (if needed to ignore)
+# WiesbadenAfterDark.store
+# WiesbadenAfterDark.store-shm
+# WiesbadenAfterDark.store-wal
+
+## Export files
+Exports/
+*.ics
+*.vcf
+
+## Screenshots for debugging
+Screenshots/
+debug_screenshots/
+
+# ========================================
+# CI/CD
+# ========================================
+
+## GitHub Actions
+.github/workflows/secrets
+
+## CircleCI
+.circleci/config.local.yml
+
+## Bitrise
+bitrise.yml.backup
+
+# ========================================
+# Analytics & Crash Reporting
+# ========================================
+
+## Firebase Crashlytics
+crashlytics-build.properties
+com_crashlytics_export_strings.xml
+crashlytics.properties
+
+## App Center
+AppCenter-Config.plist
+
+# ========================================
+# App Store Connect
+# ========================================
+
+## Metadata
+metadata/screenshots/
+*.app
+*.xcarchive
+
+## Export options
+ExportOptions.plist
+
+# ========================================
+# Development Tools
+# ========================================
+
+## Sourcery
+.sourcery/
+Sourcery/
+
+## SwiftLint
+.swiftlint.cache
+
+## SwiftFormat
+.swiftformat
+
+# ========================================
+# IMPORTANT SECURITY NOTES
+# ========================================
+
+# NEVER commit:
+# - API keys or secrets
+# - Private keys or certificates
+# - User data or PII
+# - Database files with test data
+# - Provisioning profiles
+# - Signing certificates
+# - Environment variable files
+# - Payment processing keys (Stripe, etc.)
+# - Authentication tokens
+# - Firebase configuration files
+# - Apple Wallet certificate passwords
+
+# ========================================
+# Project-Specific Additions
+# ========================================
+
+# Add any project-specific files below this line
+# Example:
+# CustomSecrets/
+# PrivateAssets/

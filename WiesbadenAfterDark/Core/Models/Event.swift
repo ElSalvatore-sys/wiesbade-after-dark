@@ -215,4 +215,122 @@ extension Event {
 
         return [fridayEvent, saturdayEvent, sundayEvent]
     }
+
+    /// Mock events for all venues - distributed across different venues
+    static func mockAllEvents(venues: [UUID: String]) -> [Event] {
+        let calendar = Calendar.current
+        let now = Date()
+
+        var allEvents: [Event] = []
+
+        // Find venue IDs by name (for proper assignment)
+        let dasWohnzimmerId = venues.first(where: { $0.value == "Das Wohnzimmer" })?.key ?? UUID()
+        let parkCafeId = venues.first(where: { $0.value == "Park Café" })?.key ?? UUID()
+        let harputId = venues.first(where: { $0.value == "Harput Restaurant" })?.key ?? UUID()
+        let enteId = venues.first(where: { $0.value == "Ente" })?.key ?? UUID()
+
+        // Get upcoming Friday (2 days from now)
+        let friday = calendar.date(byAdding: .day, value: 2, to: now)!
+
+        // EVENT 1: Friday Night Fever (Das Wohnzimmer)
+        let fridayStart = calendar.date(bySettingHour: 23, minute: 0, second: 0, of: friday)!
+        let fridayEnd = calendar.date(byAdding: .hour, value: 6, to: fridayStart)!
+
+        allEvents.append(Event(
+            title: "Friday Night Fever",
+            description: "DJ sets, premium drinks, and the best nightlife vibes in Wiesbaden",
+            venueId: dasWohnzimmerId,
+            startTime: fridayStart,
+            endTime: fridayEnd,
+            djLineup: ["DJ Marcus Berlin", "Luna"],
+            coverCharge: 15.00,
+            genre: "Party",
+            attendingCount: 127,
+            interestedCount: 54,
+            pointsMultiplier: 1.5,
+            imageURL: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800"
+        ))
+
+        // EVENT 2: Saturday: Deep House Sessions (Das Wohnzimmer)
+        let saturday = calendar.date(byAdding: .day, value: 3, to: now)!
+        let saturdayStart = calendar.date(bySettingHour: 22, minute: 0, second: 0, of: saturday)!
+        let saturdayEnd = calendar.date(byAdding: .hour, value: 7, to: saturdayStart)!
+
+        allEvents.append(Event(
+            title: "Saturday: Deep House Sessions",
+            description: "International DJs spinning deep house and techno all night long",
+            venueId: dasWohnzimmerId,
+            startTime: saturdayStart,
+            endTime: saturdayEnd,
+            djLineup: ["DJ Solomun", "Tale of Us"],
+            coverCharge: 20.00,
+            genre: "Electronic",
+            attendingCount: 89,
+            interestedCount: 43,
+            pointsMultiplier: 2.0,
+            imageURL: "https://images.unsplash.com/photo-1571266028243-d220c2925d90?w=800"
+        ))
+
+        // EVENT 3: Sunday Jazz Brunch (Park Café)
+        let sunday = calendar.date(byAdding: .day, value: 4, to: now)!
+        let sundayStart = calendar.date(bySettingHour: 11, minute: 0, second: 0, of: sunday)!
+        let sundayEnd = calendar.date(bySettingHour: 15, minute: 0, second: 0, of: sunday)!
+
+        allEvents.append(Event(
+            title: "Sunday Jazz Brunch",
+            description: "Live jazz music with gourmet brunch buffet and bottomless mimosas",
+            venueId: parkCafeId,
+            startTime: sundayStart,
+            endTime: sundayEnd,
+            djLineup: ["Jazz Quartet Live"],
+            coverCharge: 35.00,
+            genre: "Dining",
+            attendingCount: 45,
+            interestedCount: 28,
+            pointsMultiplier: 1.2,
+            imageURL: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800"
+        ))
+
+        // EVENT 4: Traditional Turkish Night (Harput)
+        let nextMonday = calendar.date(byAdding: .day, value: 5, to: now)!
+        let mondayStart = calendar.date(bySettingHour: 19, minute: 0, second: 0, of: nextMonday)!
+        let mondayEnd = calendar.date(bySettingHour: 23, minute: 0, second: 0, of: nextMonday)!
+
+        allEvents.append(Event(
+            title: "Traditional Turkish Night",
+            description: "Authentic Turkish cuisine with live music and belly dancing performance",
+            venueId: harputId,
+            startTime: mondayStart,
+            endTime: mondayEnd,
+            djLineup: ["Live Turkish Band"],
+            coverCharge: 45.00,
+            genre: "Dining",
+            attendingCount: 62,
+            interestedCount: 35,
+            pointsMultiplier: 1.3,
+            imageURL: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800"
+        ))
+
+        // EVENT 5: Chef's Tasting Menu Evening (Ente)
+        let nextWeek = calendar.date(byAdding: .day, value: 7, to: now)!
+        let nextWeekStart = calendar.date(bySettingHour: 19, minute: 0, second: 0, of: nextWeek)!
+        let nextWeekEnd = calendar.date(bySettingHour: 23, minute: 0, second: 0, of: nextWeek)!
+
+        allEvents.append(Event(
+            title: "Chef's Tasting Menu Evening",
+            description: "Exclusive 7-course tasting menu by Michelin-starred Chef Michael Kammermeier",
+            venueId: enteId,
+            startTime: nextWeekStart,
+            endTime: nextWeekEnd,
+            djLineup: [],
+            coverCharge: 150.00,
+            genre: "Fine Dining",
+            attendingCount: 24,
+            interestedCount: 18,
+            pointsMultiplier: 3.0,
+            imageURL: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800"
+        ))
+
+        return allEvents
+    }
 }

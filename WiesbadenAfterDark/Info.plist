@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- ========================================
+	     APP CONFIGURATION
+	     ======================================== -->
+
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+
+	<key>CFBundleDisplayName</key>
+	<string>Wiesbaden After Dark</string>
+
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+
+	<key>CFBundleVersion</key>
+	<string>1</string>
+
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+
+	<!-- ========================================
+	     PLATFORM REQUIREMENTS
+	     ======================================== -->
+
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+
+	<key>MinimumOSVersion</key>
+	<string>17.0</string>
+
+	<!-- ========================================
+	     PRIVACY - REQUIRED USAGE DESCRIPTIONS
+	     ======================================== -->
+
+	<!-- Face ID / Touch ID -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>We use Face ID to securely authenticate payments, confirm bookings, and protect your account from unauthorized access.</string>
+
+	<!-- Camera (for QR code scanning at venues) -->
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access to scan QR codes for quick check-ins at venues and to verify your attendance.</string>
+
+	<!-- NFC Reader (for NFC check-ins) -->
+	<key>NFCReaderUsageDescription</key>
+	<string>Tap your phone to NFC readers at venues to check in seamlessly and earn loyalty points for your visits.</string>
+
+	<!-- Location (for finding nearby venues) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We use your location to show you nearby venues, help you discover events in your area, and verify venue check-ins.</string>
+
+	<!-- Photo Library (if allowing users to select profile photos) -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a photo from your library to personalize your profile and share experiences with the community.</string>
+
+	<!-- Photo Library Add (for saving tickets/passes) -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save your event tickets and venue passes to your photo library for easy access.</string>
+
+	<!-- Contacts (for inviting friends - optional feature) -->
+	<key>NSContactsUsageDescription</key>
+	<string>Access your contacts to easily invite friends to join Wiesbaden After Dark and share events together.</string>
+
+	<!-- Notifications -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>Receive notifications about upcoming events, exclusive offers, and important updates about your bookings.</string>
+
+	<!-- ========================================
+	     NFC CONFIGURATION
+	     ======================================== -->
+
+	<key>NFCReaderUsageName</key>
+	<string>Venue Check-In</string>
+
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>TAG</string>
+	</array>
+
+	<!-- ========================================
+	     APP TRANSPORT SECURITY
+	     ======================================== -->
+
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Require HTTPS for all connections -->
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+
+		<!-- Exception for localhost development (remove for production) -->
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
+	<!-- ========================================
+	     UI CONFIGURATION
+	     ======================================== -->
+
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<!-- Status bar style -->
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
+
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+
+	<!-- Launch screen -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>AccentColor</string>
+		<key>UIImageName</key>
+		<string>LaunchImage</string>
+	</dict>
+
+	<!-- ========================================
+	     APPLE WALLET / PASSKIT
+	     ======================================== -->
+
+	<key>com.apple.developer.pass-type-identifiers</key>
+	<array>
+		<string>pass.com.ea-solutions.wiesbaden-after-dark</string>
+	</array>
+
+	<!-- ========================================
+	     BACKGROUND MODES (if needed)
+	     ======================================== -->
+
+	<key>UIBackgroundModes</key>
+	<array>
+		<!-- For location updates if tracking venue proximity -->
+		<!-- <string>location</string> -->
+
+		<!-- For remote notifications -->
+		<string>remote-notification</string>
+	</array>
+
+	<!-- ========================================
+	     URL SCHEMES (for deep linking)
+	     ======================================== -->
+
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.ea-solutions.wiesbaden-after-dark</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>wad</string>
+				<string>wiesbaden-after-dark</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- ========================================
+	     LOCALIZATION
+	     ======================================== -->
+
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>de</string>
+	</array>
+
+	<!-- ========================================
+	     APP STORE & DISPLAY
+	     ======================================== -->
+
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<!-- Scene Configuration for SwiftUI -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+		<key>UISceneConfigurations</key>
+		<dict/>
+	</dict>
+
+	<!-- ========================================
+	     STRIPE CONFIGURATION (when ready)
+	     ======================================== -->
+
+	<!-- Uncomment when Stripe is integrated -->
+	<!--
+	<key>StripePublishableKey</key>
+	<string>$(STRIPE_PUBLISHABLE_KEY)</string>
+	-->
+
+	<!-- ========================================
+	     FIREBASE CONFIGURATION (if used)
+	     ======================================== -->
+
+	<!-- Firebase config will be added when backend is ready -->
+
+	<!-- ========================================
+	     DEVELOPER NOTES
+	     ======================================== -->
+
+	<!--
+	IMPORTANT REMINDERS:
+
+	1. Before App Store submission:
+	   - Remove localhost exception from NSAppTransportSecurity
+	   - Add real Stripe publishable key
+	   - Update CFBundleVersion for each build
+	   - Verify all privacy descriptions are accurate
+
+	2. Required in Xcode Project Settings:
+	   - Bundle Identifier: com.ea-solutions.WiesbadenAfterDark
+	   - Team: Your Apple Developer Team
+	   - Signing Certificate: Apple Distribution
+	   - Provisioning Profile: App Store profile
+
+	3. Capabilities to enable in Xcode:
+	   - Near Field Communication Tag Reading
+	   - Apple Pay Payment Processing
+	   - Wallet (passes)
+	   - Push Notifications
+	   - Sign In with Apple (if implementing)
+
+	4. App Store Connect Setup:
+	   - Create app record
+	   - Upload screenshots (6.7", 6.5", 5.5")
+	   - Write app description
+	   - Add keywords
+	   - Set up IAP products (for points purchases)
+	   - Configure App Privacy details
+	-->
+
+</dict>
+</plist>

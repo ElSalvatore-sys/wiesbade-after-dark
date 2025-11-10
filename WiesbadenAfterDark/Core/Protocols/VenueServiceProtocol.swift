@@ -35,6 +35,11 @@ protocol VenueServiceProtocol {
     /// - Throws: VenueError if the request fails
     func fetchEvents(venueId: UUID) async throws -> [Event]
 
+    /// Fetches all events from all venues
+    /// - Returns: Array of all events across all venues
+    /// - Throws: VenueError if the request fails
+    func fetchAllEvents() async throws -> [Event]
+
     /// Fetches rewards for a specific venue
     /// - Parameter venueId: Venue UUID
     /// - Returns: Array of rewards

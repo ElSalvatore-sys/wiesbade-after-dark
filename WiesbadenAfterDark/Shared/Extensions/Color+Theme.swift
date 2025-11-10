@@ -82,6 +82,41 @@ extension Color {
         endPoint: .bottom
     )
 
+    // MARK: - 2025 Futuristic Gradients
+
+    /// Neon gradient (purple → pink → cyan)
+    static let neonGradient = LinearGradient(
+        colors: [
+            Color(hex: "#7c3aed"),  // Primary purple
+            Color(hex: "#ec4899"),  // Pink accent
+            Color(hex: "#06b6d4")   // Cyan accent
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    /// Cyber gradient (light purple → cyan → green)
+    static let cyberGradient = LinearGradient(
+        colors: [
+            Color(hex: "#8b5cf6"),  // Light purple
+            Color(hex: "#06b6d4"),  // Cyan
+            Color(hex: "#10b981")   // Green
+        ],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+
+    /// Sunset gradient (orange → pink → purple)
+    static let sunsetGradient = LinearGradient(
+        colors: [
+            Color(hex: "#f59e0b"),  // Orange
+            Color(hex: "#ec4899"),  // Pink
+            Color(hex: "#8b5cf6")   // Purple
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
     // MARK: - Hex Initializer
 
     /// Creates a Color from a hex string

@@ -42,9 +42,9 @@ enum TableType: String, Codable, CaseIterable {
 
     var pointsCost: Int {
         switch self {
-        case .standard: return 1000
-        case .vip: return 2400
-        case .premium: return 4000
+        case .standard: return 500
+        case .vip: return 1200
+        case .premium: return 2000
         }
     }
 
@@ -61,14 +61,6 @@ enum TableType: String, Codable, CaseIterable {
         case .standard: return "Standard seating area"
         case .vip: return "Priority seating with premium service"
         case .premium: return "Exclusive area with bottle service"
-        }
-    }
-
-    var minimumSpend: Int {
-        switch self {
-        case .standard: return 100
-        case .vip: return 250
-        case .premium: return 500
         }
     }
 }

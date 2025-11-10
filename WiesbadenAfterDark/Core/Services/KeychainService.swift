@@ -55,10 +55,11 @@ final class KeychainService: KeychainServiceProtocol {
         let status = SecItemAdd(query as CFDictionary, nil)
 
         guard status == errSecSuccess else {
+            SecureLogger.shared.logKeychainOperation("save token", success: false)
             throw KeychainError.saveFailed
         }
 
-        print("✅ Token saved to Keychain successfully")
+        SecureLogger.shared.logKeychainOperation("save token", success: true)
     }
 
     /// Retrieves the stored authentication token from Keychain
@@ -76,7 +77,9 @@ final class KeychainService: KeychainServiceProtocol {
 
         // Handle no item found (not an error, just no token stored)
         guard status != errSecItemNotFound else {
-            print("ℹ️ No token found in Keychain")
+            #if DEBUG
+            SecureLogger.shared.info("No token found in Keychain", category: "Keychain")
+            #endif
             return nil
         }
 
@@ -94,7 +97,7 @@ final class KeychainService: KeychainServiceProtocol {
         decoder.dateDecodingStrategy = .iso8601
         let token = try decoder.decode(AuthToken.self, from: data)
 
-        print("✅ Token retrieved from Keychain successfully")
+        SecureLogger.shared.logKeychainOperation("retrieve token", success: true)
         return token
     }
 
@@ -110,10 +113,11 @@ final class KeychainService: KeychainServiceProtocol {
 
         // Success or item not found are both acceptable
         guard status == errSecSuccess || status == errSecItemNotFound else {
+            SecureLogger.shared.logKeychainOperation("delete token", success: false)
             throw KeychainError.deleteFailed
         }
 
-        print("✅ Token deleted from Keychain successfully")
+        SecureLogger.shared.logKeychainOperation("delete token", success: true)
     }
 
     /// Checks if a valid (non-expired) token exists
@@ -124,7 +128,7 @@ final class KeychainService: KeychainServiceProtocol {
             }
             return !token.isExpired
         } catch {
-            print("⚠️ Error checking for valid token: \(error)")
+            SecureLogger.shared.error("Error checking for valid token", error: error, category: "Keychain")
             return false
         }
     }

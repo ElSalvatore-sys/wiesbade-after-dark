@@ -158,8 +158,8 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            // Events tab (placeholder)
-            EventsPlaceholderView()
+            // Events tab
+            EventsView()
                 .tabItem {
                     Label("Events", systemImage: "calendar.fill")
                 }

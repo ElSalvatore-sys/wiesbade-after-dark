@@ -16,10 +16,28 @@ final class MockVenueService: VenueServiceProtocol {
     /// Simulated network delay in seconds
     private let networkDelay: TimeInterval = 1.0
 
-    /// Cached Das Wohnzimmer venue
-    private lazy var dasWohnzimmer: Venue = Venue.mockDasWohnzimmer()
+    /// All cached venues
+    private lazy var allVenues: [Venue] = [
+        Venue.mockDasWohnzimmer(),
+        Venue.mockParkCafe(),
+        Venue.mockHarput(),
+        Venue.mockEnte(),
+        Venue.mockHotelKochbrunnen(),
+        Venue.mockEuroPalace(),
+        Venue.mockVillaImTal(),
+        Venue.mockKulturpalast()
+    ]
 
-    /// Cached events
+    /// Cached Das Wohnzimmer venue for backward compatibility
+    private var dasWohnzimmer: Venue { allVenues[0] }
+
+    /// All events across all venues
+    private lazy var allEvents: [Event] = {
+        let venueMap = Dictionary(uniqueKeysWithValues: allVenues.map { ($0.id, $0.name) })
+        return Event.mockAllEvents(venues: venueMap)
+    }()
+
+    /// Cached events for Das Wohnzimmer (backward compatibility)
     private lazy var events: [Event] = Event.mockEventsForVenue(dasWohnzimmer.id)
 
     /// Cached rewards
@@ -35,15 +53,15 @@ final class MockVenueService: VenueServiceProtocol {
 
     // MARK: - VenueServiceProtocol Implementation
 
-    /// Fetches all venues (currently only Das Wohnzimmer)
+    /// Fetches all venues
     func fetchVenues() async throws -> [Venue] {
         print("🏢 [MockVenueService] Fetching all venues")
 
         // Simulate network delay
         try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
 
-        print("✅ [MockVenueService] Returned 1 venue (Das Wohnzimmer)")
-        return [dasWohnzimmer]
+        print("✅ [MockVenueService] Returned \(allVenues.count) venues")
+        return allVenues
     }
 
     /// Fetches a specific venue by ID
@@ -53,13 +71,13 @@ final class MockVenueService: VenueServiceProtocol {
         // Simulate network delay
         try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
 
-        guard id == dasWohnzimmer.id else {
+        guard let venue = allVenues.first(where: { $0.id == id }) else {
             print("❌ [MockVenueService] Venue not found")
             throw VenueError.venueNotFound
         }
 
-        print("✅ [MockVenueService] Returned Das Wohnzimmer")
-        return dasWohnzimmer
+        print("✅ [MockVenueService] Returned \(venue.name)")
+        return venue
     }
 
     /// Fetches events for a venue
@@ -69,13 +87,27 @@ final class MockVenueService: VenueServiceProtocol {
         // Simulate network delay
         try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
 
-        guard venueId == dasWohnzimmer.id else {
+        // Check if venue exists
+        guard allVenues.contains(where: { $0.id == venueId }) else {
             print("❌ [MockVenueService] Venue not found")
             throw VenueError.venueNotFound
         }
 
-        print("✅ [MockVenueService] Returned \(events.count) events")
-        return events
+        // Filter events for this specific venue
+        let venueEvents = allEvents.filter { $0.venueId == venueId }
+        print("✅ [MockVenueService] Returned \(venueEvents.count) events")
+        return venueEvents
+    }
+
+    /// Fetches all events from all venues
+    func fetchAllEvents() async throws -> [Event] {
+        print("🎉 [MockVenueService] Fetching all events across all venues")
+
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
+
+        print("✅ [MockVenueService] Returned \(allEvents.count) events")
+        return allEvents
     }
 
     /// Fetches rewards for a venue

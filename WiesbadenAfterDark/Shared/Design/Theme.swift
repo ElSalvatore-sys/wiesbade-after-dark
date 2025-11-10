@@ -21,13 +21,13 @@ enum Theme {
         static let xxl: CGFloat = 48
     }
 
-    // MARK: - Corner Radius
+    // MARK: - Corner Radius (2025 Modern - Softer Rounded Corners)
     enum CornerRadius {
-        static let sm: CGFloat = 8
-        static let md: CGFloat = 12
-        static let lg: CGFloat = 16
-        static let xl: CGFloat = 24
-        static let pill: CGFloat = 999 // For fully rounded buttons
+        static let sm: CGFloat = 14        // ⬆️ Increased from 8
+        static let md: CGFloat = 16        // ⬆️ Increased from 12
+        static let lg: CGFloat = 20        // ⬆️ Increased from 16
+        static let xl: CGFloat = 24        // Unchanged (already modern)
+        static let pill: CGFloat = 999     // For fully rounded buttons
     }
 
     // MARK: - Border Width
@@ -37,25 +37,25 @@ enum Theme {
         static let thick: CGFloat = 3
     }
 
-    // MARK: - Shadow
+    // MARK: - Shadow (2025 Modern - Softer, More Depth)
     enum Shadow {
         static let sm = ShadowStyle(
-            color: Color.black.opacity(0.1),
-            radius: 4,
+            color: Color.black.opacity(0.05),  // ⬇️ More subtle
+            radius: 8,                         // ⬆️ Increased spread
             x: 0,
             y: 2
         )
 
         static let md = ShadowStyle(
-            color: Color.black.opacity(0.15),
-            radius: 8,
+            color: Color.black.opacity(0.08),  // ⬇️ More subtle
+            radius: 12,                        // ⬆️ Increased spread
             x: 0,
             y: 4
         )
 
         static let lg = ShadowStyle(
-            color: Color.black.opacity(0.2),
-            radius: 16,
+            color: Color.black.opacity(0.15),  // ⬇️ More subtle
+            radius: 20,                        // ⬆️ Increased spread
             x: 0,
             y: 8
         )
