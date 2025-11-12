@@ -60,7 +60,15 @@ async def init_db() -> None:
     """
     async with engine.begin() as conn:
         # Import all models here to ensure they're registered with Base
-        from app.models import user, venue, transaction, user_points, referral, product
+        from app.models import (
+            user,
+            venue,
+            transaction,
+            user_points,
+            referral,
+            product,
+            verification_code
+        )
 
         # Create all tables
         await conn.run_sync(Base.metadata.create_all)

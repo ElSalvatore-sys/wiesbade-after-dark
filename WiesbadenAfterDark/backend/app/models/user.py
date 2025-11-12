@@ -23,15 +23,19 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     # Authentication
-    email = Column(String(255), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=True, index=True)  # Nullable for phone-only auth
     password_hash = Column(String(255), nullable=True)  # Optional for social auth
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
 
+    # Phone Authentication
+    phone_number = Column(String(20), unique=True, nullable=True, index=True)  # E.164 format
+    phone_country_code = Column(String(5), nullable=True)  # e.g., "+49"
+    phone_verified = Column(Boolean, default=False)
+
     # Profile
     first_name = Column(String(100))
     last_name = Column(String(100))
-    phone = Column(String(20))
     avatar_url = Column(String(500))
     date_of_birth = Column(DateTime)
 

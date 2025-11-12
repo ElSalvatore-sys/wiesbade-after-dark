@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     ORDERBIRD_API_KEY: str = Field(default="", description="orderbird API key")
     ORDERBIRD_API_URL: str = Field(default="https://api.orderbird.com/v1", description="orderbird API URL")
 
+    # Twilio SMS
+    TWILIO_ACCOUNT_SID: str = Field(default="", description="Twilio Account SID")
+    TWILIO_AUTH_TOKEN: str = Field(default="", description="Twilio Auth Token")
+    TWILIO_PHONE_NUMBER: str = Field(default="", description="Twilio Phone Number")
+
     # Email (Optional)
     SMTP_HOST: str = Field(default="", description="SMTP server host")
     SMTP_PORT: int = Field(default=587, description="SMTP server port")
