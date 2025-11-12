@@ -34,7 +34,9 @@ from app.models import (
 config = context.config
 
 # Set the SQLAlchemy URL from app settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Escape % characters for ConfigParser by doubling them
+database_url = settings.DATABASE_URL.replace("%", "%%")
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
