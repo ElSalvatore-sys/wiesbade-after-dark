@@ -31,7 +31,7 @@ final class AuthenticationViewModel {
     // MARK: - Initialization
 
     init(
-        authService: AuthServiceProtocol = MockAuthService.shared,
+        authService: AuthServiceProtocol = RealAuthService.shared,
         keychainService: KeychainServiceProtocol = KeychainService.shared,
         modelContext: ModelContext? = nil
     ) {

@@ -17,55 +17,55 @@ enum APIConfig {
 
     enum Endpoints {
         // Authentication
-        static let sendVerificationCode = "/auth/send-code"
-        static let verifyCode = "/auth/verify-code"
-        static let register = "/auth/register"
-        static let login = "/auth/login"
-        static let refreshToken = "/auth/refresh"
+        static let sendVerificationCode = "/api/v1/auth/send-code"
+        static let verifyCode = "/api/v1/auth/verify-code"
+        static let register = "/api/v1/auth/register"
+        static let login = "/api/v1/auth/login"
+        static let refreshToken = "/api/v1/auth/refresh"
 
         // Users
-        static let userProfile = "/users/me"
-        static let updateProfile = "/users/me"
-        static let validateReferralCode = "/users/validate-referral"
+        static let userProfile = "/api/v1/users/me"
+        static let updateProfile = "/api/v1/users/me"
+        static let validateReferralCode = "/api/v1/users/validate-referral"
 
         // Venues
-        static let venues = "/venues"
-        static func venueDetail(id: String) -> String { "/venues/\(id)" }
-        static func venueEvents(id: String) -> String { "/venues/\(id)/events" }
-        static func venueRewards(id: String) -> String { "/venues/\(id)/rewards" }
-        static func venueCommunity(id: String) -> String { "/venues/\(id)/community" }
-        static func joinVenue(id: String) -> String { "/venues/\(id)/join" }
+        static let venues = "/api/v1/venues"
+        static func venueDetail(id: String) -> String { "/api/v1/venues/\(id)" }
+        static func venueEvents(id: String) -> String { "/api/v1/venues/\(id)/events" }
+        static func venueRewards(id: String) -> String { "/api/v1/venues/\(id)/rewards" }
+        static func venueCommunity(id: String) -> String { "/api/v1/venues/\(id)/community" }
+        static func joinVenue(id: String) -> String { "/api/v1/venues/\(id)/join" }
         static func venueMembership(venueId: String, userId: String) -> String {
-            "/venues/\(venueId)/members/\(userId)"
+            "/api/v1/venues/\(venueId)/members/\(userId)"
         }
 
         // Events
-        static func rsvpEvent(id: String) -> String { "/events/\(id)/rsvp" }
-        static let myEvents = "/events/my-events"
+        static func rsvpEvent(id: String) -> String { "/api/v1/events/\(id)/rsvp" }
+        static let myEvents = "/api/v1/events/my-events"
 
         // Bookings
-        static let createBooking = "/bookings"
-        static let myBookings = "/bookings/my-bookings"
-        static func bookingDetail(id: String) -> String { "/bookings/\(id)" }
-        static func cancelBooking(id: String) -> String { "/bookings/\(id)/cancel" }
+        static let createBooking = "/api/v1/bookings"
+        static let myBookings = "/api/v1/bookings/my-bookings"
+        static func bookingDetail(id: String) -> String { "/api/v1/bookings/\(id)" }
+        static func cancelBooking(id: String) -> String { "/api/v1/bookings/\(id)/cancel" }
 
         // Check-ins
-        static let checkIn = "/check-ins"
-        static func checkInHistory(userId: String) -> String { "/check-ins/user/\(userId)" }
-        static func currentStreak(userId: String) -> String { "/check-ins/user/\(userId)/streak" }
+        static let checkIn = "/api/v1/check-ins"
+        static func checkInHistory(userId: String) -> String { "/api/v1/check-ins/user/\(userId)" }
+        static func currentStreak(userId: String) -> String { "/api/v1/check-ins/user/\(userId)/streak" }
 
         // Wallet Passes
-        static let walletPasses = "/wallet-passes"
-        static func generatePass(bookingId: String) -> String { "/wallet-passes/generate/\(bookingId)" }
+        static let walletPasses = "/api/v1/wallet-passes"
+        static func generatePass(bookingId: String) -> String { "/api/v1/wallet-passes/generate/\(bookingId)" }
 
         // Payments
-        static let createPaymentIntent = "/payments/create-intent"
-        static let confirmPayment = "/payments/confirm"
-        static let paymentHistory = "/payments/my-payments"
-        static func refundPayment(id: String) -> String { "/payments/\(id)/refund" }
+        static let createPaymentIntent = "/api/v1/payments/create-intent"
+        static let confirmPayment = "/api/v1/payments/confirm"
+        static let paymentHistory = "/api/v1/payments/my-payments"
+        static func refundPayment(id: String) -> String { "/api/v1/payments/\(id)/refund" }
 
         // Rewards
-        static func redeemReward(id: String) -> String { "/rewards/\(id)/redeem" }
+        static func redeemReward(id: String) -> String { "/api/v1/rewards/\(id)/redeem" }
     }
 
     // MARK: - Headers
