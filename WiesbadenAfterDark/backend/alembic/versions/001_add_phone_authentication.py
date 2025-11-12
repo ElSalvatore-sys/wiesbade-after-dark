@@ -36,7 +36,7 @@ def upgrade() -> None:
 
     # Create unique constraint and index on phone_number
     op.create_unique_constraint('uq_users_phone_number', 'users', ['phone_number'])
-    op.create_index('ix_users_phone_number', 'users', ['phone_number'])
+    op.create_index('ix_users_phone_number', 'users', ['phone_number'], if_not_exists=True)
 
     # Make email nullable (was required, now optional for phone-only auth)
     op.alter_column('users', 'email',
@@ -59,9 +59,10 @@ def upgrade() -> None:
         sa.Column('attempts', sa.Integer(), nullable=False, server_default='0'),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.Column('used_at', sa.DateTime(), nullable=True),
-        sa.PrimaryKeyConstraint('id')
+        sa.PrimaryKeyConstraint('id'),
+        if_not_exists=True
     )
-    op.create_index('ix_verification_codes_phone_number', 'verification_codes', ['phone_number'])
+    op.create_index('ix_verification_codes_phone_number', 'verification_codes', ['phone_number'], if_not_exists=True)
 
 
 def downgrade() -> None:
