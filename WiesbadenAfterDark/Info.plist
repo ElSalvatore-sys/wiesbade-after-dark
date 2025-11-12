@@ -106,15 +106,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 
-		<!-- Exception for localhost development (remove for production) -->
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>localhost</key>
-			<dict>
-				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-		</dict>
+		<!-- Production backend uses HTTPS (Railway) -->
+		<!-- No exceptions needed - using secure HTTPS connection -->
 	</dict>
 
 	<!-- ========================================
