@@ -119,13 +119,13 @@ async def generate_unique_referral_code(db: AsyncSession) -> str:
     )
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register-email", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     user_data: UserRegister,
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Register a new user account.
+    Register a new user account with email and password.
 
     Creates a new user with the provided information, generates a unique referral code,
     and handles referral chain creation if a referral code was provided.
@@ -389,7 +389,7 @@ async def send_verification_code(
     }
 
 
-@router.post("/verify-code")
+@router.post("/verify-email-code")
 async def verify_email_code(
     data: CodeVerification,
     db: AsyncSession = Depends(get_db)
