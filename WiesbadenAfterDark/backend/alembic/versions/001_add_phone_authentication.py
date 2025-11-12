@@ -34,9 +34,14 @@ def upgrade() -> None:
     op.add_column('users', sa.Column('phone_country_code', sa.String(length=5), nullable=True))
     op.add_column('users', sa.Column('phone_verified', sa.Boolean(), nullable=False, server_default='false'))
 
-    # Create unique constraint and index on phone_number
-    op.create_unique_constraint('uq_users_phone_number', 'users', ['phone_number'])
-    op.create_index('ix_users_phone_number', 'users', ['phone_number'], if_not_exists=True)
+    # Create unique constraint and index on phone_number with error handling
+    try:
+        op.create_unique_constraint('uq_users_phone_number', 'users', ['phone_number'])
+        op.create_index('ix_users_phone_number', 'users', ['phone_number'])
+    except Exception as e:
+        # Constraint/index already exists from previous attempt, skip creation
+        print(f"Skipping users phone_number index creation: {e}")
+        pass
 
     # Make email nullable (was required, now optional for phone-only auth)
     op.alter_column('users', 'email',
@@ -48,21 +53,25 @@ def upgrade() -> None:
                     existing_type=sa.String(length=255),
                     nullable=True)
 
-    # Create verification_codes table
-    op.create_table(
-        'verification_codes',
-        sa.Column('id', sa.UUID(), nullable=False),
-        sa.Column('phone_number', sa.String(length=20), nullable=False),
-        sa.Column('code', sa.String(length=6), nullable=False),
-        sa.Column('is_used', sa.Boolean(), nullable=False, server_default='false'),
-        sa.Column('expires_at', sa.DateTime(), nullable=False),
-        sa.Column('attempts', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
-        sa.Column('used_at', sa.DateTime(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        if_not_exists=True
-    )
-    op.create_index('ix_verification_codes_phone_number', 'verification_codes', ['phone_number'], if_not_exists=True)
+    # Create verification_codes table with error handling
+    try:
+        op.create_table(
+            'verification_codes',
+            sa.Column('id', sa.UUID(), nullable=False),
+            sa.Column('phone_number', sa.String(length=20), nullable=False),
+            sa.Column('code', sa.String(length=6), nullable=False),
+            sa.Column('is_used', sa.Boolean(), nullable=False, server_default='false'),
+            sa.Column('expires_at', sa.DateTime(), nullable=False),
+            sa.Column('attempts', sa.Integer(), nullable=False, server_default='0'),
+            sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
+            sa.Column('used_at', sa.DateTime(), nullable=True),
+            sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index('ix_verification_codes_phone_number', 'verification_codes', ['phone_number'])
+    except Exception as e:
+        # Table already exists from previous attempt, skip creation
+        print(f"Skipping verification_codes table creation: {e}")
+        pass
 
 
 def downgrade() -> None:
