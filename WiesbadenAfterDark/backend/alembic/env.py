@@ -33,10 +33,14 @@ from app.models import (
 # access to the values within the .ini file in use.
 config = context.config
 
-# Set the SQLAlchemy URL from app settings
-# Convert asyncpg URL to psycopg2 URL for Alembic
-database_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
-# Escape % characters for ConfigParser by doubling them
+# Convert DATABASE_URL for Alembic use
+database_url = settings.DATABASE_URL
+# 1. Replace asyncpg driver with psycopg2 (sync driver for migrations)
+database_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
+# 2. Remove asyncpg-specific query parameters (prepared_statement_cache_size)
+if "?" in database_url:
+    database_url = database_url.split("?")[0]
+# 3. Escape % characters for ConfigParser by doubling them
 database_url = database_url.replace("%", "%%")
 config.set_main_option("sqlalchemy.url", database_url)
 
