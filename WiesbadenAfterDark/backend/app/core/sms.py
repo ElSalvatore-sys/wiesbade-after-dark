@@ -66,7 +66,7 @@ class SMSService:
 
         try:
             message = self.client.messages.create(
-                body=f"Your Wiesbaden After Dark verification code is: {code}\n\nValid for 5 minutes.",
+                body=f"Wiesbaden After Dark\n\nYour verification code is: {code}\n\nValid for 5 minutes.",
                 from_=settings.TWILIO_PHONE_NUMBER,
                 to=phone_number
             )
@@ -81,12 +81,18 @@ class SMSService:
             logger.error(f"Unexpected error sending SMS to {phone_number}: {e}")
             return False
 
-    async def send_welcome_message(self, phone_number: str, name: Optional[str] = None) -> bool:
+    async def send_welcome_message(
+        self,
+        phone_number: str,
+        referral_code: str,
+        name: Optional[str] = None
+    ) -> bool:
         """
         Send welcome message to new user.
 
         Args:
             phone_number: Phone number in E.164 format
+            referral_code: User's unique referral code
             name: Optional user name
 
         Returns:
@@ -97,9 +103,8 @@ class SMSService:
             return True
 
         try:
-            greeting = f"Hi {name}!" if name else "Welcome!"
             message = self.client.messages.create(
-                body=f"{greeting} Thank you for joining Wiesbaden After Dark. Discover exclusive events and venues in Wiesbaden!",
+                body=f"Welcome to Wiesbaden After Dark! 🎉\n\nYour referral code: {referral_code}\n\nShare with friends to earn points!",
                 from_=settings.TWILIO_PHONE_NUMBER,
                 to=phone_number
             )

@@ -444,7 +444,7 @@ async def register_user(
     await db.refresh(new_user)
 
     # Send welcome SMS
-    await sms_service.send_welcome_message(request.phone_number)
+    await sms_service.send_welcome_message(request.phone_number, new_user.referral_code)
 
     # Generate tokens
     access_token = create_access_token({"sub": str(new_user.id)})
