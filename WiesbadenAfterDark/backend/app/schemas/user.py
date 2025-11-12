@@ -78,13 +78,15 @@ class FCMTokenUpdate(BaseModel):
 class UserResponse(BaseModel):
     """Schema for user data in responses."""
     id: UUID
-    email: str
-    first_name: Optional[str]
-    last_name: Optional[str]
-    phone: Optional[str]
-    avatar_url: Optional[str]
+    email: Optional[str] = None  # Optional for phone-only auth
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone_number: Optional[str] = None  # Changed from 'phone' to match model
+    phone_country_code: Optional[str] = None
+    phone_verified: bool = False
+    avatar_url: Optional[str] = None
     referral_code: str
-    referred_by_code: Optional[str]
+    referred_by_code: Optional[str] = None
     total_referrals: int
     total_points_earned: float
     total_points_spent: float
@@ -92,7 +94,7 @@ class UserResponse(BaseModel):
     is_verified: bool
     is_active: bool
     created_at: datetime
-    last_login_at: Optional[datetime]
+    last_login_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -104,7 +106,7 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int  # seconds
-    user: UserResponse
+    user: Optional[UserResponse] = None  # Optional for phone verification before registration
 
 
 class VenuePointsDetail(BaseModel):
@@ -132,9 +134,10 @@ class UserPointsSummary(BaseModel):
 class ReferredUser(BaseModel):
     """Schema for a user who was referred."""
     id: UUID
-    first_name: Optional[str]
-    last_name: Optional[str]
-    email: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None  # Optional for phone-only users
+    phone_number: Optional[str] = None
     referred_at: datetime
     is_active: bool
 

@@ -36,7 +36,12 @@ router = APIRouter()
 
 class SendCodeRequest(BaseModel):
     """Request to send verification code."""
-    phone_number: str = Field(..., description="Phone number in E.164 format (e.g., +4917012345678)")
+    phone_number: str = Field(
+        ...,
+        min_length=10,
+        max_length=20,
+        description="Phone number in E.164 format (e.g., +4917012345678)"
+    )
 
 
 class SendCodeResponse(BaseModel):
@@ -47,14 +52,26 @@ class SendCodeResponse(BaseModel):
 
 class VerifyCodeRequest(BaseModel):
     """Request to verify SMS code."""
-    phone_number: str = Field(..., description="Phone number in E.164 format")
+    phone_number: str = Field(
+        ...,
+        min_length=10,
+        max_length=20,
+        description="Phone number in E.164 format"
+    )
     code: str = Field(..., min_length=6, max_length=6, description="6-digit verification code")
 
 
-class RegisterRequest(BaseModel):
+class PhoneRegisterRequest(BaseModel):
     """Request to register new user after phone verification."""
-    phone_number: str = Field(..., description="Phone number in E.164 format")
+    phone_number: str = Field(
+        ...,
+        min_length=10,
+        max_length=20,
+        description="Phone number in E.164 format"
+    )
     referral_code: Optional[str] = Field(None, description="Optional referral code")
+    first_name: Optional[str] = Field(None, max_length=100, description="User's first name")
+    last_name: Optional[str] = Field(None, max_length=100, description="User's last name")
 
 
 class ValidateReferralResponse(BaseModel):
@@ -338,7 +355,7 @@ async def verify_code_and_authenticate(
     description="Create new user account after phone number has been verified"
 )
 async def register_user(
-    request: RegisterRequest,
+    request: PhoneRegisterRequest,
     db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:
     """
@@ -425,6 +442,8 @@ async def register_user(
         phone_number=request.phone_number,
         phone_country_code=phone_country_code,
         phone_verified=True,
+        first_name=request.first_name,
+        last_name=request.last_name,
         referral_code=new_referral_code,
         referred_by_code=request.referral_code,
         is_verified=True,  # Phone verified
