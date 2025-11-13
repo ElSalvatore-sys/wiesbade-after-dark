@@ -25,6 +25,56 @@ enum MembershipTier: String, Codable, CaseIterable {
         case .platinum: return "#E5E4E2"
         }
     }
+
+    /// Default spending threshold to reach this tier (can be customized per venue)
+    var defaultRequiredSpending: Decimal {
+        switch self {
+        case .bronze: return 0
+        case .silver: return 500
+        case .gold: return 2000
+        case .platinum: return 5000
+        }
+    }
+
+    /// Default points multiplier for this tier
+    var defaultMultiplier: Decimal {
+        switch self {
+        case .bronze: return 1.0
+        case .silver: return 1.2
+        case .gold: return 1.5
+        case .platinum: return 2.0
+        }
+    }
+
+    /// Icon for tier badge
+    var icon: String {
+        switch self {
+        case .bronze: return "shield.fill"
+        case .silver: return "shield.lefthalf.filled"
+        case .gold: return "crown.fill"
+        case .platinum: return "star.fill"
+        }
+    }
+
+    /// Next tier in progression (if any)
+    var nextTier: MembershipTier? {
+        switch self {
+        case .bronze: return .silver
+        case .silver: return .gold
+        case .gold: return .platinum
+        case .platinum: return nil
+        }
+    }
+
+    /// Order for sorting (higher is better)
+    var order: Int {
+        switch self {
+        case .bronze: return 0
+        case .silver: return 1
+        case .gold: return 2
+        case .platinum: return 3
+        }
+    }
 }
 
 /// Represents a community post at a venue
