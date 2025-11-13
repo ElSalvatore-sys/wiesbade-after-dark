@@ -16,6 +16,10 @@ protocol CheckInServiceProtocol {
     ///   - venueName: Venue name
     ///   - method: Check-in method (NFC, QR, Manual)
     ///   - eventId: Optional event ID if checking in for specific event
+    ///   - eventMultiplier: Event multiplier (1.0 = no event)
+    ///   - amountSpent: Optional purchase amount for margin-based points calculation
+    ///   - orderItems: Optional order items for detailed points calculation
+    ///   - venue: Optional venue object for margin-based calculation (required if amountSpent/orderItems provided)
     /// - Returns: Created CheckIn record
     func performCheckIn(
         userId: UUID,
@@ -23,7 +27,10 @@ protocol CheckInServiceProtocol {
         venueName: String,
         method: CheckInMethod,
         eventId: UUID?,
-        eventMultiplier: Decimal
+        eventMultiplier: Decimal,
+        amountSpent: Decimal?,
+        orderItems: [OrderItem]?,
+        venue: Venue?
     ) async throws -> CheckIn
 
     /// Simulates NFC tag scan (for mock implementation)

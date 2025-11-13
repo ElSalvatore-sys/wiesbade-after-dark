@@ -71,6 +71,15 @@ final class Venue: @unchecked Sendable {
     var avgSpend: Decimal
     var bestNights: [String]
 
+    // MARK: - Margin Configuration (for Points Calculation)
+
+    /// Food margin percentage (e.g., 30.0 for 30%)
+    var foodMarginPercent: Decimal
+    /// Beverage margin percentage (e.g., 80.0 for 80%)
+    var beverageMarginPercent: Decimal
+    /// Default margin percentage for uncategorized items (e.g., 50.0 for 50%)
+    var defaultMarginPercent: Decimal
+
     // MARK: - Opening Hours
 
     /// Opening hours stored as JSON dictionary: ["monday": "18:00-23:00", "tuesday": "closed"]
@@ -113,6 +122,9 @@ final class Venue: @unchecked Sendable {
         capacity: Int? = nil,
         avgSpend: Decimal = 0,
         bestNights: [String] = [],
+        foodMarginPercent: Decimal = 30.0,
+        beverageMarginPercent: Decimal = 80.0,
+        defaultMarginPercent: Decimal = 50.0,
         openingHours: [String: String] = [:],
         memberCount: Int = 0,
         rating: Decimal = 0,
@@ -143,6 +155,9 @@ final class Venue: @unchecked Sendable {
         self.capacity = capacity
         self.avgSpend = avgSpend
         self.bestNights = bestNights
+        self.foodMarginPercent = foodMarginPercent
+        self.beverageMarginPercent = beverageMarginPercent
+        self.defaultMarginPercent = defaultMarginPercent
         self.memberCount = memberCount
         self.rating = rating
         self.totalEvents = totalEvents
@@ -263,6 +278,11 @@ extension Venue {
     /// Formatted rating display
     var formattedRating: String {
         return String(format: "%.1f", NSDecimalNumber(decimal: rating).doubleValue)
+    }
+
+    /// Maximum margin percentage across all categories (for points calculation)
+    var maxMarginPercent: Decimal {
+        return max(foodMarginPercent, beverageMarginPercent, defaultMarginPercent)
     }
 }
 

@@ -33,11 +33,20 @@ final class MockCheckInService: CheckInServiceProtocol {
         venueName: String,
         method: CheckInMethod,
         eventId: UUID? = nil,
-        eventMultiplier: Decimal = 1.0
+        eventMultiplier: Decimal = 1.0,
+        amountSpent: Decimal? = nil,
+        orderItems: [OrderItem]? = nil,
+        venue: Venue? = nil
     ) async throws -> CheckIn {
         print("🏃 [CheckIn] Starting check-in at \(venueName)")
         print("   User: \(userId.uuidString.prefix(8))...")
         print("   Method: \(method.rawValue)")
+        if let amount = amountSpent {
+            print("   Amount spent: €\(NSDecimalNumber(decimal: amount).doubleValue)")
+        }
+        if let items = orderItems {
+            print("   Order items: \(items.count) items")
+        }
 
         // Simulate network delay
         try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
@@ -63,31 +72,76 @@ final class MockCheckInService: CheckInServiceProtocol {
             }
         }()
 
-        // Check if weekend (Friday or Saturday)
-        let isWeekend = Calendar.current.isDateInWeekend(Date())
-        let weekendMultiplier: Decimal = isWeekend ? 1.2 : 1.0
+        // Calculate points based on purchase or check-in
+        let basePoints: Int
+        let totalPoints: Int
+        let calculationMethod: String
 
-        // Calculate total points
-        let basePoints = 50
-        let totalPoints = calculatePoints(
-            basePoints: basePoints,
-            eventMultiplier: eventMultiplier,
-            streakDay: streakDay,
-            isWeekend: isWeekend
-        )
+        if let items = orderItems, let venue = venue {
+            // Margin-based calculation with detailed order items
+            let calculator = PointsCalculatorService.shared
+            let result = calculator.calculatePointsForOrder(orderItems: items, venue: venue)
 
-        print("🎯 [CheckIn] Points calculation:")
-        print("   Base: \(basePoints) pts")
-        if eventMultiplier > 1.0 {
-            print("   Event multiplier: ×\(NSDecimalNumber(decimal: eventMultiplier).doubleValue)")
+            totalPoints = result.roundedPoints
+            basePoints = result.roundedPoints // For order-based points, base = total
+            calculationMethod = "Margin-based (detailed order)"
+
+            print("🎯 [CheckIn] Margin-based points calculation:")
+            print("   Items: \(items.count)")
+            print("   Total amount: €\(items.reduce(Decimal(0)) { $0 + $1.subtotal })")
+            print("   Base points: \(result.basePoints)")
+            if result.bonusPoints > 0 {
+                print("   Bonus points: +\(result.bonusPoints)")
+            }
+            print("   Total: \(totalPoints) pts")
+
+        } else if let amount = amountSpent, let venue = venue {
+            // Simple margin-based calculation (assume default category)
+            let calculator = PointsCalculatorService.shared
+            let points = calculator.calculateSimplePoints(
+                amount: amount,
+                category: .other, // Default category when not specified
+                venue: venue,
+                bonusMultiplier: 1.0
+            )
+
+            totalPoints = Int(points.rounded())
+            basePoints = totalPoints
+            calculationMethod = "Margin-based (simple)"
+
+            print("🎯 [CheckIn] Simple margin-based points:")
+            print("   Amount: €\(NSDecimalNumber(decimal: amount).doubleValue)")
+            print("   Category: Other (default)")
+            print("   Total: \(totalPoints) pts")
+
+        } else {
+            // Traditional check-in based points (no purchase)
+            let checkInBasePoints = 50
+            let isWeekend = Calendar.current.isDateInWeekend(Date())
+            let weekendMultiplier: Decimal = isWeekend ? 1.2 : 1.0
+
+            totalPoints = calculatePoints(
+                basePoints: checkInBasePoints,
+                eventMultiplier: eventMultiplier,
+                streakDay: streakDay,
+                isWeekend: isWeekend
+            )
+            basePoints = checkInBasePoints
+            calculationMethod = "Check-in based"
+
+            print("🎯 [CheckIn] Traditional check-in points:")
+            print("   Base: \(basePoints) pts")
+            if eventMultiplier > 1.0 {
+                print("   Event multiplier: ×\(NSDecimalNumber(decimal: eventMultiplier).doubleValue)")
+            }
+            if isWeekend {
+                print("   Weekend bonus: ×\(NSDecimalNumber(decimal: weekendMultiplier).doubleValue)")
+            }
+            if streakDay > 1 {
+                print("   Streak multiplier (Day \(streakDay)): ×\(NSDecimalNumber(decimal: streakMultiplier).doubleValue)")
+            }
+            print("   Total: \(totalPoints) pts")
         }
-        if isWeekend {
-            print("   Weekend bonus: ×\(NSDecimalNumber(decimal: weekendMultiplier).doubleValue)")
-        }
-        if streakDay > 1 {
-            print("   Streak multiplier (Day \(streakDay)): ×\(NSDecimalNumber(decimal: streakMultiplier).doubleValue)")
-        }
-        print("   Total: \(totalPoints) pts")
 
         // Create check-in record
         let checkIn = CheckIn(
