@@ -66,6 +66,10 @@ enum APIConfig {
 
         // Rewards
         static func redeemReward(id: String) -> String { "/api/v1/rewards/\(id)/redeem" }
+
+        // Referrals
+        static func userReferrals(userId: String) -> String { "/api/v1/users/\(userId)/referrals" }
+        static let processReferralRewards = "/api/v1/referrals/process-rewards"
     }
 
     // MARK: - Headers
