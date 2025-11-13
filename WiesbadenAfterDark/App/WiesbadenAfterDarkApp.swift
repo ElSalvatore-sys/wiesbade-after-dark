@@ -26,7 +26,8 @@ struct WiesbadenAfterDarkApp: App {
             PointTransaction.self,
             Payment.self,
             PointsPurchase.self,
-            Refund.self
+            Refund.self,
+            PointExpiration.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -41,6 +42,15 @@ struct WiesbadenAfterDarkApp: App {
 
     @State private var authViewModel: AuthenticationViewModel?
     @State private var venueViewModel: VenueViewModel?
+
+    // MARK: - Initialization
+
+    init() {
+        // Register background task for points expiration
+        Task { @MainActor in
+            PointsExpirationService.shared.registerBackgroundTask()
+        }
+    }
 
     // MARK: - Body
 
@@ -59,6 +69,12 @@ struct WiesbadenAfterDarkApp: App {
                         let context = sharedModelContainer.mainContext
                         authViewModel = AuthenticationViewModel(modelContext: context)
                         venueViewModel = VenueViewModel(modelContext: context)
+
+                        // Configure points expiration service
+                        Task { @MainActor in
+                            PointsExpirationService.shared.configure(with: context)
+                            PointsExpirationService.shared.scheduleBackgroundTask()
+                        }
                     }
             }
         }

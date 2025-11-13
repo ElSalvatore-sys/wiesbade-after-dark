@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import CoreLocation
 
 /// Home screen - main app view with inventory gamification and event highlights
@@ -13,6 +14,7 @@ struct HomeView: View {
     // MARK: - Properties
 
     @Environment(AuthenticationViewModel.self) private var authViewModel
+    @Environment(\.modelContext) private var modelContext
     @State private var homeViewModel = HomeViewModel()
 
     // MARK: - UI State
@@ -21,6 +23,9 @@ struct HomeView: View {
     @State private var showCheckInHistory = false
     @State private var selectedEvent: Event?
     @State private var selectedProduct: Product?
+    @State private var expiringMemberships: [VenueMembership] = []
+    @State private var showExpiringPointsSheet = false
+    @State private var selectedMembership: VenueMembership?
 
     // MARK: - Body
 
