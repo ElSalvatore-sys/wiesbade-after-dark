@@ -75,6 +75,9 @@ struct WiesbadenAfterDarkApp: App {
                             PointsExpirationService.shared.configure(with: context)
                             PointsExpirationService.shared.scheduleBackgroundTask()
                         }
+
+                        // Initialize RealWalletPassService with model context
+                        RealWalletPassService.shared.setModelContext(context)
                     }
             }
         }
