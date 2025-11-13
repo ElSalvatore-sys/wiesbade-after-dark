@@ -33,7 +33,7 @@ struct WalletPassDetailView: View {
 
         self._viewModel = State(initialValue: CheckInViewModel(
             checkInService: MockCheckInService.shared,
-            walletPassService: MockWalletPassService.shared
+            walletPassService: RealWalletPassService.shared
         ))
     }
 

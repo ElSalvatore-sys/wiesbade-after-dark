@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PassKit
 
 /// Rewards tab with points and redeemable rewards
 struct VenueRewardsTab: View {
@@ -21,6 +22,9 @@ struct VenueRewardsTab: View {
 
     @State private var showCheckInView = false
     @State private var showWalletPassDetail = false
+    @State private var walletPassViewModel: CheckInViewModel?
+    @State private var existingPass: WalletPass?
+    @State private var isLoadingPass = false
 
     var body: some View {
         ScrollView {
@@ -91,10 +95,28 @@ struct VenueRewardsTab: View {
         }
         .sheet(isPresented: $showWalletPassDetail) {
             NavigationStack {
-                if let userId = authViewModel.authState.user?.id {
-                    // TODO: Show existing pass if already generated
-                    Text("Wallet Pass - Coming Soon")
-                        .navigationTitle("Wallet Pass")
+                if let userId = authViewModel.authState.user?.id,
+                   let membership = viewModel.membership {
+                    if let existingPass = existingPass {
+                        // Show existing pass detail
+                        WalletPassDetailView(pass: existingPass)
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Close") {
+                                        showWalletPassDetail = false
+                                    }
+                                }
+                            }
+                    } else {
+                        // Show pass generation view
+                        WalletPassGenerationView(
+                            venue: venue,
+                            membership: membership,
+                            userId: userId,
+                            onPassGenerated: { pass in
+                                existingPass = pass
+                            }
+                        )
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
                                 Button("Close") {
@@ -102,9 +124,36 @@ struct VenueRewardsTab: View {
                                 }
                             }
                         }
+                    }
                 }
             }
         }
+        .task {
+            // Initialize wallet pass view model and check for existing pass
+            if walletPassViewModel == nil {
+                walletPassViewModel = CheckInViewModel(
+                    checkInService: MockCheckInService.shared,
+                    walletPassService: RealWalletPassService.shared
+                )
+            }
+
+            // Check for existing pass when view appears
+            if let userId = authViewModel.authState.user?.id, existingPass == nil {
+                await loadExistingPass(userId: userId)
+            }
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    private func loadExistingPass(userId: UUID) async {
+        isLoadingPass = true
+        do {
+            existingPass = try await RealWalletPassService.shared.fetchPass(userId: userId, venueId: venue.id)
+        } catch {
+            print("❌ [VenueRewardsTab] Error loading existing pass: \(error)")
+        }
+        isLoadingPass = false
     }
 }
 

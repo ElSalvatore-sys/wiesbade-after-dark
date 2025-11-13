@@ -59,6 +59,9 @@ struct WiesbadenAfterDarkApp: App {
                         let context = sharedModelContainer.mainContext
                         authViewModel = AuthenticationViewModel(modelContext: context)
                         venueViewModel = VenueViewModel(modelContext: context)
+
+                        // Initialize RealWalletPassService with model context
+                        RealWalletPassService.shared.setModelContext(context)
                     }
             }
         }
