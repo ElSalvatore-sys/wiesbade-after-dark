@@ -74,6 +74,9 @@ enum APIConfig {
         // Transactions
         static let createTransaction = "/api/v1/transactions"
         static func userTransactions(userId: String) -> String { "/api/v1/transactions/user/\(userId)" }
+
+        // Products
+        static func venueProducts(id: String) -> String { "/api/v1/venues/\(id)/products" }
     }
 
     // MARK: - Headers
