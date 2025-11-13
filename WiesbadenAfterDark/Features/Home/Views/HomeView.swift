@@ -2,21 +2,25 @@
 //  HomeView.swift
 //  WiesbadenAfterDark
 //
-//  Home screen with check-in CTA
+//  Home screen with gamification and event highlights
 //
 
 import SwiftUI
+import CoreLocation
 
-/// Home screen - main app view after authentication
+/// Home screen - main app view with inventory gamification and event highlights
 struct HomeView: View {
     // MARK: - Properties
 
-    @Environment(AuthenticationViewModel.self) private var viewModel
+    @Environment(AuthenticationViewModel.self) private var authViewModel
+    @State private var homeViewModel = HomeViewModel()
 
     // MARK: - UI State
 
     @State private var showMyPasses = false
     @State private var showCheckInHistory = false
+    @State private var selectedEvent: Event?
+    @State private var selectedProduct: Product?
 
     // MARK: - Body
 
@@ -24,14 +28,26 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Check-In CTA Card
-                    checkInCTACard
-                        .padding(.horizontal)
-                        .padding(.top)
+                    // Active Bonuses Banner (if any)
+                    if homeViewModel.hasActiveBonuses {
+                        activeBonusesBanner
+                            .padding(.horizontal)
+                    }
 
-                    // Welcome Section
-                    welcomeSection
-                        .padding(.horizontal)
+                    // Points Balance Card
+                    if homeViewModel.totalPoints > 0 {
+                        pointsBalanceCard
+                            .padding(.horizontal)
+                    }
+
+                    // Event Highlights Section
+                    eventHighlightsSection
+
+                    // Inventory Offers Section
+                    inventoryOffersSection
+
+                    // Nearby Venues Section
+                    nearbyVenuesSection
 
                     // Quick Actions
                     quickActionsSection
@@ -40,19 +56,31 @@ struct HomeView: View {
                     Spacer()
                         .frame(height: 40)
                 }
+                .padding(.top)
             }
             .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.large)
+            .refreshable {
+                if let user = authViewModel.authState.user {
+                    await homeViewModel.refresh(userId: user.id)
+                }
+            }
+            .task {
+                // Load home data on appear
+                if let user = authViewModel.authState.user {
+                    await homeViewModel.loadHomeData(userId: user.id)
+                }
+            }
             .sheet(isPresented: $showMyPasses) {
-                if let user = viewModel.authState.user {
+                if let user = authViewModel.authState.user {
                     NavigationStack {
                         MyPassesView(userId: user.id)
                     }
                 }
             }
             .sheet(isPresented: $showCheckInHistory) {
-                if let user = viewModel.authState.user {
+                if let user = authViewModel.authState.user {
                     NavigationStack {
                         CheckInHistoryView(userId: user.id)
                     }
@@ -61,125 +89,323 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Check-In CTA Card
+    // MARK: - Active Bonuses Banner
 
-    private var checkInCTACard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(Color.primaryGradient)
-                        .frame(width: 56, height: 56)
+    private var activeBonusesBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "flame.fill")
+                .font(.title2)
+                .foregroundStyle(Color.gold)
 
-                    Image(systemName: "wave.3.right.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.white)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Active Bonuses")
+                    .font(.headline)
+                    .foregroundStyle(Color.textPrimary)
+
+                if let summary = homeViewModel.activeBonusesSummary() {
+                    Text(summary)
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
                 }
+            }
 
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(Color.textTertiary)
+        }
+        .padding(16)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color.gold.opacity(0.15),
+                    Color.warning.opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                .strokeBorder(Color.gold.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Points Balance Card
+
+    private var pointsBalanceCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Check In at Venues")
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundStyle(Color.textPrimary)
-
-                    Text("Earn points & unlock rewards")
+                    Text("Total Points")
                         .font(.subheadline)
                         .foregroundStyle(Color.textSecondary)
+
+                    Text("\(homeViewModel.totalPoints)")
+                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.primaryGradient)
                 }
 
                 Spacer()
+
+                Image(systemName: "star.circle.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(Color.gold)
             }
 
-            // Features
-            VStack(alignment: .leading, spacing: 10) {
-                featureRow(icon: "wave.3.right", text: "NFC tap check-in")
-                featureRow(icon: "qrcode", text: "QR code scanning")
-                featureRow(icon: "flame.fill", text: "Build daily streaks")
-                featureRow(icon: "star.fill", text: "Earn bonus points")
-            }
-            .font(.subheadline)
+            // Venue breakdown (if multiple memberships)
+            if homeViewModel.memberships.count > 1 {
+                Divider()
 
-            // CTA Button
-            NavigationLink {
-                Text("Venues List - Coming Soon")
-            } label: {
-                HStack {
-                    Text("Find Nearby Venues")
-                        .font(.headline)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Points by Venue")
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
 
-                    Spacer()
+                    ForEach(homeViewModel.memberships.prefix(3), id: \.id) { membership in
+                        if let venue = homeViewModel.venues.first(where: { $0.id == membership.venueId }) {
+                            HStack {
+                                Text(venue.name)
+                                    .font(.caption)
+                                    .foregroundStyle(Color.textPrimary)
 
-                    Image(systemName: "chevron.right")
+                                Spacer()
+
+                                Text("\(membership.pointsBalance) pts")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(Color.textSecondary)
+                            }
+                        }
+                    }
                 }
-                .foregroundStyle(.white)
-                .padding()
-                .background(Color.primaryGradient)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
         .padding(20)
         .background(Color.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: Theme.Shadow.md.color, radius: Theme.Shadow.md.radius, x: Theme.Shadow.md.x, y: Theme.Shadow.md.y)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.xl))
+        .shadow(
+            color: Theme.Shadow.md.color,
+            radius: Theme.Shadow.md.radius,
+            x: Theme.Shadow.md.x,
+            y: Theme.Shadow.md.y
+        )
     }
 
-    // MARK: - Welcome Section
+    // MARK: - Event Highlights Section
 
-    private var welcomeSection: some View {
-        VStack(spacing: 16) {
-            if let user = viewModel.authState.user {
-                // User Info Card
-                VStack(spacing: 12) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Welcome back!")
-                                .font(.subheadline)
-                                .foregroundStyle(Color.textSecondary)
+    private var eventHighlightsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section Header
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(eventSectionTitle)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.textPrimary)
 
-                            Text(user.formattedPhoneNumber)
-                                .font(.headline)
-                                .foregroundStyle(Color.textPrimary)
+                    Text(eventSectionSubtitle)
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                }
+
+                Spacer()
+
+                Button {
+                    // Navigate to events tab
+                } label: {
+                    Text("See All")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.primary)
+                }
+            }
+            .padding(.horizontal)
+
+            // Event Cards
+            if !homeViewModel.todayEvents.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 16) {
+                        ForEach(homeViewModel.todayEvents.prefix(3), id: \.id) { event in
+                            EventHighlightCard(
+                                event: event,
+                                venue: homeViewModel.venue(for: event),
+                                isToday: true
+                            )
+                            .frame(width: 320)
+                            .onTapGesture {
+                                selectedEvent = event
+                            }
                         }
-
-                        Spacer()
-
-                        // Referral Code Badge
-                        VStack(spacing: 4) {
-                            Text("Code")
-                                .font(.caption2)
-                                .foregroundStyle(Color.textSecondary)
-
-                            Text(user.referralCode)
-                                .font(.headline)
-                                .fontWeight(.bold)
-                                .foregroundStyle(Color.primaryGradient)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.inputBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
+                    .padding(.horizontal)
+                }
+            } else if !homeViewModel.upcomingEvents.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 16) {
+                        ForEach(homeViewModel.upcomingEvents.prefix(3), id: \.id) { event in
+                            EventHighlightCard(
+                                event: event,
+                                venue: homeViewModel.venue(for: event),
+                                isToday: false
+                            )
+                            .frame(width: 320)
+                            .onTapGesture {
+                                selectedEvent = event
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            } else {
+                // Empty state
+                VStack(spacing: 12) {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .font(.system(size: 48))
+                        .foregroundStyle(Color.textTertiary)
 
-                    // Points Balance (if any)
-                    if user.totalPointsAvailable > 0 {
-                        Divider()
+                    Text("No events scheduled")
+                        .font(.headline)
+                        .foregroundStyle(Color.textPrimary)
 
-                        HStack {
-                            Image(systemName: "star.fill")
-                                .foregroundStyle(Color.gold)
+                    Text("Check back later for upcoming events!")
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+                .padding(.horizontal)
+            }
+        }
+    }
 
-                            Text("Global Balance: \(user.totalPointsAvailable) points")
-                                .font(.subheadline)
-                                .foregroundStyle(Color.textPrimary)
+    // MARK: - Inventory Offers Section
 
-                            Spacer()
+    private var inventoryOffersSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section Header
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Special Offers")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.textPrimary)
+
+                    Text("Limited time bonus points")
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                }
+
+                Spacer()
+
+                if !homeViewModel.inventoryOffers.isEmpty {
+                    HStack(spacing: 4) {
+                        Image(systemName: "star.fill")
+                            .font(.caption2)
+
+                        Text("\(homeViewModel.inventoryOffers.count) deals")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundStyle(Color.gold)
+                }
+            }
+            .padding(.horizontal)
+
+            // Offer Cards
+            if !homeViewModel.inventoryOffers.isEmpty {
+                VStack(spacing: 12) {
+                    ForEach(homeViewModel.inventoryOffers.prefix(5), id: \.id) { product in
+                        InventoryOfferCard(
+                            product: product,
+                            venue: homeViewModel.venue(for: product),
+                            multiplier: product.bonusMultiplier,
+                            expiresAt: product.expiresAt
+                        )
+                        .onTapGesture {
+                            selectedProduct = product
                         }
                     }
                 }
-                .padding(16)
-                .background(Color.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal)
+            } else {
+                // Empty state
+                VStack(spacing: 12) {
+                    Image(systemName: "tag")
+                        .font(.system(size: 48))
+                        .foregroundStyle(Color.textTertiary)
+
+                    Text("No special offers right now")
+                        .font(.headline)
+                        .foregroundStyle(Color.textPrimary)
+
+                    Text("Check back later for bonus point deals!")
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+                .padding(.horizontal)
+            }
+        }
+    }
+
+    // MARK: - Nearby Venues Section
+
+    private var nearbyVenuesSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section Header
+            HStack {
+                Text("Nearby Venues")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(Color.textPrimary)
+
+                Spacer()
+
+                if !homeViewModel.nearbyVenues.isEmpty {
+                    Button {
+                        // Navigate to discover tab
+                    } label: {
+                        Text("See All")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.primary)
+                    }
+                }
+            }
+            .padding(.horizontal)
+
+            // Venue Cards
+            if !homeViewModel.nearbyVenues.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 16) {
+                        ForEach(homeViewModel.nearbyVenues, id: \.id) { venue in
+                            NearbyVenueCard(
+                                venue: venue,
+                                distance: homeViewModel.distance(to: venue),
+                                pointsBalance: homeViewModel.pointsBalance(for: venue.id)
+                            )
+                            .frame(width: 280)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            } else {
+                // Show all venues if no location
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 16) {
+                        ForEach(homeViewModel.venues.prefix(5), id: \.id) { venue in
+                            NearbyVenueCard(
+                                venue: venue,
+                                distance: nil,
+                                pointsBalance: homeViewModel.pointsBalance(for: venue.id)
+                            )
+                            .frame(width: 280)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
             }
         }
     }
@@ -196,46 +422,54 @@ struct HomeView: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 12) {
+                // Check-In (Navigate to discover)
+                quickActionButton(
+                    icon: "wave.3.right.circle.fill",
+                    title: "Check In",
+                    color: .purple
+                ) {
+                    // Navigate to discover tab
+                }
+
                 // My Passes
                 quickActionButton(
                     icon: "wallet.pass.fill",
                     title: "My Passes",
-                    color: .purple
+                    color: .blue
                 ) {
                     showMyPasses = true
                 }
 
-                // Check-In History
+                // History
                 quickActionButton(
                     icon: "clock.fill",
                     title: "History",
-                    color: .blue
+                    color: .green
                 ) {
                     showCheckInHistory = true
                 }
 
-                // Venues (placeholder)
+                // Share Referral
                 quickActionButton(
-                    icon: "mappin.circle.fill",
-                    title: "Venues",
-                    color: .green
-                ) {
-                    // Navigate to venues
-                }
-
-                // Events (placeholder)
-                quickActionButton(
-                    icon: "calendar.badge.clock",
-                    title: "Events",
+                    icon: "gift.fill",
+                    title: "Refer Friend",
                     color: .orange
                 ) {
-                    // Navigate to events
+                    // Share referral code
+                    if let user = authViewModel.authState.user {
+                        shareReferralCode(user.referralCode)
+                    }
                 }
+            }
+
+            // Referral Widget
+            if let user = authViewModel.authState.user, user.totalReferrals > 0 {
+                referralWidget(user: user)
             }
 
             // Sign Out Button
             Button(action: {
-                viewModel.signOut()
+                authViewModel.signOut()
             }) {
                 HStack {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -253,18 +487,6 @@ struct HomeView: View {
     }
 
     // MARK: - Helper Views
-
-    private func featureRow(icon: String, text: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 20)
-
-            Text(text)
-                .foregroundStyle(Color.textSecondary)
-        }
-    }
 
     private func quickActionButton(
         icon: String,
@@ -288,6 +510,145 @@ struct HomeView: View {
             .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
+    }
+
+    private func referralWidget(user: User) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "person.2.fill")
+                .font(.title2)
+                .foregroundStyle(Color.success)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Referrals")
+                    .font(.caption)
+                    .foregroundStyle(Color.textSecondary)
+
+                Text("\(user.totalReferrals) friends joined")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.textPrimary)
+            }
+
+            Spacer()
+
+            Text("Code: \(user.referralCode)")
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundStyle(Color.primary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.inputBackground)
+                .clipShape(Capsule())
+        }
+        .padding(16)
+        .background(Color.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Computed Properties
+
+    private var eventSectionTitle: String {
+        if !homeViewModel.todayEvents.isEmpty {
+            return "Tonight's Events"
+        } else if !homeViewModel.upcomingEvents.isEmpty {
+            return "Upcoming Events"
+        } else {
+            return "Events"
+        }
+    }
+
+    private var eventSectionSubtitle: String {
+        if !homeViewModel.todayEvents.isEmpty {
+            return "Happening today"
+        } else if !homeViewModel.upcomingEvents.isEmpty {
+            return "This week"
+        } else {
+            return "No events scheduled"
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    private func shareReferralCode(_ code: String) {
+        let text = "Join Wiesbaden After Dark with my referral code: \(code)"
+        let activityVC = UIActivityViewController(
+            activityItems: [text],
+            applicationActivities: nil
+        )
+
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first,
+           let rootVC = window.rootViewController {
+            rootVC.present(activityVC, animated: true)
+        }
+    }
+}
+
+// MARK: - Nearby Venue Card Component
+
+struct NearbyVenueCard: View {
+    let venue: Venue
+    let distance: String?
+    let pointsBalance: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Venue Image
+            AsyncImage(url: URL(string: venue.coverImageURL ?? "")) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Rectangle()
+                    .fill(Color.inputBackground)
+            }
+            .frame(height: 140)
+            .clipped()
+
+            // Venue Info
+            VStack(alignment: .leading, spacing: 8) {
+                Text(venue.name)
+                    .font(.headline)
+                    .foregroundStyle(Color.textPrimary)
+                    .lineLimit(1)
+
+                HStack {
+                    Text(venue.type.rawValue)
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+
+                    if let distance = distance {
+                        Text("•")
+                            .foregroundStyle(Color.textTertiary)
+
+                        Text(distance)
+                            .font(.caption)
+                            .foregroundStyle(Color.info)
+                    }
+                }
+
+                if pointsBalance > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "star.fill")
+                            .font(.caption2)
+
+                        Text("\(pointsBalance) points")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundStyle(Color.gold)
+                }
+            }
+            .padding(12)
+        }
+        .background(Color.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+        .shadow(
+            color: Theme.Shadow.md.color,
+            radius: Theme.Shadow.md.radius,
+            x: Theme.Shadow.md.x,
+            y: Theme.Shadow.md.y
+        )
     }
 }
 

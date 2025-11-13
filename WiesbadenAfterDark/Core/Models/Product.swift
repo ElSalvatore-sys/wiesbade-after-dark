@@ -2,7 +2,7 @@
 //  Product.swift
 //  WiesbadenAfterDark
 //
-//  SwiftData model for venue products with bonus points system
+//  SwiftData model for venue products with bonus points system and inventory gamification
 //
 
 import Foundation
@@ -61,17 +61,22 @@ final class Product: @unchecked Sendable {
     var bonusPointsActive: Bool
     /// Bonus multiplier (e.g., 2.0 for 2x points, 1.5 for 1.5x points)
     var bonusMultiplier: Decimal
-    /// Description of the bonus offer
-    var bonusDescription: String?
+    /// Reason for bonus (e.g., "Expiring Soon", "Excess Stock", "Happy Hour Special")
+    var bonusReason: String?
     /// When the bonus starts
     var bonusStartDate: Date?
-    /// When the bonus ends
+    /// When the bonus ends / product expires
     var bonusEndDate: Date?
 
     // MARK: - Inventory Management
 
     var stockQuantity: Int
     var isAvailable: Bool
+
+    // MARK: - UI Assets
+
+    /// Product image URL or emoji
+    var imageURL: String?
 
     // MARK: - POS Integration
 
@@ -95,11 +100,12 @@ final class Product: @unchecked Sendable {
         cost: Decimal? = nil,
         bonusPointsActive: Bool = false,
         bonusMultiplier: Decimal = 1.0,
-        bonusDescription: String? = nil,
+        bonusReason: String? = nil,
         bonusStartDate: Date? = nil,
         bonusEndDate: Date? = nil,
         stockQuantity: Int = 0,
         isAvailable: Bool = true,
+        imageURL: String? = nil,
         orderbirdProductId: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -113,11 +119,12 @@ final class Product: @unchecked Sendable {
         self.cost = cost
         self.bonusPointsActive = bonusPointsActive
         self.bonusMultiplier = bonusMultiplier
-        self.bonusDescription = bonusDescription
+        self.bonusReason = bonusReason
         self.bonusStartDate = bonusStartDate
         self.bonusEndDate = bonusEndDate
         self.stockQuantity = stockQuantity
         self.isAvailable = isAvailable
+        self.imageURL = imageURL
         self.orderbirdProductId = orderbirdProductId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -188,6 +195,13 @@ extension Product {
         return "\(multiplierInt)x Points"
     }
 
+    /// Bonus multiplier badge text (for UI)
+    var bonusMultiplierText: String? {
+        guard isBonusActive else { return nil }
+        let value = NSDecimalNumber(decimal: bonusMultiplier).intValue
+        return "\(value)x POINTS"
+    }
+
     /// Profit margin calculation
     var profitMargin: Decimal? {
         guard let cost = cost, cost > 0 else { return nil }
@@ -207,9 +221,44 @@ extension Product {
         }
     }
 
+    /// Stock display text (for gamification UI)
+    var stockText: String? {
+        if stockQuantity == 0 {
+            return "Out of Stock"
+        } else if stockQuantity <= 5 {
+            return "Only \(stockQuantity) left!"
+        }
+        return nil
+    }
+
     /// Check if product is available for purchase (in stock and marked as available)
     var canPurchase: Bool {
         return isAvailable && isInStock
+    }
+
+    /// Check if offer is expiring soon (within 24 hours)
+    var isExpiringSoon: Bool {
+        guard let expiresAt = bonusEndDate else { return false }
+        let hoursUntilExpiry = Calendar.current.dateComponents([.hour], from: Date(), to: expiresAt).hour ?? 0
+        return hoursUntilExpiry <= 24
+    }
+
+    /// Time remaining until expiry
+    var timeRemaining: String? {
+        guard let expiresAt = bonusEndDate else { return nil }
+
+        let now = Date()
+        if expiresAt < now { return "Expired" }
+
+        let components = Calendar.current.dateComponents([.hour, .minute], from: now, to: expiresAt)
+
+        if let hours = components.hour, hours > 0 {
+            return "Expires in \(hours)h"
+        } else if let minutes = components.minute, minutes > 0 {
+            return "Expires in \(minutes)m"
+        }
+
+        return "Expiring soon"
     }
 
     /// Calculate bonus points earned for this product
@@ -226,73 +275,89 @@ extension Product {
 
 // MARK: - Mock Data
 extension Product {
-    /// Mock product for Das Wohnzimmer
+    /// Mock product for Das Wohnzimmer - Aperol Spritz with bonus
     static func mockAperolSpritz(venueId: UUID) -> Product {
         return Product(
             venueId: venueId,
             name: "Aperol Spritz",
+            description: "Classic Italian aperitif",
             category: .cocktails,
             price: 8.50,
             cost: 2.50,
-            stockQuantity: 50,
-            isAvailable: true,
             bonusPointsActive: true,
             bonusMultiplier: 2.0,
-            bonusDescription: "Happy Hour Special",
+            bonusReason: "Happy Hour Special",
             bonusStartDate: Calendar.current.date(byAdding: .hour, value: -1, to: Date()),
-            bonusEndDate: Calendar.current.date(byAdding: .hour, value: 2, to: Date())
+            bonusEndDate: Calendar.current.date(byAdding: .hour, value: 2, to: Date()),
+            stockQuantity: 50,
+            isAvailable: true,
+            imageURL: "🍹"
         )
     }
 
-    /// Mock Mojito
-    static func mockMojito(venueId: UUID) -> Product {
+    /// Mock orange juice expiring soon (gamification example)
+    static func mockOrangeJuice(venueId: UUID) -> Product {
+        let expiryDate = Calendar.current.date(byAdding: .hour, value: 6, to: Date())!
         return Product(
             venueId: venueId,
-            name: "Mojito",
-            category: .cocktails,
-            price: 9.00,
-            cost: 2.80,
-            stockQuantity: 45,
-            isAvailable: true,
-            bonusPointsActive: false,
-            bonusMultiplier: 1.0
-        )
-    }
-
-    /// Mock Gin & Tonic
-    static func mockGinTonic(venueId: UUID) -> Product {
-        return Product(
-            venueId: venueId,
-            name: "Gin & Tonic",
-            category: .cocktails,
-            price: 10.50,
-            cost: 3.20,
-            stockQuantity: 60,
-            isAvailable: true,
+            name: "Fresh Orange Juice",
+            description: "Freshly squeezed orange juice - must sell today!",
+            category: .beverages,
+            price: 4.50,
+            cost: 1.20,
             bonusPointsActive: true,
-            bonusMultiplier: 1.5,
-            bonusDescription: "Premium Night",
-            bonusStartDate: Calendar.current.date(byAdding: .day, value: -1, to: Date()),
-            bonusEndDate: Calendar.current.date(byAdding: .day, value: 1, to: Date())
+            bonusMultiplier: 2.0,
+            bonusReason: "Expiring Soon",
+            bonusStartDate: Date(),
+            bonusEndDate: expiryDate,
+            stockQuantity: 8,
+            isAvailable: true,
+            imageURL: "🍊"
         )
     }
 
-    /// Mock Craft Beer
-    static func mockCraftBeer(venueId: UUID) -> Product {
+    /// Mock house beer with excess stock (3x points)
+    static func mockHouseBeer(venueId: UUID) -> Product {
         return Product(
             venueId: venueId,
-            name: "Local Craft Beer",
+            name: "House Lager",
+            description: "Crisp German lager - overstocked special!",
             category: .beer,
-            price: 6.50,
-            cost: 2.00,
-            stockQuantity: 24,
+            price: 3.50,
+            cost: 1.00,
+            bonusPointsActive: true,
+            bonusMultiplier: 3.0,
+            bonusReason: "Excess Stock",
+            bonusStartDate: Date(),
+            bonusEndDate: nil,
+            stockQuantity: 50,
             isAvailable: true,
-            bonusPointsActive: false,
-            bonusMultiplier: 1.0
+            imageURL: "🍺"
         )
     }
 
-    /// Mock Burger
+    /// Mock currywurst daily special
+    static func mockCurrywurst(venueId: UUID) -> Product {
+        let expiresTonight = Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: Date())!
+        return Product(
+            venueId: venueId,
+            name: "Currywurst Special",
+            description: "Traditional German currywurst with fries",
+            category: .food,
+            price: 7.90,
+            cost: 3.50,
+            bonusPointsActive: true,
+            bonusMultiplier: 2.0,
+            bonusReason: "Today's Special",
+            bonusStartDate: Date(),
+            bonusEndDate: expiresTonight,
+            stockQuantity: 12,
+            isAvailable: true,
+            imageURL: "🌭"
+        )
+    }
+
+    /// Mock burger
     static func mockBurger(venueId: UUID) -> Product {
         return Product(
             venueId: venueId,
@@ -301,71 +366,42 @@ extension Product {
             category: .food,
             price: 14.50,
             cost: 5.50,
+            bonusPointsActive: false,
+            bonusMultiplier: 1.0,
             stockQuantity: 30,
             isAvailable: true,
-            bonusPointsActive: false,
-            bonusMultiplier: 1.0
+            imageURL: "🍔"
         )
     }
 
-    /// Mock Fries
-    static func mockFries(venueId: UUID) -> Product {
-        return Product(
-            venueId: venueId,
-            name: "Sweet Potato Fries",
-            category: .food,
-            price: 5.50,
-            cost: 1.50,
-            stockQuantity: 40,
-            isAvailable: true,
-            bonusPointsActive: false,
-            bonusMultiplier: 1.0
-        )
-    }
-
-    /// Mock Wine
-    static func mockWine(venueId: UUID) -> Product {
-        return Product(
-            venueId: venueId,
-            name: "House Red Wine",
-            category: .wine,
-            price: 7.00,
-            cost: 2.50,
-            stockQuantity: 0, // Out of stock
-            isAvailable: false,
-            bonusPointsActive: false,
-            bonusMultiplier: 1.0
-        )
-    }
-
-    /// Mock Dessert
+    /// Mock dessert with high bonus
     static func mockDessert(venueId: UUID) -> Product {
         return Product(
             venueId: venueId,
             name: "Chocolate Lava Cake",
+            description: "Decadent chocolate dessert",
             category: .desserts,
             price: 8.00,
             cost: 2.80,
-            stockQuantity: 15,
-            isAvailable: true,
             bonusPointsActive: true,
             bonusMultiplier: 3.0,
-            bonusDescription: "Triple Points Dessert!",
+            bonusReason: "Triple Points Dessert!",
             bonusStartDate: Calendar.current.date(byAdding: .hour, value: -2, to: Date()),
-            bonusEndDate: Calendar.current.date(byAdding: .hour, value: 3, to: Date())
+            bonusEndDate: Calendar.current.date(byAdding: .hour, value: 3, to: Date()),
+            stockQuantity: 15,
+            isAvailable: true,
+            imageURL: "🍰"
         )
     }
 
-    /// Get all mock products for a venue
+    /// Get all mock products for a venue (comprehensive set)
     static func mockProductsForVenue(_ venueId: UUID) -> [Product] {
         return [
+            mockOrangeJuice(venueId: venueId),
+            mockHouseBeer(venueId: venueId),
+            mockCurrywurst(venueId: venueId),
             mockAperolSpritz(venueId: venueId),
-            mockMojito(venueId: venueId),
-            mockGinTonic(venueId: venueId),
-            mockCraftBeer(venueId: venueId),
             mockBurger(venueId: venueId),
-            mockFries(venueId: venueId),
-            mockWine(venueId: venueId),
             mockDessert(venueId: venueId)
         ]
     }
