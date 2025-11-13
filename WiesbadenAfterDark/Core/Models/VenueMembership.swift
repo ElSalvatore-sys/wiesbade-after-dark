@@ -31,6 +31,10 @@ final class VenueMembership: @unchecked Sendable {
     var isActive: Bool
     var lastVisitAt: Date?
 
+    // Expiration tracking
+    var lastActivityDate: Date // Last activity for expiration calculation (check-in, redemption, etc.)
+    var nextExpirationDate: Date? // Next scheduled expiration date (lastActivity + 180 days)
+
     var updatedAt: Date
 
     // MARK: - Initialization
@@ -48,6 +52,8 @@ final class VenueMembership: @unchecked Sendable {
         totalPointsRedeemed: Int = 0,
         isActive: Bool = true,
         lastVisitAt: Date? = nil,
+        lastActivityDate: Date = Date(),
+        nextExpirationDate: Date? = nil,
         updatedAt: Date = Date()
     ) {
         self.id = id
@@ -62,6 +68,8 @@ final class VenueMembership: @unchecked Sendable {
         self.totalPointsRedeemed = totalPointsRedeemed
         self.isActive = isActive
         self.lastVisitAt = lastVisitAt
+        self.lastActivityDate = lastActivityDate
+        self.nextExpirationDate = nextExpirationDate
         self.updatedAt = updatedAt
     }
 }
@@ -95,6 +103,62 @@ extension VenueMembership {
             return .silver
         } else {
             return .bronze
+        }
+    }
+
+    // MARK: - Expiration Properties
+
+    /// Calculate expiration date based on last activity (180 days from last activity)
+    var calculatedExpirationDate: Date {
+        return Calendar.current.date(byAdding: .day, value: 180, to: lastActivityDate) ?? lastActivityDate
+    }
+
+    /// Days until points expire
+    var daysUntilExpiry: Int {
+        let expirationDate = nextExpirationDate ?? calculatedExpirationDate
+        let components = Calendar.current.dateComponents([.day], from: Date(), to: expirationDate)
+        return max(0, components.day ?? 0)
+    }
+
+    /// Whether points are expiring soon (within 30 days)
+    var hasExpiringPoints: Bool {
+        guard pointsBalance > 0 else { return false }
+        return daysUntilExpiry <= 30 && daysUntilExpiry > 0
+    }
+
+    /// Whether points have already expired
+    var hasExpiredPoints: Bool {
+        let expirationDate = nextExpirationDate ?? calculatedExpirationDate
+        return Date() >= expirationDate && pointsBalance > 0
+    }
+
+    /// Is expiring soon (within 30 days but more than 7 days)
+    var isExpiringSoon: Bool {
+        return daysUntilExpiry > 7 && daysUntilExpiry <= 30
+    }
+
+    /// Is expiring critically soon (within 7 days)
+    var isExpiringCritical: Bool {
+        return daysUntilExpiry > 0 && daysUntilExpiry <= 7
+    }
+
+    /// Points that will expire (all points if within expiration window)
+    var expiringPoints: Int {
+        return hasExpiringPoints || hasExpiredPoints ? pointsBalance : 0
+    }
+
+    /// Human-readable expiration message
+    var expirationMessage: String {
+        if hasExpiredPoints {
+            return "\(pointsBalance) points expired"
+        } else if daysUntilExpiry == 0 {
+            return "\(pointsBalance) points expire today"
+        } else if daysUntilExpiry == 1 {
+            return "\(pointsBalance) points expire tomorrow"
+        } else if hasExpiringPoints {
+            return "\(pointsBalance) points expire in \(daysUntilExpiry) days"
+        } else {
+            return "No expiring points"
         }
     }
 }

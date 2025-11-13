@@ -6,17 +6,22 @@
 //
 
 import SwiftUI
+import SwiftData
 
 /// Home screen - main app view after authentication
 struct HomeView: View {
     // MARK: - Properties
 
     @Environment(AuthenticationViewModel.self) private var viewModel
+    @Environment(\.modelContext) private var modelContext
 
     // MARK: - UI State
 
     @State private var showMyPasses = false
     @State private var showCheckInHistory = false
+    @State private var expiringMemberships: [VenueMembership] = []
+    @State private var showExpiringPointsSheet = false
+    @State private var selectedMembership: VenueMembership?
 
     // MARK: - Body
 
@@ -28,6 +33,21 @@ struct HomeView: View {
                     checkInCTACard
                         .padding(.horizontal)
                         .padding(.top)
+
+                    // Expiring Points Banner
+                    if !expiringMemberships.isEmpty {
+                        ExpiringPointsBanner(
+                            expiringMemberships: expiringMemberships,
+                            onTap: { membership in
+                                selectedMembership = membership
+                                showExpiringPointsSheet = true
+                            },
+                            onDismiss: {
+                                dismissExpiringPointsWarning()
+                            }
+                        )
+                        .padding(.top, 8)
+                    }
 
                     // Welcome Section
                     welcomeSection
@@ -57,6 +77,77 @@ struct HomeView: View {
                         CheckInHistoryView(userId: user.id)
                     }
                 }
+            }
+            .sheet(isPresented: $showExpiringPointsSheet) {
+                if let membership = selectedMembership {
+                    ExpiringPointsAlertSheet(
+                        membership: membership,
+                        onUseNow: {
+                            // Navigate to venue detail page to use points
+                            print("Navigate to venue \(membership.venueId)")
+                        },
+                        onRemindLater: {
+                            remindLaterForExpiration(membership)
+                        },
+                        onDismiss: {
+                            dismissExpiringPointsWarning()
+                        }
+                    )
+                }
+            }
+            .onAppear {
+                loadExpiringMemberships()
+            }
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    private func loadExpiringMemberships() {
+        guard let user = viewModel.authState.user else { return }
+
+        Task {
+            do {
+                let fetchDescriptor = FetchDescriptor<VenueMembership>(
+                    predicate: #Predicate<VenueMembership> {
+                        $0.userId == user.id && $0.isActive && $0.pointsBalance > 0
+                    }
+                )
+
+                let memberships = try modelContext.fetch(fetchDescriptor)
+
+                // Filter to only those expiring soon (within 30 days)
+                expiringMemberships = memberships.filter { $0.hasExpiringPoints }
+                    .sorted { $0.daysUntilExpiry < $1.daysUntilExpiry }
+            } catch {
+                print("❌ Failed to load expiring memberships: \(error)")
+            }
+        }
+    }
+
+    private func dismissExpiringPointsWarning() {
+        // Hide the banner temporarily
+        if let membership = selectedMembership {
+            expiringMemberships.removeAll { $0.id == membership.id }
+        }
+    }
+
+    private func remindLaterForExpiration(_ membership: VenueMembership) {
+        Task {
+            do {
+                // Find the expiration record and set remind later
+                let fetchDescriptor = FetchDescriptor<PointExpiration>(
+                    predicate: #Predicate<PointExpiration> {
+                        $0.membershipId == membership.id && !$0.isExpired
+                    }
+                )
+
+                if let expiration = try modelContext.fetch(fetchDescriptor).first {
+                    try await PointsExpirationService.shared.remindLater(for: expiration.id, remindInDays: 7)
+                    expiringMemberships.removeAll { $0.id == membership.id }
+                }
+            } catch {
+                print("❌ Failed to set remind later: \(error)")
             }
         }
     }

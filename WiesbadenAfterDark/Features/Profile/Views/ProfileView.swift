@@ -38,6 +38,15 @@ struct ProfileView: View {
                         .background(Color.textTertiary.opacity(0.2))
                         .padding(.horizontal, Theme.Spacing.lg)
 
+                    // Expiring Points section
+                    if let userId = authViewModel.authState.user?.id {
+                        ExpiringPointsSection(userId: userId)
+
+                        Divider()
+                            .background(Color.textTertiary.opacity(0.2))
+                            .padding(.horizontal, Theme.Spacing.lg)
+                    }
+
                     // Payments section
                     if let userId = authViewModel.authState.user?.id {
                         PaymentsSection(userId: userId)
