@@ -27,6 +27,7 @@ final class AuthenticationViewModel {
     var currentReferralCode: String?
     var isLoading: Bool = false
     var errorMessage: String?
+    var currentUser: User?
 
     // MARK: - Initialization
 
@@ -76,7 +77,6 @@ final class AuthenticationViewModel {
 
         isLoading = true
         errorMessage = nil
-        // Keep authState unchanged during verification to maintain navigation flow
 
         do {
             // Verify the code and get token
@@ -87,12 +87,91 @@ final class AuthenticationViewModel {
             try keychainService.saveToken(token)
             print("✅ [AuthViewModel] Token saved to keychain")
 
-            // Navigation will proceed via callback in VerificationCodeView
-            // authState will transition to .authenticated when account creation completes
-            print("✅ [AuthViewModel] Code verified, proceeding to next step")
+            // STEP 4: Try to fetch existing user (multiple attempts with retry)
+            print("🔍 [AuthViewModel] Checking if user already exists...")
 
-            isLoading = false
-            return true
+            var existingUser: User?
+            var attemptCount = 0
+            let maxAttempts = 3
+            var lastError: Error?
+
+            while existingUser == nil && attemptCount < maxAttempts {
+                attemptCount += 1
+                print("   Attempt \(attemptCount)/\(maxAttempts)...")
+
+                do {
+                    existingUser = try await authService.fetchCurrentUser()
+                    print("✅ [AuthViewModel] User found on attempt \(attemptCount)!")
+                } catch {
+                    print("⚠️ Attempt \(attemptCount) failed: \(error)")
+                    lastError = error
+                    if attemptCount < maxAttempts {
+                        print("   Retrying in 1 second...")
+                        try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    }
+                }
+            }
+
+            if let user = existingUser {
+                // USER EXISTS - AUTO LOGIN
+                print("✅ [AuthViewModel] Existing user confirmed - auto-logging in")
+                print("   User ID: \(user.id)")
+                print("   Phone: \(user.phoneNumber)")
+                print("   Name: \(user.firstName ?? "nil") \(user.lastName ?? "nil")")
+
+                currentUser = user
+
+                // Save to database
+                if let context = modelContext {
+                    print("💾 [AuthViewModel] Saving user to local database...")
+                    context.insert(user)
+                    do {
+                        try context.save()
+                        print("✅ [AuthViewModel] User saved to local database")
+                    } catch {
+                        print("⚠️ [AuthViewModel] Database save failed (might already exist): \(error)")
+                    }
+                }
+
+                // CRITICAL: Set auth state BEFORE returning (ensure main thread)
+                await MainActor.run {
+                    authState = .authenticated(user)
+                    isLoading = false
+                }
+
+                print("🏠 [AuthViewModel] AUTH STATE SET - SHOULD GO TO HOME NOW")
+                return true
+
+            } else {
+                // NEW USER - Show registration
+                print("🆕 [AuthViewModel] No existing user found after \(maxAttempts) attempts")
+                print("   Proceeding to registration flow")
+
+                // Log the last error for debugging
+                if let error = lastError {
+                    print("   Last error was: \(error)")
+
+                    // Set user-friendly error message based on error type
+                    if let authError = error as? AuthError {
+                        switch authError {
+                        case .networkError:
+                            errorMessage = "Network error: Please check your connection"
+                        case .serverError(let message):
+                            errorMessage = "Server error: \(message)"
+                        default:
+                            // Other auth errors are expected for new users
+                            break
+                        }
+                    } else {
+                        errorMessage = "Could not verify existing account: \(error.localizedDescription)"
+                    }
+                }
+
+                await MainActor.run {
+                    isLoading = false
+                }
+                return true
+            }
 
         } catch {
             errorMessage = error.localizedDescription
@@ -137,7 +216,7 @@ final class AuthenticationViewModel {
     }
 
     /// Step 4: Complete account creation
-    func completeAccountCreation() async -> Bool {
+    func completeAccountCreation(firstName: String? = nil, lastName: String? = nil) async -> Bool {
         print("👤 [AuthViewModel] Completing account creation")
 
         isLoading = true
@@ -147,6 +226,8 @@ final class AuthenticationViewModel {
             // Create account
             let user = try await authService.createAccount(
                 phoneNumber: currentPhoneNumber,
+                firstName: firstName,
+                lastName: lastName,
                 referralCode: currentReferralCode
             )
             print("✅ [AuthViewModel] Account created: \(user.id)")
@@ -182,22 +263,49 @@ final class AuthenticationViewModel {
         // Simulate splash screen minimum duration
         try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
 
-        // Check if valid token exists
-        guard keychainService.hasValidToken() else {
-            print("ℹ️ [AuthViewModel] No valid token found")
+        // Check if token exists
+        guard let token = try? keychainService.getToken() else {
+            print("ℹ️ [AuthViewModel] No token found")
             authState = .unauthenticated
             return
         }
 
-        print("✅ [AuthViewModel] Valid token found")
+        // Check if token is expired
+        if token.isExpired {
+            print("⚠️ [AuthViewModel] Token expired, attempting refresh...")
+            do {
+                // Attempt to refresh the token
+                let refreshedToken = try await authService.refreshAccessToken()
+                try keychainService.saveToken(refreshedToken)
+                print("✅ [AuthViewModel] Token refreshed successfully")
+            } catch {
+                print("❌ [AuthViewModel] Token refresh failed: \(error)")
+                authState = .unauthenticated
+                return
+            }
+        } else {
+            print("✅ [AuthViewModel] Valid token found")
+        }
 
-        // Try to load user from SwiftData
+        // Try to load user from SwiftData or fetch from API
         if let user = loadUserFromDatabase() {
             print("✅ [AuthViewModel] User loaded from database")
             authState = .authenticated(user)
         } else {
-            print("⚠️ [AuthViewModel] Token exists but no user in database")
-            authState = .unauthenticated
+            // User not in local database, fetch from API
+            print("ℹ️ [AuthViewModel] User not in database, fetching from API...")
+            do {
+                let user = try await authService.fetchCurrentUser()
+                if let context = modelContext {
+                    context.insert(user)
+                    try context.save()
+                }
+                print("✅ [AuthViewModel] User fetched and saved")
+                authState = .authenticated(user)
+            } catch {
+                print("❌ [AuthViewModel] Failed to fetch user: \(error)")
+                authState = .unauthenticated
+            }
         }
     }
 

@@ -293,6 +293,36 @@ Sourcery/
 # - Apple Wallet certificate passwords
 
 # ========================================
+# Backend Exclusion (CRITICAL FOR IOS BUILD)
+# ========================================
+
+# NEVER include backend Python files in iOS project
+backend/
+**/*.py
+**/*.pyc
+**/__pycache__/
+**/*.egg-info/
+.python-version
+requirements.txt
+alembic.ini
+alembic/
+
+# Exclude backend-related files from iOS directory
+WiesbadenAfterDark/backend/
+
+# ========================================
+# Documentation Files (CRITICAL FOR IOS BUILD)
+# ========================================
+
+# NEVER include documentation files in iOS app directory
+# All documentation should be in ./docs/ at project root
+WiesbadenAfterDark/*.md
+WiesbadenAfterDark/*.txt
+WiesbadenAfterDark/README*
+WiesbadenAfterDark/CHANGELOG*
+WiesbadenAfterDark/LICENSE*
+
+# ========================================
 # Project-Specific Additions
 # ========================================
 

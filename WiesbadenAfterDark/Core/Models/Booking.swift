@@ -40,6 +40,14 @@ enum TableType: String, Codable, CaseIterable {
         }
     }
 
+    var minimumSpend: Int {
+        switch self {
+        case .standard: return 100
+        case .vip: return 250
+        case .premium: return 500
+        }
+    }
+
     var pointsCost: Int {
         switch self {
         case .standard: return 500

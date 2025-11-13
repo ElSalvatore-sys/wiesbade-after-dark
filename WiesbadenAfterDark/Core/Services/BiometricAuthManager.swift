@@ -8,6 +8,7 @@
 
 import Foundation
 import LocalAuthentication
+import os
 
 /// Manages biometric authentication for the app
 /// Provides Face ID / Touch ID authentication for sensitive operations
@@ -27,6 +28,7 @@ final class BiometricAuthManager: @unchecked Sendable {
         let context = LAContext()
         var error: NSError?
 
+        
         guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
             return .none
         }

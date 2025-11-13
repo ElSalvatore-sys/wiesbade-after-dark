@@ -3,13 +3,15 @@
 //  WiesbadenAfterDark
 //
 //  Mock implementation of AuthServiceProtocol for testing
-//  This will be replaced with real API calls once backend is deployed
+//  ⚠️ WARNING: DO NOT USE IN PRODUCTION - FOR TESTING ONLY
 //
 
 import Foundation
 
-/// Mock authentication service for development and testing
+#if DEBUG
+/// Mock authentication service for development and testing ONLY
 /// Always returns successful responses with simulated delays
+/// ⚠️ This service should NEVER be used in production builds
 final class MockAuthService: AuthServiceProtocol {
     // MARK: - Properties
 
@@ -98,7 +100,7 @@ final class MockAuthService: AuthServiceProtocol {
 
     /// Creates a mock user account
     @MainActor
-    func createAccount(phoneNumber: String, referralCode: String?) async throws -> User {
+    func createAccount(phoneNumber: String, firstName: String?, lastName: String?, referralCode: String?) async throws -> User {
         #if DEBUG
         SecureLogger.shared.auth("Creating account for: \(phoneNumber)")
 
@@ -118,12 +120,20 @@ final class MockAuthService: AuthServiceProtocol {
             id: UUID(),
             phoneNumber: phoneNumber.replacingOccurrences(of: " ", with: ""),
             phoneCountryCode: "+49",
-            name: nil,
+            phoneVerified: true,
+            firstName: firstName,
+            lastName: lastName,
             email: nil,
             avatarURL: nil,
             referralCode: userReferralCode,
+            referredByCode: referralCode,
             referredBy: nil,
-            pointsBalance: referralCode != nil ? 50 : 0, // Bonus points if referred
+            totalReferrals: 0,
+            totalPointsEarned: referralCode != nil ? 50.0 : 0.0, // Bonus points if referred
+            totalPointsSpent: 0.0,
+            totalPointsAvailable: referralCode != nil ? 50.0 : 0.0,
+            isVerified: true,
+            isActive: true,
             createdAt: Date(),
             lastLoginAt: Date(),
             preferredLanguage: "de"
@@ -132,6 +142,50 @@ final class MockAuthService: AuthServiceProtocol {
         #if DEBUG
         SecureLogger.shared.auth("Account created successfully", level: .success)
         SecureLogger.shared.info("User referral code: \(userReferralCode)", category: "MockAuth")
+        #endif
+
+        return user
+    }
+
+    /// Simulates refreshing the access token
+    func refreshAccessToken() async throws -> AuthToken {
+        #if DEBUG
+        SecureLogger.shared.auth("Refreshing access token")
+        #endif
+
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
+
+        // Return mock token
+        let token = AuthToken(
+            accessToken: "mock_refreshed_access_token_\(UUID().uuidString)",
+            refreshToken: "mock_refresh_token_\(UUID().uuidString)",
+            expiresAt: Date().addingTimeInterval(900), // 15 minutes
+            tokenType: "Bearer"
+        )
+
+        #if DEBUG
+        SecureLogger.shared.auth("Access token refreshed successfully", level: .success)
+        #endif
+
+        return token
+    }
+
+    /// Simulates fetching the current user profile
+    @MainActor
+    func fetchCurrentUser() async throws -> User {
+        #if DEBUG
+        SecureLogger.shared.auth("Fetching current user profile")
+        #endif
+
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: UInt64(networkDelay * 1_000_000_000))
+
+        // Return mock user
+        let user = User.mock()
+
+        #if DEBUG
+        SecureLogger.shared.auth("User profile fetched successfully", level: .success)
         #endif
 
         return user
@@ -172,3 +226,4 @@ extension MockAuthService {
         return validReferralCodes
     }
 }
+#endif // DEBUG

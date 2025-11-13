@@ -20,8 +20,14 @@ final class User: @unchecked Sendable {
     /// Country code for the phone number (e.g., "+49")
     var phoneCountryCode: String
 
-    /// User's display name (optional)
-    var name: String?
+    /// Whether the phone number has been verified
+    var phoneVerified: Bool
+
+    /// User's first name (optional)
+    var firstName: String?
+
+    /// User's last name (optional)
+    var lastName: String?
 
     /// User's email address (optional)
     var email: String?
@@ -32,11 +38,29 @@ final class User: @unchecked Sendable {
     /// User's unique referral code for inviting others
     var referralCode: String
 
+    /// Referral code of the user who referred this user (optional)
+    var referredByCode: String?
+
     /// ID of the user who referred this user (optional)
     var referredBy: UUID?
 
-    /// Total points balance
-    var pointsBalance: Int
+    /// Total number of users this user has referred
+    var totalReferrals: Int
+
+    /// Total points earned across all venues
+    var totalPointsEarned: Double
+
+    /// Total points spent across all venues
+    var totalPointsSpent: Double
+
+    /// Total points available across all venues
+    var totalPointsAvailable: Double
+
+    /// Whether the user's email is verified
+    var isVerified: Bool
+
+    /// Whether the user account is active
+    var isActive: Bool
 
     /// Account creation timestamp
     var createdAt: Date
@@ -52,12 +76,20 @@ final class User: @unchecked Sendable {
         id: UUID = UUID(),
         phoneNumber: String,
         phoneCountryCode: String = "+49",
-        name: String? = nil,
+        phoneVerified: Bool = false,
+        firstName: String? = nil,
+        lastName: String? = nil,
         email: String? = nil,
         avatarURL: String? = nil,
         referralCode: String,
+        referredByCode: String? = nil,
         referredBy: UUID? = nil,
-        pointsBalance: Int = 0,
+        totalReferrals: Int = 0,
+        totalPointsEarned: Double = 0.0,
+        totalPointsSpent: Double = 0.0,
+        totalPointsAvailable: Double = 0.0,
+        isVerified: Bool = false,
+        isActive: Bool = true,
         createdAt: Date = Date(),
         lastLoginAt: Date? = nil,
         preferredLanguage: String = "de"
@@ -65,12 +97,20 @@ final class User: @unchecked Sendable {
         self.id = id
         self.phoneNumber = phoneNumber
         self.phoneCountryCode = phoneCountryCode
-        self.name = name
+        self.phoneVerified = phoneVerified
+        self.firstName = firstName
+        self.lastName = lastName
         self.email = email
         self.avatarURL = avatarURL
         self.referralCode = referralCode
+        self.referredByCode = referredByCode
         self.referredBy = referredBy
-        self.pointsBalance = pointsBalance
+        self.totalReferrals = totalReferrals
+        self.totalPointsEarned = totalPointsEarned
+        self.totalPointsSpent = totalPointsSpent
+        self.totalPointsAvailable = totalPointsAvailable
+        self.isVerified = isVerified
+        self.isActive = isActive
         self.createdAt = createdAt
         self.lastLoginAt = lastLoginAt
         self.preferredLanguage = preferredLanguage
@@ -84,9 +124,23 @@ extension User {
         return phoneCountryCode + " " + phoneNumber.formattedAsPhoneNumber()
     }
 
-    /// Display name or phone number fallback
+    /// Full name combining first and last name
+    var fullName: String? {
+        switch (firstName, lastName) {
+        case (let first?, let last?):
+            return "\(first) \(last)"
+        case (let first?, nil):
+            return first
+        case (nil, let last?):
+            return last
+        case (nil, nil):
+            return nil
+        }
+    }
+
+    /// Display name with fallback to phone number
     var displayName: String {
-        return name ?? formattedPhoneNumber
+        return fullName ?? formattedPhoneNumber
     }
 }
 
@@ -98,9 +152,16 @@ extension User {
             id: UUID(),
             phoneNumber: "17012345678",
             phoneCountryCode: "+49",
-            name: "Test User",
+            phoneVerified: true,
+            firstName: "Test",
+            lastName: "User",
             referralCode: "TEST\(Int.random(in: 100...999))",
-            pointsBalance: 100
+            totalReferrals: 0,
+            totalPointsEarned: 150.0,
+            totalPointsSpent: 50.0,
+            totalPointsAvailable: 100.0,
+            isVerified: true,
+            isActive: true
         )
     }
 }

@@ -68,8 +68,8 @@
 	     ======================================== -->
 
 	<key>aps-environment</key>
-	<string>development</string>
-	<!-- Change to 'production' for App Store builds -->
+	<string>production</string>
+	<!-- Production environment for TestFlight and App Store -->
 
 	<!-- ========================================
 	     SIGN IN WITH APPLE (if implementing)

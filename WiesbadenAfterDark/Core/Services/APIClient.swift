@@ -152,14 +152,19 @@ final class APIClient {
         request.httpMethod = method
 
         // Get auth token if required
-        let token: String? = if requiresAuth {
-            try? KeychainService.shared.getToken()
+        let tokenString: String? = if requiresAuth {
+            if let authToken = try? KeychainService.shared.getToken(),
+               !authToken.isExpired {
+                authToken.accessToken  // Extract access token string
+            } else {
+                nil  // Token expired or not found
+            }
         } else {
             nil
         }
 
         // Set headers
-        let headers = APIConfig.headers(with: token)
+        let headers = APIConfig.headers(with: tokenString)
         for (key, value) in headers {
             request.setValue(value, forHTTPHeaderField: key)
         }
@@ -168,19 +173,79 @@ final class APIClient {
     }
 
     private func performRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
-        #if DEBUG
-        print("🌐 [APIClient] \(request.httpMethod ?? "?") \(request.url?.absoluteString ?? "?")")
-        #endif
+        do {
+            return try await executeRequest(request)
+        } catch APIError.unauthorized {
+            // Token expired - attempt refresh and retry once
+            #if DEBUG
+            print("🔄 [APIClient] Token expired, attempting refresh...")
+            #endif
+
+            // Try to refresh the token
+            do {
+                let keychainService = KeychainService.shared
+                guard let currentToken = try? keychainService.getToken() else {
+                    throw APIError.unauthorized
+                }
+
+                // Call refresh endpoint
+                let refreshedToken = try await refreshToken(currentToken.refreshToken)
+                try keychainService.saveToken(refreshedToken)
+
+                #if DEBUG
+                print("✅ [APIClient] Token refreshed successfully, retrying request...")
+                #endif
+
+                // Rebuild request with new token
+                var retryRequest = request
+                retryRequest.setValue("Bearer \(refreshedToken.accessToken)", forHTTPHeaderField: "Authorization")
+
+                // Retry the original request with new token
+                return try await executeRequest(retryRequest)
+            } catch {
+                // Refresh failed - user must re-authenticate
+                print("❌ [APIClient] Token refresh failed: \(error)")
+                throw APIError.unauthorized
+            }
+        }
+    }
+
+    private func executeRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
+        // Log request (production-safe)
+        let endpoint = request.url?.path ?? "unknown"
+        ProductionLogger.shared.logAPIRequest(
+            method: request.httpMethod ?? "?",
+            endpoint: endpoint
+        )
 
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("❌ [APIClient] Invalid response type")
+            ProductionLogger.shared.log("Invalid response from server", level: .error, category: "API")
             throw APIError.invalidResponse
         }
 
-        #if DEBUG
-        print("📡 [APIClient] Response: \(httpResponse.statusCode)")
-        #endif
+        // DETAILED LOGGING FOR DEBUGGING
+        print("📡 [APIClient] Response received")
+        print("   Status code: \(httpResponse.statusCode)")
+        print("   Endpoint: \(endpoint)")
+        print("   Method: \(request.httpMethod ?? "?")")
+
+        if httpResponse.statusCode == 401 {
+            print("⚠️ [APIClient] 401 Unauthorized - Token might be invalid")
+        } else if httpResponse.statusCode == 404 {
+            print("⚠️ [APIClient] 404 Not Found - Resource doesn't exist")
+        } else if !(200...299).contains(httpResponse.statusCode) {
+            print("⚠️ [APIClient] HTTP error: \(httpResponse.statusCode)")
+        }
+
+        // Log response
+        ProductionLogger.shared.logAPIResponse(
+            endpoint: endpoint,
+            statusCode: httpResponse.statusCode,
+            success: (200...299).contains(httpResponse.statusCode)
+        )
 
         // Handle different status codes
         switch httpResponse.statusCode {
@@ -217,6 +282,37 @@ final class APIClient {
         default:
             throw APIError.httpError(statusCode: httpResponse.statusCode, message: nil)
         }
+    }
+
+    /// Refreshes the access token using the refresh token
+    private func refreshToken(_ refreshToken: String) async throws -> AuthToken {
+        struct RefreshRequest: Encodable {
+            let refreshToken: String
+        }
+
+        struct RefreshResponse: Decodable {
+            let accessToken: String
+            let refreshToken: String
+            let tokenType: String
+            let expiresIn: Int
+        }
+
+        let url = try buildURL(endpoint: APIConfig.Endpoints.refreshToken)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try encoder.encode(RefreshRequest(refreshToken: refreshToken))
+
+        let response: RefreshResponse = try await executeRequest(request)
+
+        let expiresAt = Date().addingTimeInterval(TimeInterval(response.expiresIn))
+        return AuthToken(
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+            expiresAt: expiresAt,
+            tokenType: response.tokenType
+        )
     }
 }
 

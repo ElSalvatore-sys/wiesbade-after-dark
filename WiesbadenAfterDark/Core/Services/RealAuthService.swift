@@ -73,6 +73,11 @@ final class RealAuthService: AuthServiceProtocol {
             let refreshToken: String
             let tokenType: String
             let expiresIn: Int // seconds
+            let user: UserDTO? // Present if user already registered
+
+            // No explicit CodingKeys needed - APIClient's .convertFromSnakeCase handles it
+            // Backend sends: access_token, refresh_token, token_type, expires_in, user
+            // JSONDecoder auto-converts to: accessToken, refreshToken, tokenType, expiresIn, user
         }
 
         do {
@@ -81,6 +86,16 @@ final class RealAuthService: AuthServiceProtocol {
                 body: Request(phoneNumber: phoneNumber, code: code),
                 requiresAuth: false
             )
+
+            // Log whether user exists in response
+            if let user = response.user {
+                print("✅ [RealAuthService] Existing user returned from backend")
+                print("   User ID: \(user.id)")
+                print("   Phone: \(user.phoneNumber)")
+                print("   Verified: \(user.phoneVerified)")
+            } else {
+                print("ℹ️ [RealAuthService] No user in response - this is a new user")
+            }
 
             // Convert expires_in (seconds) to expiresAt (Date)
             let expiresAt = Date().addingTimeInterval(TimeInterval(response.expiresIn))
@@ -96,14 +111,22 @@ final class RealAuthService: AuthServiceProtocol {
             SecureLogger.shared.auth("Code verified successfully", level: .success)
             #endif
 
+            // Log authentication success (production-safe)
+            ProductionLogger.shared.logAuthAttempt(success: true)
+
             return token
 
         } catch let error as APIError {
             #if DEBUG
             SecureLogger.shared.auth("Code verification failed: \(error)", level: .error)
             #endif
+
+            // Log authentication failure (production-safe)
+            ProductionLogger.shared.logAuthAttempt(success: false)
+
             throw mapAPIError(error)
         } catch {
+            ProductionLogger.shared.logAuthAttempt(success: false)
             throw AuthError.networkError(error)
         }
     }
@@ -146,9 +169,9 @@ final class RealAuthService: AuthServiceProtocol {
         }
     }
 
-    /// Creates a new user account with optional referral code
+    /// Creates a new user account with optional referral code and name
     @MainActor
-    func createAccount(phoneNumber: String, referralCode: String?) async throws -> User {
+    func createAccount(phoneNumber: String, firstName: String?, lastName: String?, referralCode: String?) async throws -> User {
         #if DEBUG
         SecureLogger.shared.auth("Creating account for: \(phoneNumber)")
         if let code = referralCode {
@@ -159,6 +182,8 @@ final class RealAuthService: AuthServiceProtocol {
         struct Request: Encodable {
             let phoneNumber: String
             let referralCode: String?
+            let firstName: String?
+            let lastName: String?
         }
 
         struct Response: Decodable {
@@ -169,25 +194,10 @@ final class RealAuthService: AuthServiceProtocol {
             let user: UserDTO
         }
 
-        struct UserDTO: Decodable {
-            let id: String
-            let phoneNumber: String
-            let phoneCountryCode: String
-            let name: String?
-            let email: String?
-            let avatarUrl: String?
-            let referralCode: String
-            let referredBy: String?
-            let pointsBalance: Int
-            let createdAt: String
-            let lastLoginAt: String?
-            let preferredLanguage: String
-        }
-
         do {
             let response: Response = try await apiClient.post(
                 APIConfig.Endpoints.register,
-                body: Request(phoneNumber: phoneNumber, referralCode: referralCode),
+                body: Request(phoneNumber: phoneNumber, referralCode: referralCode, firstName: firstName, lastName: lastName),
                 requiresAuth: false
             )
 
@@ -244,9 +254,12 @@ final class RealAuthService: AuthServiceProtocol {
 
         struct Response: Decodable {
             let accessToken: String
-            let refreshToken: String
             let tokenType: String
             let expiresIn: Int
+
+            // No explicit CodingKeys needed - APIClient's .convertFromSnakeCase handles it
+            // Backend sends: access_token, token_type, expires_in
+            // JSONDecoder auto-converts to: accessToken, tokenType, expiresIn
         }
 
         do {
@@ -256,10 +269,17 @@ final class RealAuthService: AuthServiceProtocol {
                 requiresAuth: false
             )
 
+            print("✅ [RealAuthService] Refresh response decoded successfully")
+            print("   New access token: \(String(response.accessToken.prefix(20)))...")
+            print("   Token type: \(response.tokenType)")
+            print("   Expires in: \(response.expiresIn) seconds")
+            print("   Keeping existing refresh token (backend doesn't return new one)")
+
             let expiresAt = Date().addingTimeInterval(TimeInterval(response.expiresIn))
+            // Return NEW access token but KEEP existing refresh token
             let newToken = AuthToken(
                 accessToken: response.accessToken,
-                refreshToken: response.refreshToken,
+                refreshToken: currentToken.refreshToken,  // ← KEEP the old one!
                 expiresAt: expiresAt,
                 tokenType: response.tokenType
             )
@@ -270,14 +290,22 @@ final class RealAuthService: AuthServiceProtocol {
             SecureLogger.shared.success("Access token refreshed successfully", category: "RealAuthService")
             #endif
 
+            // Log token refresh success (production-safe)
+            ProductionLogger.shared.logTokenRefresh(success: true)
+
             return newToken
 
         } catch let error as APIError {
             #if DEBUG
             SecureLogger.shared.error("Token refresh failed", error: error, category: "RealAuthService")
             #endif
+
+            // Log token refresh failure (production-safe)
+            ProductionLogger.shared.logTokenRefresh(success: false)
+
             throw mapAPIError(error)
         } catch {
+            ProductionLogger.shared.logTokenRefresh(success: false)
             throw AuthError.networkError(error)
         }
     }
@@ -285,24 +313,12 @@ final class RealAuthService: AuthServiceProtocol {
     /// Fetches the current user profile
     @MainActor
     func fetchCurrentUser() async throws -> User {
+        print("📡 [RealAuthService] Fetching current user from backend...")
+        print("   URL: \(APIConfig.baseURL)\(APIConfig.Endpoints.userProfile)")
+
         #if DEBUG
         SecureLogger.shared.info("Fetching current user profile", category: "RealAuthService")
         #endif
-
-        struct UserDTO: Decodable {
-            let id: String
-            let phoneNumber: String
-            let phoneCountryCode: String
-            let name: String?
-            let email: String?
-            let avatarUrl: String?
-            let referralCode: String
-            let referredBy: String?
-            let pointsBalance: Int
-            let createdAt: String
-            let lastLoginAt: String?
-            let preferredLanguage: String
-        }
 
         do {
             let userDTO: UserDTO = try await apiClient.get(
@@ -310,7 +326,14 @@ final class RealAuthService: AuthServiceProtocol {
                 requiresAuth: true
             )
 
+            print("✅ [RealAuthService] Backend returned user successfully")
+            print("   Raw response - ID: \(userDTO.id)")
+            print("   Raw response - Phone: \(userDTO.phoneNumber)")
+            print("   Raw response - Verified: \(userDTO.phoneVerified)")
+            print("   Raw response - Referral Code: \(userDTO.referralCode)")
+
             let user = try convertToUser(from: userDTO)
+            print("✅ [RealAuthService] Converted to User model successfully")
 
             #if DEBUG
             SecureLogger.shared.success("User profile fetched successfully", category: "RealAuthService")
@@ -319,11 +342,23 @@ final class RealAuthService: AuthServiceProtocol {
             return user
 
         } catch let error as APIError {
+            print("❌ [RealAuthService] fetchCurrentUser FAILED")
+            print("   Error type: APIError")
+            print("   Error: \(error)")
+
             #if DEBUG
             SecureLogger.shared.error("Failed to fetch user profile", error: error, category: "RealAuthService")
             #endif
             throw mapAPIError(error)
         } catch {
+            print("❌ [RealAuthService] fetchCurrentUser FAILED")
+            print("   Error type: \(type(of: error))")
+            print("   Error: \(error)")
+
+            if let urlError = error as? URLError {
+                print("   URLError code: \(urlError.code)")
+            }
+
             throw AuthError.networkError(error)
         }
     }
@@ -332,41 +367,28 @@ final class RealAuthService: AuthServiceProtocol {
 
     /// Converts backend UserDTO to SwiftData User model
     private func convertToUser(from dto: UserDTO) throws -> User {
-        guard let userId = UUID(uuidString: dto.id) else {
-            throw AuthError.serverError("Invalid user ID format")
-        }
-
-        let referredById: UUID? = if let referredBy = dto.referredBy {
-            UUID(uuidString: referredBy)
-        } else {
-            nil
-        }
-
-        // Parse ISO8601 date
-        let dateFormatter = ISO8601DateFormatter()
-        guard let createdAt = dateFormatter.date(from: dto.createdAt) else {
-            throw AuthError.serverError("Invalid date format")
-        }
-
-        let lastLoginAt: Date? = if let lastLogin = dto.lastLoginAt {
-            dateFormatter.date(from: lastLogin)
-        } else {
-            nil
-        }
-
+        // UserDTO now has UUID and parsed dates - no conversion needed!
         return User(
-            id: userId,
+            id: dto.id,
             phoneNumber: dto.phoneNumber,
-            phoneCountryCode: dto.phoneCountryCode,
-            name: dto.name,
+            phoneCountryCode: dto.phoneCountryCode ?? "+49",
+            phoneVerified: dto.phoneVerified,
+            firstName: dto.firstName,
+            lastName: dto.lastName,
             email: dto.email,
             avatarURL: dto.avatarUrl,
             referralCode: dto.referralCode,
-            referredBy: referredById,
-            pointsBalance: dto.pointsBalance,
-            createdAt: createdAt,
-            lastLoginAt: lastLoginAt,
-            preferredLanguage: dto.preferredLanguage
+            referredByCode: dto.referredByCode,
+            referredBy: nil, // We don't receive the referrer's UUID from backend
+            totalReferrals: dto.totalReferrals,
+            totalPointsEarned: dto.totalPointsEarned,
+            totalPointsSpent: dto.totalPointsSpent,
+            totalPointsAvailable: dto.totalPointsAvailable,
+            isVerified: dto.isVerified,
+            isActive: dto.isActive,
+            createdAt: dto.createdAt,
+            lastLoginAt: dto.lastLoginAt,
+            preferredLanguage: "de" // Backend doesn't send this yet
         )
     }
 
@@ -402,16 +424,87 @@ final class RealAuthService: AuthServiceProtocol {
 private struct EmptyResponse: Decodable {}
 
 private struct UserDTO: Decodable {
-    let id: String
-    let phoneNumber: String
-    let phoneCountryCode: String
-    let name: String?
+    let id: UUID
     let email: String?
+    let firstName: String?
+    let lastName: String?
+    let phoneNumber: String
+    let phoneCountryCode: String?
+    let phoneVerified: Bool
     let avatarUrl: String?
     let referralCode: String
-    let referredBy: String?
-    let pointsBalance: Int
-    let createdAt: String
-    let lastLoginAt: String?
-    let preferredLanguage: String
+    let referredByCode: String?
+    let totalReferrals: Int
+    let totalPointsEarned: Double
+    let totalPointsSpent: Double
+    let totalPointsAvailable: Double
+    let isVerified: Bool
+    let isActive: Bool
+    let createdAt: Date
+    let lastLoginAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        // No explicit raw values - APIClient's .convertFromSnakeCase handles it!
+        // Backend sends: phone_number, first_name, created_at (snake_case)
+        // JSONDecoder auto-converts to: phoneNumber, firstName, createdAt (camelCase)
+        // These case names match the converted camelCase keys ✅
+        case id, email
+        case firstName, lastName
+        case phoneNumber, phoneCountryCode, phoneVerified
+        case avatarUrl, referralCode, referredByCode
+        case totalReferrals, totalPointsEarned, totalPointsSpent, totalPointsAvailable
+        case isVerified, isActive
+        case createdAt, lastLoginAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(UUID.self, forKey: .id)
+        email = try container.decodeIfPresent(String.self, forKey: .email)
+        firstName = try container.decodeIfPresent(String.self, forKey: .firstName)
+        lastName = try container.decodeIfPresent(String.self, forKey: .lastName)
+        phoneNumber = try container.decode(String.self, forKey: .phoneNumber)
+        phoneCountryCode = try container.decodeIfPresent(String.self, forKey: .phoneCountryCode)
+        phoneVerified = try container.decode(Bool.self, forKey: .phoneVerified)
+        avatarUrl = try container.decodeIfPresent(String.self, forKey: .avatarUrl)
+        referralCode = try container.decode(String.self, forKey: .referralCode)
+        referredByCode = try container.decodeIfPresent(String.self, forKey: .referredByCode)
+        totalReferrals = try container.decode(Int.self, forKey: .totalReferrals)
+        totalPointsEarned = try container.decode(Double.self, forKey: .totalPointsEarned)
+        totalPointsSpent = try container.decode(Double.self, forKey: .totalPointsSpent)
+        totalPointsAvailable = try container.decode(Double.self, forKey: .totalPointsAvailable)
+        isVerified = try container.decode(Bool.self, forKey: .isVerified)
+        isActive = try container.decode(Bool.self, forKey: .isActive)
+
+        // CUSTOM DATE PARSING
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        // Parse created_at
+        if let createdAtString = try? container.decode(String.self, forKey: .createdAt) {
+            if let date = dateFormatter.date(from: createdAtString) {
+                createdAt = date
+            } else {
+                // Fallback: try without fractional seconds
+                dateFormatter.formatOptions = [.withInternetDateTime]
+                createdAt = dateFormatter.date(from: createdAtString) ?? Date()
+            }
+        } else {
+            createdAt = Date()
+        }
+
+        // Parse last_login_at
+        if let lastLoginString = try? container.decodeIfPresent(String.self, forKey: .lastLoginAt) {
+            // lastLoginString is already unwrapped to String, no need for second unwrap
+            if let date = dateFormatter.date(from: lastLoginString) {
+                lastLoginAt = date
+            } else {
+                dateFormatter.formatOptions = [.withInternetDateTime]
+                lastLoginAt = dateFormatter.date(from: lastLoginString)
+            }
+        } else {
+            lastLoginAt = nil
+        }
+    }
 }

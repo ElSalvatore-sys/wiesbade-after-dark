@@ -123,7 +123,15 @@ struct OnboardingFlow: View {
 
                 case .verification(let phoneNumber):
                     VerificationCodeView(phoneNumber: phoneNumber) {
-                        navigationPath.append(OnboardingRoute.referralCode)
+                        // Check auth state - only navigate to referral if NOT authenticated
+                        // If user is authenticated (existing user), root navigation will handle it
+                        if case .authenticated = viewModel.authState {
+                            print("🏠 [Navigation] User authenticated - let root navigation handle (go to home)")
+                            // Don't navigate - authenticated users go straight to MainTabView
+                        } else {
+                            print("📝 [Navigation] New user - proceeding to referral code input")
+                            navigationPath.append(OnboardingRoute.referralCode)
+                        }
                     }
 
                 case .referralCode:
@@ -161,7 +169,7 @@ struct MainTabView: View {
             // Events tab
             EventsView()
                 .tabItem {
-                    Label("Events", systemImage: "calendar.fill")
+                    Label("Events", systemImage: "calendar")
                 }
                 .tag(2)
 

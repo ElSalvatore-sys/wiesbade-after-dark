@@ -10,9 +10,22 @@
 		CF278C5B2EBAFD59000553A3 /* WiesbadenAfterDark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WiesbadenAfterDark.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CFBB68942EC5609900778ED1 /* Exceptions for "WiesbadenAfterDark" folder in "WiesbadenAfterDark" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CF278C5A2EBAFD59000553A3 /* WiesbadenAfterDark */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CF278C5D2EBAFD59000553A3 /* WiesbadenAfterDark */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CFBB68942EC5609900778ED1 /* Exceptions for "WiesbadenAfterDark" folder in "WiesbadenAfterDark" target */,
+			);
 			path = WiesbadenAfterDark;
 			sourceTree = "<group>";
 		};
@@ -255,7 +268,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3BQ832JLX7;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WiesbadenAfterDark/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,7 +302,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3BQ832JLX7;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WiesbadenAfterDark/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -30,13 +30,25 @@ protocol AuthServiceProtocol {
     /// - Throws: AuthError if validation fails
     func validateReferralCode(_ code: String) async throws -> Bool
 
-    /// Creates a user account with optional referral code
+    /// Creates a user account with optional name and referral code
     /// - Parameters:
     ///   - phoneNumber: E.164 formatted phone number
+    ///   - firstName: Optional first name
+    ///   - lastName: Optional last name
     ///   - referralCode: Optional referral code
     /// - Returns: User object with account details
     /// - Throws: AuthError if account creation fails
-    @MainActor func createAccount(phoneNumber: String, referralCode: String?) async throws -> User
+    @MainActor func createAccount(phoneNumber: String, firstName: String?, lastName: String?, referralCode: String?) async throws -> User
+
+    /// Refreshes the access token using the refresh token
+    /// - Returns: New AuthToken with fresh access token
+    /// - Throws: AuthError if refresh fails
+    func refreshAccessToken() async throws -> AuthToken
+
+    /// Fetches the current user profile from the server
+    /// - Returns: Current user object
+    /// - Throws: AuthError if fetch fails
+    @MainActor func fetchCurrentUser() async throws -> User
 }
 
 /// Custom errors for authentication operations

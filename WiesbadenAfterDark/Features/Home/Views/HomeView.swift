@@ -162,14 +162,14 @@ struct HomeView: View {
                     }
 
                     // Points Balance (if any)
-                    if user.pointsBalance > 0 {
+                    if user.totalPointsAvailable > 0 {
                         Divider()
 
                         HStack {
                             Image(systemName: "star.fill")
                                 .foregroundStyle(Color.gold)
 
-                            Text("Global Balance: \(user.pointsBalance) points")
+                            Text("Global Balance: \(user.totalPointsAvailable) points")
                                 .font(.subheadline)
                                 .foregroundStyle(Color.textPrimary)
 
