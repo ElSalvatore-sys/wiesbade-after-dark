@@ -33,7 +33,10 @@ final class MockCheckInService: CheckInServiceProtocol {
         venueName: String,
         method: CheckInMethod,
         eventId: UUID? = nil,
-        eventMultiplier: Decimal = 1.0
+        eventMultiplier: Decimal = 1.0,
+        amountSpent: Decimal? = nil,
+        orderItems: [OrderItem]? = nil,
+        venue: Venue? = nil
     ) async throws -> CheckIn {
         print("🏃 [CheckIn] Starting check-in at \(venueName)")
         print("   User: \(userId.uuidString.prefix(8))...")
