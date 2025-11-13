@@ -1,0 +1,313 @@
+//
+//  HomeViewModel.swift
+//  WiesbadenAfterDark
+//
+//  ViewModel for home page with gamification and event highlights
+//
+
+import Foundation
+import SwiftUI
+import SwiftData
+import CoreLocation
+
+/// Home view model with gamification features
+@MainActor
+@Observable
+final class HomeViewModel {
+    // MARK: - Dependencies
+
+    private let venueService: VenueServiceProtocol
+    private let modelContext: ModelContext?
+
+    // MARK: - Published State
+
+    // Venues and location
+    var venues: [Venue] = []
+    var nearbyVenues: [Venue] = []
+    var userLocation: CLLocation?
+
+    // Events
+    var todayEvents: [Event] = []
+    var upcomingEvents: [Event] = []
+    var allEvents: [Event] = []
+
+    // Inventory offers
+    var inventoryOffers: [Product] = []
+    var expiringProducts: [Product] = []
+
+    // User data
+    var memberships: [VenueMembership] = []
+    var totalPoints: Int = 0
+
+    // UI State
+    var isLoading: Bool = false
+    var isRefreshing: Bool = false
+    var errorMessage: String?
+
+    // MARK: - Initialization
+
+    init(
+        venueService: VenueServiceProtocol = MockVenueService.shared,
+        modelContext: ModelContext? = nil
+    ) {
+        self.venueService = venueService
+        self.modelContext = modelContext
+
+        print("🏠 [HomeViewModel] Initialized")
+    }
+
+    // MARK: - Data Loading Methods
+
+    /// Loads all home page data
+    func loadHomeData(userId: UUID) async {
+        print("🏠 [HomeViewModel] Loading home data")
+
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            // Load venues
+            venues = try await venueService.fetchVenues()
+
+            // Load events from all venues
+            await loadAllEvents()
+
+            // Load inventory offers
+            await loadInventoryOffers()
+
+            // Load user memberships
+            await loadMemberships(userId: userId)
+
+            // Calculate nearby venues if location is available
+            updateNearbyVenues()
+
+            print("✅ [HomeViewModel] Home data loaded successfully")
+            isLoading = false
+
+        } catch {
+            errorMessage = error.localizedDescription
+            print("❌ [HomeViewModel] Failed to load home data: \(error)")
+            isLoading = false
+        }
+    }
+
+    /// Refreshes home page data
+    func refresh(userId: UUID) async {
+        print("🔄 [HomeViewModel] Refreshing home data")
+
+        isRefreshing = true
+        await loadHomeData(userId: userId)
+        isRefreshing = false
+    }
+
+    // MARK: - Events Methods
+
+    /// Loads events from all venues and categorizes them
+    private func loadAllEvents() async {
+        print("🎫 [HomeViewModel] Loading events")
+
+        var allEventsList: [Event] = []
+
+        // Load events for each venue
+        for venue in venues {
+            do {
+                let venueEvents = try await venueService.fetchEvents(venueId: venue.id)
+                allEventsList.append(contentsOf: venueEvents)
+            } catch {
+                print("⚠️ [HomeViewModel] Failed to load events for venue \(venue.name): \(error)")
+            }
+        }
+
+        allEvents = allEventsList
+
+        // Categorize events
+        categorizeEvents()
+
+        print("✅ [HomeViewModel] Loaded \(allEvents.count) events")
+    }
+
+    /// Categorizes events into today and upcoming
+    private func categorizeEvents() {
+        let now = Date()
+        let calendar = Calendar.current
+
+        // Today's events (happening today)
+        todayEvents = allEvents.filter { event in
+            calendar.isDateInToday(event.startTime) && event.startTime > now
+        }.sorted { $0.startTime < $1.startTime }
+
+        // If no events today, show events happening right now
+        if todayEvents.isEmpty {
+            todayEvents = allEvents.filter { event in
+                event.startTime <= now && event.endTime > now
+            }.sorted { $0.startTime < $1.startTime }
+        }
+
+        // Upcoming events (next 7 days, excluding today)
+        let nextWeek = calendar.date(byAdding: .day, value: 7, to: now)!
+        upcomingEvents = allEvents.filter { event in
+            !calendar.isDateInToday(event.startTime) &&
+            event.startTime > now &&
+            event.startTime < nextWeek
+        }.sorted { $0.startTime < $1.startTime }
+
+        print("📅 [HomeViewModel] Today: \(todayEvents.count) events, Upcoming: \(upcomingEvents.count) events")
+    }
+
+    /// Gets the venue for an event
+    func venue(for event: Event) -> Venue? {
+        return venues.first { $0.id == event.venueId }
+    }
+
+    // MARK: - Inventory Offers Methods
+
+    /// Loads inventory offers with bonuses from all venues
+    private func loadInventoryOffers() async {
+        print("🛒 [HomeViewModel] Loading inventory offers")
+
+        // Mock data for now - in production, this would be an API call
+        var allOffers: [Product] = []
+
+        for venue in venues {
+            let products = Product.mockProductsWithBonuses(venueId: venue.id)
+            let bonusProducts = products.filter { $0.hasBonus }
+            allOffers.append(contentsOf: bonusProducts)
+        }
+
+        inventoryOffers = allOffers
+
+        // Filter expiring products (expires within 24 hours)
+        expiringProducts = inventoryOffers.filter { $0.isExpiringSoon }
+
+        print("✅ [HomeViewModel] Loaded \(inventoryOffers.count) inventory offers (\(expiringProducts.count) expiring soon)")
+    }
+
+    /// Gets the venue for a product
+    func venue(for product: Product) -> Venue? {
+        return venues.first { $0.id == product.venueId }
+    }
+
+    // MARK: - Memberships Methods
+
+    /// Loads user memberships from all venues
+    private func loadMemberships(userId: UUID) async {
+        print("🎖️ [HomeViewModel] Loading memberships")
+
+        var allMemberships: [VenueMembership] = []
+
+        for venue in venues {
+            do {
+                if let membership = try await venueService.fetchMembership(userId: userId, venueId: venue.id) {
+                    allMemberships.append(membership)
+                }
+            } catch {
+                // No membership for this venue - that's okay
+                print("ℹ️ [HomeViewModel] No membership for venue \(venue.name)")
+            }
+        }
+
+        memberships = allMemberships
+
+        // Calculate total points across all venues
+        totalPoints = memberships.reduce(0) { $0 + $1.pointsBalance }
+
+        print("✅ [HomeViewModel] Loaded \(memberships.count) memberships with \(totalPoints) total points")
+    }
+
+    /// Gets points balance for a specific venue
+    func pointsBalance(for venueId: UUID) -> Int {
+        return memberships.first { $0.venueId == venueId }?.pointsBalance ?? 0
+    }
+
+    // MARK: - Location Methods
+
+    /// Updates user location
+    func updateLocation(_ location: CLLocation) {
+        userLocation = location
+        updateNearbyVenues()
+    }
+
+    /// Calculates and updates nearby venues
+    private func updateNearbyVenues() {
+        guard let location = userLocation else {
+            nearbyVenues = []
+            return
+        }
+
+        // Calculate distances and sort by proximity
+        let venuesWithDistances = venues.map { venue -> (venue: Venue, distance: CLLocationDistance) in
+            let venueLocation = CLLocation(
+                latitude: venue.address.latitude,
+                longitude: venue.address.longitude
+            )
+            let distance = location.distance(from: venueLocation)
+            return (venue, distance)
+        }
+
+        // Sort by distance and take top 5
+        nearbyVenues = venuesWithDistances
+            .sorted { $0.distance < $1.distance }
+            .prefix(5)
+            .map { $0.venue }
+
+        print("📍 [HomeViewModel] Updated nearby venues: \(nearbyVenues.count)")
+    }
+
+    /// Gets distance to venue in kilometers
+    func distance(to venue: Venue) -> String? {
+        guard let location = userLocation else { return nil }
+
+        let venueLocation = CLLocation(
+            latitude: venue.address.latitude,
+            longitude: venue.address.longitude
+        )
+        let distanceInMeters = location.distance(from: venueLocation)
+        let distanceInKm = distanceInMeters / 1000.0
+
+        if distanceInKm < 1.0 {
+            return String(format: "%.0fm", distanceInMeters)
+        } else {
+            return String(format: "%.1fkm", distanceInKm)
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    /// Clears error message
+    func clearError() {
+        errorMessage = nil
+    }
+
+    /// Gets active bonuses summary text
+    func activeBonusesSummary() -> String? {
+        var bonuses: [String] = []
+
+        // Check for events with multipliers today
+        let eventBonuses = todayEvents.filter { $0.pointsMultiplier > 1.0 }
+        if !eventBonuses.isEmpty {
+            bonuses.append("\(eventBonuses.count) event bonus\(eventBonuses.count == 1 ? "" : "es")")
+        }
+
+        // Check for inventory offers
+        if !inventoryOffers.isEmpty {
+            bonuses.append("\(inventoryOffers.count) product deal\(inventoryOffers.count == 1 ? "" : "s")")
+        }
+
+        // Check for expiring products
+        if !expiringProducts.isEmpty {
+            bonuses.append("\(expiringProducts.count) expiring soon")
+        }
+
+        if bonuses.isEmpty {
+            return nil
+        }
+
+        return bonuses.joined(separator: " • ")
+    }
+
+    /// Checks if there are any active bonuses
+    var hasActiveBonuses: Bool {
+        return !todayEvents.filter { $0.pointsMultiplier > 1.0 }.isEmpty ||
+               !inventoryOffers.isEmpty
+    }
+}
