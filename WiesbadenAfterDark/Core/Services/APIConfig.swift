@@ -70,6 +70,10 @@ enum APIConfig {
         // Referrals
         static func userReferrals(userId: String) -> String { "/api/v1/users/\(userId)/referrals" }
         static let processReferralRewards = "/api/v1/referrals/process-rewards"
+
+        // Transactions
+        static let createTransaction = "/api/v1/transactions"
+        static func userTransactions(userId: String) -> String { "/api/v1/transactions/user/\(userId)" }
     }
 
     // MARK: - Headers
