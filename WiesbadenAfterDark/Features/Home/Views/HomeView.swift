@@ -39,19 +39,32 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Active Bonuses Banner (if any)
-                    if homeViewModel.hasActiveBonuses {
-                        activeBonusesBanner
-                            .padding(.horizontal)
-                    }
-
-                    // Points Balance Card
+                    // 1. POINTS BALANCE CARD (Top Priority)
                     if homeViewModel.totalPoints > 0 {
                         pointsBalanceCard
                             .padding(.horizontal)
                     }
 
-                    // Referral Card (Prominent)
+                    // 2. QUICK ACTIONS (Check-in & Wallet Pass)
+                    quickActionsCard
+                        .padding(.horizontal)
+
+                    // 3. EVENT HIGHLIGHTS SECTION
+                    eventHighlightsSection
+
+                    // 4. ACTIVE BONUSES BANNER (if any)
+                    if homeViewModel.hasActiveBonuses {
+                        activeBonusesBanner
+                            .padding(.horizontal)
+                    }
+
+                    // 5. INVENTORY OFFERS SECTION
+                    inventoryOffersSection
+
+                    // 6. NEARBY VENUES SECTION
+                    nearbyVenuesSection
+
+                    // 7. REFERRAL CARD (Moved down)
                     if let user = authViewModel.authState.user {
                         VStack(spacing: 12) {
                             ReferralCard(
@@ -64,23 +77,14 @@ struct HomeView: View {
                         .padding(.horizontal)
                     }
 
-                    // Recent Transactions
+                    // 8. RECENT ACTIVITY (Moved to bottom)
                     if !homeViewModel.recentTransactions.isEmpty {
                         RecentTransactionsView(transactions: homeViewModel.recentTransactions)
                             .padding(.horizontal)
                     }
 
-                    // Event Highlights Section
-                    eventHighlightsSection
-
-                    // Inventory Offers Section
-                    inventoryOffersSection
-
-                    // Nearby Venues Section
-                    nearbyVenuesSection
-
-                    // Quick Actions
-                    quickActionsSection
+                    // 9. SIGN OUT BUTTON
+                    signOutButton
                         .padding(.horizontal)
 
                     Spacer()
@@ -499,100 +503,108 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Quick Actions
+    // MARK: - Quick Actions Card (Simplified)
 
-    private var quickActionsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Quick Actions")
-                .font(.headline)
-                .foregroundStyle(Color.textPrimary)
+    private var quickActionsCard: some View {
+        HStack(spacing: 16) {
+            // Check-In Button
+            Button {
+                showVenuePicker = true
+            } label: {
+                VStack(spacing: 12) {
+                    Image(systemName: "location.circle.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.blue, Color.blue.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
 
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 12) {
-                // Check-In (Show venue picker)
-                quickActionButton(
-                    icon: "wave.3.right.circle.fill",
-                    title: "Check In",
-                    color: .purple
-                ) {
-                    showVenuePicker = true
+                    Text("Check In")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.textPrimary)
                 }
-
-                // My Passes
-                quickActionButton(
-                    icon: "wallet.pass.fill",
-                    title: "My Passes",
-                    color: .blue
-                ) {
-                    showMyPasses = true
-                }
-
-                // History
-                quickActionButton(
-                    icon: "clock.fill",
-                    title: "History",
-                    color: .green
-                ) {
-                    showCheckInHistory = true
-                }
-
-                // Share Referral
-                quickActionButton(
-                    icon: "gift.fill",
-                    title: "Refer Friend",
-                    color: .orange
-                ) {
-                    // Share referral code
-                    if let user = authViewModel.authState.user {
-                        shareReferralCode(user.referralCode)
-                    }
-                }
-            }
-
-            // Sign Out Button
-            Button(action: {
-                authViewModel.signOut()
-            }) {
-                HStack {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                    Text("Sign Out")
-                }
-                .font(.subheadline)
-                .foregroundStyle(Color.textSecondary)
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.vertical, 24)
+                .background(
+                    LinearGradient(
+                        colors: [Color.blue.opacity(0.15), Color.blue.opacity(0.08)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(Color.blue.opacity(0.3), lineWidth: 1.5)
+                )
             }
-            .padding(.top, 8)
+            .buttonStyle(.plain)
+
+            // Wallet Pass Button
+            Button {
+                showMyPasses = true
+            } label: {
+                VStack(spacing: 12) {
+                    Image(systemName: "wallet.pass.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.purple, Color.purple.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+
+                    Text("My Passes")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.textPrimary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+                .background(
+                    LinearGradient(
+                        colors: [Color.purple.opacity(0.15), Color.purple.opacity(0.08)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(Color.purple.opacity(0.3), lineWidth: 1.5)
+                )
+            }
+            .buttonStyle(.plain)
         }
+        .shadow(
+            color: Theme.Shadow.sm.color,
+            radius: Theme.Shadow.sm.radius,
+            x: Theme.Shadow.sm.x,
+            y: Theme.Shadow.sm.y
+        )
     }
 
-    // MARK: - Helper Views
+    // MARK: - Sign Out Button
 
-    private func quickActionButton(
-        icon: String,
-        title: String,
-        color: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(color)
-
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(Color.textPrimary)
+    private var signOutButton: some View {
+        Button(action: {
+            authViewModel.signOut()
+        }) {
+            HStack {
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                Text("Sign Out")
             }
+            .font(.subheadline)
+            .foregroundStyle(Color.textSecondary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
+            .padding()
             .background(Color.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
 
