@@ -38,6 +38,7 @@ final class HomeViewModel {
     // User data
     var memberships: [VenueMembership] = []
     var totalPoints: Int = 0
+    var recentTransactions: [PointTransaction] = []
 
     // UI State
     var isLoading: Bool = false
@@ -77,6 +78,9 @@ final class HomeViewModel {
 
             // Load user memberships
             await loadMemberships(userId: userId)
+
+            // Load recent transactions
+            await loadRecentTransactions(userId: userId)
 
             // Calculate nearby venues if location is available
             updateNearbyVenues()
@@ -245,6 +249,33 @@ final class HomeViewModel {
     /// Gets points balance for a specific venue
     func pointsBalance(for venueId: UUID) -> Int {
         return memberships.first { $0.venueId == venueId }?.pointsBalance ?? 0
+    }
+
+    // MARK: - Transactions Methods
+
+    /// Loads recent transactions for the user
+    private func loadRecentTransactions(userId: UUID) async {
+        print("💳 [HomeViewModel] Loading recent transactions")
+
+        // In production, this would fetch from the backend
+        // For now, use mock data if we have memberships
+        guard !memberships.isEmpty else {
+            recentTransactions = []
+            return
+        }
+
+        // Generate mock transactions for the first venue
+        if let firstMembership = memberships.first,
+           let venue = venues.first(where: { $0.id == firstMembership.venueId }) {
+            recentTransactions = PointTransaction.mockHistory(
+                userId: userId,
+                venueId: venue.id,
+                venueName: venue.name,
+                count: 8
+            )
+        }
+
+        print("✅ [HomeViewModel] Loaded \(recentTransactions.count) recent transactions")
     }
 
     // MARK: - Location Methods
