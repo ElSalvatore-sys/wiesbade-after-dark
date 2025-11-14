@@ -26,7 +26,8 @@ final class AuthenticationViewModel {
     var currentPhoneNumber: String = ""
     var currentReferralCode: String?
     var isLoading: Bool = false
-    var errorMessage: String?
+    var error: AppError?
+    var showError: Bool = false
     var currentUser: User?
 
     // MARK: - Initialization
@@ -51,20 +52,23 @@ final class AuthenticationViewModel {
 
         // Normalize phone number
         guard let normalized = phoneNumber.normalizedPhoneNumber() else {
-            errorMessage = "Invalid phone number format"
+            error = .invalidPhoneNumber
+            showError = true
             print("❌ [AuthViewModel] Invalid phone number format")
             return
         }
 
         currentPhoneNumber = normalized
         isLoading = true
-        errorMessage = nil
+        error = nil
+        showError = false
 
         do {
             try await authService.sendVerificationCode(to: normalized)
             print("✅ [AuthViewModel] Verification code sent successfully")
         } catch {
-            errorMessage = error.localizedDescription
+            self.error = AppError.from(error)
+            showError = true
             print("❌ [AuthViewModel] Failed to send code: \(error)")
         }
 
@@ -76,7 +80,8 @@ final class AuthenticationViewModel {
         print("🔐 [AuthViewModel] Verifying code: \(code)")
 
         isLoading = true
-        errorMessage = nil
+        error = nil
+        showError = false
 
         do {
             // Verify the code and get token
@@ -151,19 +156,18 @@ final class AuthenticationViewModel {
                 if let error = lastError {
                     print("   Last error was: \(error)")
 
-                    // Set user-friendly error message based on error type
-                    if let authError = error as? AuthError {
-                        switch authError {
-                        case .networkError:
-                            errorMessage = "Network error: Please check your connection"
-                        case .serverError(let message):
-                            errorMessage = "Server error: \(message)"
-                        default:
-                            // Other auth errors are expected for new users
-                            break
-                        }
-                    } else {
-                        errorMessage = "Could not verify existing account: \(error.localizedDescription)"
+                    // Set user-friendly error based on error type
+                    let appError = AppError.from(error)
+
+                    // Only show error for actual network/server issues
+                    // User not found is expected for new users, so don't show error
+                    switch appError {
+                    case .noInternet, .serverError, .networkTimeout:
+                        self.error = appError
+                        showError = true
+                    default:
+                        // Other errors are expected for new users
+                        break
                     }
                 }
 
@@ -174,9 +178,10 @@ final class AuthenticationViewModel {
             }
 
         } catch {
-            errorMessage = error.localizedDescription
+            self.error = AppError.from(error)
+            showError = true
             print("❌ [AuthViewModel] Code verification failed: \(error)")
-            authState = .error(error.localizedDescription)
+            authState = .error(self.error?.message ?? "Unknown error")
             isLoading = false
             return false
         }
@@ -191,7 +196,8 @@ final class AuthenticationViewModel {
         print("🎁 [AuthViewModel] Validating referral code: \(code)")
 
         isLoading = true
-        errorMessage = nil
+        error = nil
+        showError = false
 
         do {
             let isValid = try await authService.validateReferralCode(code)
@@ -201,14 +207,16 @@ final class AuthenticationViewModel {
                 currentReferralCode = code
                 print("✅ [AuthViewModel] Referral code is valid")
             } else {
-                errorMessage = "Invalid referral code"
+                error = .invalidReferralCode
+                showError = true
                 print("❌ [AuthViewModel] Referral code is invalid")
             }
 
             return isValid
 
         } catch {
-            errorMessage = error.localizedDescription
+            self.error = AppError.from(error)
+            showError = true
             print("❌ [AuthViewModel] Referral code validation failed: \(error)")
             isLoading = false
             return false
@@ -220,7 +228,8 @@ final class AuthenticationViewModel {
         print("👤 [AuthViewModel] Completing account creation")
 
         isLoading = true
-        errorMessage = nil
+        error = nil
+        showError = false
 
         do {
             // Create account
@@ -246,9 +255,10 @@ final class AuthenticationViewModel {
             return true
 
         } catch {
-            errorMessage = error.localizedDescription
+            self.error = AppError.from(error)
+            showError = true
             print("❌ [AuthViewModel] Account creation failed: \(error)")
-            authState = .error(error.localizedDescription)
+            authState = .error(self.error?.message ?? "Unknown error")
             isLoading = false
             return false
         }
@@ -323,7 +333,8 @@ final class AuthenticationViewModel {
         authState = .unauthenticated
         currentPhoneNumber = ""
         currentReferralCode = nil
-        errorMessage = nil
+        error = nil
+        showError = false
     }
 
     // MARK: - Helper Methods
@@ -349,6 +360,7 @@ final class AuthenticationViewModel {
 
     /// Clears error message
     func clearError() {
-        errorMessage = nil
+        error = nil
+        showError = false
     }
 }
