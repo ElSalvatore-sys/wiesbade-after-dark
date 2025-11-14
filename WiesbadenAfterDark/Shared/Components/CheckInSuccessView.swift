@@ -20,6 +20,7 @@ struct CheckInSuccessView: View {
     @State private var showPoints = false
     @State private var showBreakdown = false
     @State private var pulseAnimation = false
+    @State private var celebrationParticles: [CelebrationParticle] = []
 
     // MARK: - Body
 
@@ -29,6 +30,15 @@ struct CheckInSuccessView: View {
             Color.appBackground
                 .ignoresSafeArea()
 
+            // Celebration particles
+            ForEach(celebrationParticles) { particle in
+                Circle()
+                    .fill(particle.color)
+                    .frame(width: particle.size, height: particle.size)
+                    .position(particle.position)
+                    .opacity(particle.opacity)
+            }
+
             ScrollView {
                 VStack(spacing: 32) {
                     Spacer()
@@ -36,22 +46,33 @@ struct CheckInSuccessView: View {
 
                     // Success Icon
                     ZStack {
+                        // Outer glow ring
+                        Circle()
+                            .fill(Color.primaryGradient)
+                            .frame(width: 140, height: 140)
+                            .opacity(showContent ? 0.3 : 0)
+                            .scaleEffect(showContent ? 1.2 : 0.8)
+                            .animation(.easeOut(duration: 0.8), value: showContent)
+
+                        // Main circle
                         Circle()
                             .fill(Color.primaryGradient)
                             .frame(width: 120, height: 120)
-                            .scaleEffect(pulseAnimation ? 1.1 : 1.0)
+                            .scaleEffect(pulseAnimation ? 1.05 : 1.0)
                             .animation(
                                 .easeInOut(duration: 1.5).repeatForever(autoreverses: true),
                                 value: pulseAnimation
                             )
 
+                        // Checkmark icon with bounce
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 80))
                             .foregroundStyle(.white)
+                            .rotationEffect(.degrees(showContent ? 0 : -90))
                     }
                     .opacity(showContent ? 1 : 0)
-                    .scaleEffect(showContent ? 1 : 0.5)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.7), value: showContent)
+                    .scaleEffect(showContent ? 1 : 0.3)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0.3), value: showContent)
 
                     // Success Message
                     VStack(spacing: 8) {
@@ -70,19 +91,39 @@ struct CheckInSuccessView: View {
 
                     // Points Earned Card
                     VStack(spacing: 20) {
-                        // Large Points Display
+                        // Large Points Display with celebration
                         VStack(spacing: 8) {
-                            Text("+\(checkIn.pointsEarned)")
-                                .font(.system(size: 64, weight: .bold))
-                                .foregroundStyle(Color.primaryGradient)
+                            HStack(spacing: 8) {
+                                // Sparkle icon
+                                Image(systemName: "sparkles")
+                                    .font(.title)
+                                    .foregroundStyle(.orange)
+                                    .opacity(showPoints ? 1 : 0)
+                                    .scaleEffect(showPoints ? 1 : 0.5)
+                                    .rotationEffect(.degrees(showPoints ? 0 : -180))
+                                    .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.5), value: showPoints)
+
+                                Text("+\(checkIn.pointsEarned)")
+                                    .font(.system(size: 64, weight: .bold))
+                                    .foregroundStyle(Color.primaryGradient)
+
+                                // Sparkle icon
+                                Image(systemName: "sparkles")
+                                    .font(.title)
+                                    .foregroundStyle(.orange)
+                                    .opacity(showPoints ? 1 : 0)
+                                    .scaleEffect(showPoints ? 1 : 0.5)
+                                    .rotationEffect(.degrees(showPoints ? 0 : 180))
+                                    .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.5), value: showPoints)
+                            }
 
                             Text("Points Earned")
                                 .font(.headline)
                                 .foregroundStyle(Color.textSecondary)
                         }
                         .opacity(showPoints ? 1 : 0)
-                        .scaleEffect(showPoints ? 1 : 0.8)
-                        .animation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.4), value: showPoints)
+                        .scaleEffect(showPoints ? 1 : 0.5)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.3), value: showPoints)
 
                         // Streak Badge (if applicable)
                         if checkIn.isStreakBonus {
@@ -240,6 +281,9 @@ struct CheckInSuccessView: View {
             }
         }
         .onAppear {
+            // Generate celebration particles
+            generateCelebrationParticles()
+
             // Trigger animations in sequence
             withAnimation {
                 showContent = true
@@ -260,6 +304,9 @@ struct CheckInSuccessView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 pulseAnimation = true
             }
+
+            // Animate particles
+            animateCelebrationParticles()
         }
     }
 
@@ -321,6 +368,53 @@ struct CheckInSuccessView: View {
             return "hand.tap.fill"
         }
     }
+
+    // MARK: - Celebration Particles
+
+    private func generateCelebrationParticles() {
+        let colors: [Color] = [.orange, .yellow, .purple, .blue, .green, .pink]
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+
+        for i in 0..<20 {
+            let particle = CelebrationParticle(
+                id: UUID(),
+                position: CGPoint(
+                    x: screenWidth / 2 + CGFloat.random(in: -100...100),
+                    y: screenHeight / 3
+                ),
+                color: colors.randomElement() ?? .orange,
+                size: CGFloat.random(in: 8...16),
+                opacity: 1.0
+            )
+            celebrationParticles.append(particle)
+        }
+    }
+
+    private func animateCelebrationParticles() {
+        for (index, _) in celebrationParticles.enumerated() {
+            let delay = Double(index) * 0.05
+            let duration = Double.random(in: 1.0...1.5)
+            let xOffset = CGFloat.random(in: -150...150)
+            let yOffset = CGFloat.random(in: -200...(-50))
+
+            withAnimation(.easeOut(duration: duration).delay(delay)) {
+                celebrationParticles[index].position.x += xOffset
+                celebrationParticles[index].position.y += yOffset
+                celebrationParticles[index].opacity = 0
+            }
+        }
+    }
+}
+
+// MARK: - Celebration Particle
+
+struct CelebrationParticle: Identifiable {
+    let id: UUID
+    var position: CGPoint
+    let color: Color
+    let size: CGFloat
+    var opacity: Double
 }
 
 // MARK: - Preview

@@ -102,6 +102,20 @@ struct CheckInView: View {
                 showSuccessView = true
             }
         }
+        .overlay {
+            // Loading overlay during check-in processing
+            if case .processing = viewModel.checkInState {
+                CheckInLoadingView(message: "Processing check-in...")
+                    .transition(.opacity)
+            } else if case .validating = viewModel.checkInState {
+                CheckInLoadingView(message: "Validating...")
+                    .transition(.opacity)
+            } else if case .scanning = viewModel.checkInState {
+                CheckInLoadingView(message: "Scanning NFC tag...")
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.checkInState)
     }
 
     // MARK: - Venue Header
@@ -285,22 +299,30 @@ struct CheckInView: View {
                 }
             }) {
                 HStack {
-                    Image(systemName: "hand.tap.fill")
-                        .font(.title3)
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .scaleEffect(0.9)
+                    } else {
+                        Image(systemName: "hand.tap.fill")
+                            .font(.title3)
+                    }
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Manual Check-In")
+                        Text(viewModel.isLoading ? "Processing..." : "Manual Check-In")
                             .font(.subheadline)
                             .fontWeight(.semibold)
 
-                        Text("No NFC tag available?")
+                        Text(viewModel.isLoading ? "Please wait" : "No NFC tag available?")
                             .font(.caption2)
                     }
 
                     Spacer()
 
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
+                    if !viewModel.isLoading {
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                    }
                 }
                 .foregroundStyle(Color.textPrimary)
                 .padding(16)
@@ -308,7 +330,7 @@ struct CheckInView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.primary.opacity(0.3), lineWidth: 1)
+                        .stroke(viewModel.isLoading ? Color.primary : Color.primary.opacity(0.3), lineWidth: viewModel.isLoading ? 2 : 1)
                 )
             }
             .disabled(viewModel.isLoading)
