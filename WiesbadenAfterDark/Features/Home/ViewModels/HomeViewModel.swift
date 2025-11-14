@@ -161,6 +161,13 @@ final class HomeViewModel {
 
     // MARK: - Inventory Offers Methods
 
+    /// Priority venue names for special offers display (in order)
+    private let priorityVenues = [
+        "Das Wohnzimmer",
+        "Hotel am Kochbrunnen",
+        "Harput Restaurant"
+    ]
+
     /// Loads inventory offers with bonuses from all venues
     private func loadInventoryOffers() async {
         print("🛒 [HomeViewModel] Loading inventory offers")
@@ -169,17 +176,38 @@ final class HomeViewModel {
         var allOffers: [Product] = []
 
         for venue in venues {
-            let products = Product.mockProductsWithBonuses(venueId: venue.id)
-            let bonusProducts = products.filter { $0.hasBonus }
+            let products = Product.mockProductsForVenue(venue.id)
+            let bonusProducts = products.filter { $0.bonusPointsActive }
             allOffers.append(contentsOf: bonusProducts)
         }
 
-        inventoryOffers = allOffers
+        // Filter by priority venues and sort by venue priority order
+        let filteredOffers = allOffers
+            .filter { product in
+                // Find the venue name for this product
+                guard let productVenue = venues.first(where: { $0.id == product.venueId }) else {
+                    return false
+                }
+                return priorityVenues.contains(productVenue.name)
+            }
+            .sorted { product1, product2 in
+                // Get venue names for both products
+                let venue1 = venues.first(where: { $0.id == product1.venueId })?.name ?? ""
+                let venue2 = venues.first(where: { $0.id == product2.venueId })?.name ?? ""
+
+                // Get priority indices (higher index = lower priority)
+                let index1 = priorityVenues.firstIndex(of: venue1) ?? 999
+                let index2 = priorityVenues.firstIndex(of: venue2) ?? 999
+
+                return index1 < index2
+            }
+
+        inventoryOffers = filteredOffers
 
         // Filter expiring products (expires within 24 hours)
         expiringProducts = inventoryOffers.filter { $0.isExpiringSoon }
 
-        print("✅ [HomeViewModel] Loaded \(inventoryOffers.count) inventory offers (\(expiringProducts.count) expiring soon)")
+        print("✅ [HomeViewModel] Loaded \(inventoryOffers.count) inventory offers from priority venues (\(expiringProducts.count) expiring soon)")
     }
 
     /// Gets the venue for a product
@@ -235,11 +263,11 @@ final class HomeViewModel {
         }
 
         // Calculate distances and sort by proximity
-        let venuesWithDistances = venues.map { venue -> (venue: Venue, distance: CLLocationDistance) in
-            let venueLocation = CLLocation(
-                latitude: venue.address.latitude,
-                longitude: venue.address.longitude
-            )
+        let venuesWithDistances = venues.compactMap { venue -> (venue: Venue, distance: CLLocationDistance)? in
+            guard let latitude = venue.latitude, let longitude = venue.longitude else {
+                return nil
+            }
+            let venueLocation = CLLocation(latitude: latitude, longitude: longitude)
             let distance = location.distance(from: venueLocation)
             return (venue, distance)
         }
@@ -255,12 +283,11 @@ final class HomeViewModel {
 
     /// Gets distance to venue in kilometers
     func distance(to venue: Venue) -> String? {
-        guard let location = userLocation else { return nil }
+        guard let location = userLocation,
+              let latitude = venue.latitude,
+              let longitude = venue.longitude else { return nil }
 
-        let venueLocation = CLLocation(
-            latitude: venue.address.latitude,
-            longitude: venue.address.longitude
-        )
+        let venueLocation = CLLocation(latitude: latitude, longitude: longitude)
         let distanceInMeters = location.distance(from: venueLocation)
         let distanceInKm = distanceInMeters / 1000.0
 

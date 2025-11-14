@@ -12,6 +12,8 @@ import MapKit
 struct VenueOverviewTab: View {
     let venue: Venue
 
+    @State private var venueSpecialOffers: [Product] = []
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
@@ -21,6 +23,15 @@ struct VenueOverviewTab: View {
                 Divider()
                     .background(Color.textTertiary.opacity(0.2))
                     .padding(.horizontal, Theme.Spacing.lg)
+
+                // Special Offers Section (if available)
+                if !venueSpecialOffers.isEmpty {
+                    SpecialOffersSection(offers: venueSpecialOffers, venue: venue)
+
+                    Divider()
+                        .background(Color.textTertiary.opacity(0.2))
+                        .padding(.horizontal, Theme.Spacing.lg)
+                }
 
                 // Opening hours
                 OpeningHoursSection(venue: venue)
@@ -49,6 +60,17 @@ struct VenueOverviewTab: View {
             .padding(.vertical, Theme.Spacing.lg)
         }
         .background(Color.appBackground)
+        .task {
+            await loadVenueOffers()
+        }
+    }
+
+    // MARK: - Data Loading
+
+    private func loadVenueOffers() async {
+        // Fetch products for this specific venue with active bonuses
+        let allProducts = Product.mockProductsForVenue(venue.id)
+        venueSpecialOffers = allProducts.filter { $0.bonusPointsActive && $0.isBonusActive }
     }
 }
 
@@ -69,6 +91,37 @@ private struct AboutSection: View {
                 .lineSpacing(4)
         }
         .padding(.horizontal, Theme.Spacing.lg)
+    }
+}
+
+// MARK: - Special Offers Section
+private struct SpecialOffersSection: View {
+    let offers: [Product]
+    let venue: Venue
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            Text("Special Offers")
+                .font(Typography.titleMedium)
+                .fontWeight(.semibold)
+                .foregroundColor(.textPrimary)
+                .padding(.horizontal, Theme.Spacing.lg)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVStack(spacing: 12) {
+                    ForEach(offers, id: \.id) { offer in
+                        InventoryOfferCard(
+                            product: offer,
+                            venue: venue,
+                            multiplier: offer.bonusMultiplier,
+                            expiresAt: offer.bonusEndDate
+                        )
+                        .padding(.horizontal, Theme.Spacing.lg)
+                    }
+                }
+            }
+            .frame(maxHeight: 400)
+        }
     }
 }
 
