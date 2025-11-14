@@ -296,19 +296,25 @@ Sourcery/
 # Backend Exclusion (CRITICAL FOR IOS BUILD)
 # ========================================
 
-# NEVER include backend Python files in iOS project
-backend/
-**/*.py
-**/*.pyc
-**/__pycache__/
-**/*.egg-info/
-.python-version
-requirements.txt
-alembic.ini
-alembic/
-
-# Exclude backend-related files from iOS directory
+# NEVER include backend Python files in iOS app directory
+# But allow backend/ at project root for PostgreSQL schema
+WiesbadenAfterDark/**/*.py
+WiesbadenAfterDark/**/*.pyc
+WiesbadenAfterDark/**/__pycache__/
+WiesbadenAfterDark/**/*.egg-info/
 WiesbadenAfterDark/backend/
+WiesbadenAfterDark/.python-version
+WiesbadenAfterDark/requirements.txt
+WiesbadenAfterDark/alembic.ini
+WiesbadenAfterDark/alembic/
+
+# Backend environment and sensitive files (everywhere)
+**/__pycache__/
+**/*.pyc
+**/*.egg-info/
+backend/.env
+backend/*.db
+backend/*.sqlite
 
 # ========================================
 # Documentation Files (CRITICAL FOR IOS BUILD)
