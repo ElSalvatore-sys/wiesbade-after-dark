@@ -51,6 +51,19 @@ struct HomeView: View {
                             .padding(.horizontal)
                     }
 
+                    // Referral Card (Prominent)
+                    if let user = authViewModel.authState.user {
+                        VStack(spacing: 12) {
+                            ReferralCard(
+                                referralCode: user.referralCode,
+                                totalEarnings: Int(user.totalPointsEarned * 0.25) // Estimate 25% from referrals
+                            )
+
+                            ReferralExplanationView()
+                        }
+                        .padding(.horizontal)
+                    }
+
                     // Recent Transactions
                     if !homeViewModel.recentTransactions.isEmpty {
                         RecentTransactionsView(transactions: homeViewModel.recentTransactions)
@@ -538,11 +551,6 @@ struct HomeView: View {
                 }
             }
 
-            // Referral Widget
-            if let user = authViewModel.authState.user, user.totalReferrals > 0 {
-                referralWidget(user: user)
-            }
-
             // Sign Out Button
             Button(action: {
                 authViewModel.signOut()
@@ -586,39 +594,6 @@ struct HomeView: View {
             .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
-    }
-
-    private func referralWidget(user: User) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "person.2.fill")
-                .font(.title2)
-                .foregroundStyle(Color.success)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Referrals")
-                    .font(.caption)
-                    .foregroundStyle(Color.textSecondary)
-
-                Text("\(user.totalReferrals) friends joined")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.textPrimary)
-            }
-
-            Spacer()
-
-            Text("Code: \(user.referralCode)")
-                .font(.caption)
-                .fontWeight(.bold)
-                .foregroundStyle(Color.primary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.inputBackground)
-                .clipShape(Capsule())
-        }
-        .padding(16)
-        .background(Color.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Computed Properties

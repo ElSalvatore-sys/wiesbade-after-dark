@@ -24,6 +24,23 @@ struct ProfileView: View {
                         .background(Color.textTertiary.opacity(0.2))
                         .padding(.horizontal, Theme.Spacing.lg)
 
+                    // Referral section (prominent)
+                    if let user = authViewModel.authState.user {
+                        VStack(spacing: Theme.Spacing.md) {
+                            ReferralCard(
+                                referralCode: user.referralCode,
+                                totalEarnings: Int(user.totalPointsEarned * 0.25)
+                            )
+
+                            ReferralExplanationView()
+                        }
+                        .padding(.horizontal, Theme.Spacing.lg)
+
+                        Divider()
+                            .background(Color.textTertiary.opacity(0.2))
+                            .padding(.horizontal, Theme.Spacing.lg)
+                    }
+
                     // Account section
                     AccountSection(user: authViewModel.authState.user)
 
