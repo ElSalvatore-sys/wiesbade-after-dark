@@ -40,7 +40,7 @@ class Transaction(Base):
 
     # Metadata
     description = Column(Text, nullable=True)
-    metadata = Column(String, nullable=True)  # JSON for additional data
+    transaction_metadata = Column(String, nullable=True)  # JSON for additional data
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
