@@ -1,12 +1,21 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pydantic==2.5.0
-pydantic-settings==2.1.0
-sqlalchemy==2.0.23
-asyncpg==0.29.0
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
-twilio==8.10.0
-python-dotenv==1.0.0
+
+# Core Dependencies
+# Database Connection
+# Development Tools (optional)
 alembic==1.12.1
+alembic>=1.13.0
+asyncpg==0.29.0
+fastapi==0.104.1
+ipython>=8.18.0
+passlib[bcrypt]==1.7.4
+psycopg2-binary>=2.9.9
+pydantic-settings==2.1.0
+pydantic==2.5.0
+python-dotenv==1.0.0
+python-dotenv>=1.0.0
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.6
+sqlalchemy==2.0.23
+sqlalchemy>=2.0.0
+twilio==8.10.0
+uvicorn[standard]==0.24.0
