@@ -27,13 +27,31 @@ struct VenueCard: View {
                                 .clipped()
                         } placeholder: {
                             Rectangle()
-                                .fill(Color.cardBackground)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.blue.opacity(0.3),
+                                            Color.purple.opacity(0.3)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
                                 .frame(height: 180)
                                 .shimmer()
                         }
                     } else {
                         Rectangle()
-                            .fill(Color.cardBackground)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.blue.opacity(0.3),
+                                        Color.purple.opacity(0.3)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                             .frame(height: 180)
                     }
 
@@ -110,13 +128,13 @@ struct VenueCard: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .background(Color(.systemBackground))
-            .cornerRadius(Theme.CornerRadius.lg)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(20)
             .shadow(
-                color: Color.black.opacity(0.08),
-                radius: 8,
+                color: Color.black.opacity(0.1),
+                radius: 10,
                 x: 0,
-                y: 4
+                y: 5
             )
         }
         .buttonStyle(ScaleButtonStyle())
