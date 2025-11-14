@@ -272,57 +272,53 @@ private struct SettingsSection: View {
                 .padding(.horizontal, Theme.Spacing.lg)
 
             VStack(spacing: 0) {
-                SettingsRow(
-                    icon: "bell.fill",
-                    label: "Notifications",
-                    showChevron: true,
-                    action: {
-                        // TODO: Navigate to notifications settings
-                        print("Navigate to notifications")
-                    }
-                )
+                NavigationLink(destination: NotificationSettingsView()) {
+                    SettingsRowContent(
+                        icon: "bell.fill",
+                        iconColor: .purple,
+                        label: "Notifications"
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
 
                 Divider()
                     .padding(.leading, 56)
                     .background(Color.textTertiary.opacity(0.2))
 
-                SettingsRow(
-                    icon: "lock.fill",
-                    label: "Privacy & Security",
-                    showChevron: true,
-                    action: {
-                        // TODO: Navigate to privacy settings
-                        print("Navigate to privacy")
-                    }
-                )
+                NavigationLink(destination: PrivacySecurityView()) {
+                    SettingsRowContent(
+                        icon: "lock.fill",
+                        iconColor: .blue,
+                        label: "Privacy & Security"
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
 
                 Divider()
                     .padding(.leading, 56)
                     .background(Color.textTertiary.opacity(0.2))
 
-                SettingsRow(
-                    icon: "questionmark.circle.fill",
-                    label: "Help & Support",
-                    showChevron: true,
-                    action: {
-                        // TODO: Navigate to help
-                        print("Navigate to help")
-                    }
-                )
+                NavigationLink(destination: HelpSupportView()) {
+                    SettingsRowContent(
+                        icon: "questionmark.circle.fill",
+                        iconColor: .green,
+                        label: "Help & Support"
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
 
                 Divider()
                     .padding(.leading, 56)
                     .background(Color.textTertiary.opacity(0.2))
 
-                SettingsRow(
-                    icon: "doc.text.fill",
-                    label: "Terms & Privacy Policy",
-                    showChevron: true,
-                    action: {
-                        // TODO: Navigate to legal
-                        print("Navigate to legal")
-                    }
-                )
+                NavigationLink(destination: LegalView()) {
+                    SettingsRowContent(
+                        icon: "doc.text.fill",
+                        iconColor: .gray,
+                        label: "Terms & Privacy Policy"
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
             }
             .background(Color.cardBackground)
             .cornerRadius(Theme.CornerRadius.lg)
@@ -331,36 +327,35 @@ private struct SettingsSection: View {
     }
 }
 
-private struct SettingsRow: View {
+// MARK: - Settings Row Content
+private struct SettingsRowContent: View {
     let icon: String
+    let iconColor: Color
     let label: String
-    let showChevron: Bool
-    let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: Theme.Spacing.md) {
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(.primary)
-                    .frame(width: 24)
+        HStack(spacing: Theme.Spacing.md) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundColor(iconColor)
+                .frame(width: 24, height: 24)
 
-                Text(label)
-                    .font(Typography.bodyMedium)
-                    .foregroundColor(.textPrimary)
+            Text(label)
+                .font(Typography.bodyMedium)
+                .foregroundColor(.textPrimary)
 
-                Spacer()
+            Spacer()
 
-                if showChevron {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14))
-                        .foregroundColor(.textTertiary)
-                }
-            }
-            .padding(Theme.Spacing.md)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.textTertiary)
         }
+        .padding(.horizontal, Theme.Spacing.lg)
+        .padding(.vertical, Theme.Spacing.md)
+        .contentShape(Rectangle())
     }
 }
+
 
 // MARK: - Wallet Passes Section
 private struct WalletPassesSection: View {

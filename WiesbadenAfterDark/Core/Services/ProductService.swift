@@ -156,13 +156,13 @@ final class ProductService: ProductServiceProtocol {
             category: dto.category,
             price: dto.price,
             cost: dto.cost,
-            stockQuantity: dto.stockQuantity,
-            isAvailable: dto.isAvailable,
             bonusPointsActive: dto.bonusPointsActive,
             bonusMultiplier: dto.bonusMultiplier,
-            bonusDescription: dto.bonusDescription,
+            bonusReason: dto.bonusDescription, // DTO uses bonusDescription, model uses bonusReason
             bonusStartDate: dto.bonusStartDate,
             bonusEndDate: dto.bonusEndDate,
+            stockQuantity: dto.stockQuantity,
+            isAvailable: dto.isAvailable,
             createdAt: dto.createdAt ?? Date(),
             updatedAt: dto.updatedAt ?? Date()
         )

@@ -153,7 +153,7 @@ final class VenueTierConfig: @unchecked Sendable {
     var inactivityDowngradeAfterDays: Int? // Days of inactivity before downgrade
     var hasGracePeriod: Bool = true
     var gracePeriodDays: Int = 30
-    var tierResetPolicy: TierResetPolicy = .never
+    var tierResetPolicy: TierResetPolicy = TierResetPolicy.never
 
     // MARK: - Custom Colors (optional)
 

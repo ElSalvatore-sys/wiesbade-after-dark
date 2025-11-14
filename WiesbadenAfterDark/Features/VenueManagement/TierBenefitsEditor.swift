@@ -17,6 +17,11 @@ struct TierBenefitsEditor: View {
     @State private var newPerkDescription = ""
     @State private var newPerkIcon = "star.fill"
 
+    // Computed property to help compiler with type inference
+    private var selectedTierColor: Color {
+        Color(hex: selectedTier.color)
+    }
+
     // Available perk templates
     private let perkTemplates: [TierPerk] = [
         TierPerk(name: "Early Event Access", description: "Book events before general release", icon: "calendar.badge.clock"),
@@ -53,11 +58,11 @@ struct TierBenefitsEditor: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Text("Tier Benefits")
-                .font(Typography.h2)
+                .font(Typography.titleLarge)
                 .foregroundColor(.textPrimary)
 
             Text("Configure points multipliers and exclusive perks for each membership tier.")
-                .font(Typography.body)
+                .font(Typography.bodyMedium)
                 .foregroundColor(.textSecondary)
         }
     }
@@ -85,7 +90,7 @@ struct TierBenefitsEditor: View {
                     .font(.system(size: 18))
 
                 Text(tier.displayName)
-                    .font(Typography.bodyBold)
+                    .font(Typography.headlineMedium)
             }
             .foregroundColor(selectedTier == tier ? .white : Color(hex: tier.color))
             .padding(.horizontal, Theme.Spacing.lg)
@@ -108,23 +113,23 @@ struct TierBenefitsEditor: View {
     private var multiplierSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Text("Points Multiplier")
-                .font(Typography.h3)
+                .font(Typography.headlineLarge)
                 .foregroundColor(.textPrimary)
 
             Text("Members earn \(formatMultiplier(currentMultiplier)) points for every €1 spent")
-                .font(Typography.body)
+                .font(Typography.bodyMedium)
                 .foregroundColor(.textSecondary)
 
             HStack {
                 Text("1.0x")
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.textSecondary)
 
                 Slider(value: multiplierBinding, in: 1.0...3.0, step: 0.1)
                     .accentColor(Color(hex: selectedTier.color))
 
                 Text("3.0x")
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.textSecondary)
             }
 
@@ -137,7 +142,7 @@ struct TierBenefitsEditor: View {
                         .foregroundColor(Color(hex: selectedTier.color))
 
                     Text("Points Multiplier")
-                        .font(Typography.caption)
+                        .font(Typography.captionMedium)
                         .foregroundColor(.textSecondary)
                 }
                 Spacer()
@@ -156,7 +161,7 @@ struct TierBenefitsEditor: View {
     private var perksSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Text("Exclusive Perks")
-                .font(Typography.h3)
+                .font(Typography.headlineLarge)
                 .foregroundColor(.textPrimary)
 
             if currentPerks.isEmpty {
@@ -176,11 +181,11 @@ struct TierBenefitsEditor: View {
                 .foregroundColor(.textSecondary)
 
             Text("No perks configured for \(selectedTier.displayName) tier")
-                .font(Typography.body)
+                .font(Typography.bodyMedium)
                 .foregroundColor(.textSecondary)
 
             Text("Add exclusive perks to make this tier more attractive")
-                .font(Typography.caption)
+                .font(Typography.captionMedium)
                 .foregroundColor(.textSecondary)
                 .multilineTextAlignment(.center)
         }
@@ -206,11 +211,11 @@ struct TierBenefitsEditor: View {
             // Content
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 Text(perk.name)
-                    .font(Typography.bodyBold)
+                    .font(Typography.headlineMedium)
                     .foregroundColor(.textPrimary)
 
                 Text(perk.description)
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.textSecondary)
             }
 
@@ -290,7 +295,7 @@ struct TierBenefitsEditor: View {
                         Spacer()
                         Image(systemName: newPerkIcon)
                             .font(.system(size: 48))
-                            .foregroundColor(Color(hex: selectedTier.color))
+                            .foregroundColor(selectedTierColor)
                         Spacer()
                     }
                 }

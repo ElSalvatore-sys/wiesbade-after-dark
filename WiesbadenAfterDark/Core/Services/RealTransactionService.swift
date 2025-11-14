@@ -121,12 +121,19 @@ final class RealTransactionService: TransactionServiceProtocol {
 
     /// Gets transaction history from local SwiftData storage
     func getTransactionHistory(userId: UUID, venueId: UUID? = nil) -> [PointTransaction] {
-        var descriptor = FetchDescriptor<PointTransaction>(
-            predicate: venueId == nil
-                ? #Predicate { $0.userId == userId }
-                : #Predicate { $0.userId == userId && $0.venueId == venueId },
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
+        // Extract venueId to local variable for predicate type inference
+        let descriptor: FetchDescriptor<PointTransaction>
+        if let unwrappedVenueId = venueId {
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.venueId == unwrappedVenueId },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        }
 
         do {
             let transactions = try modelContext.fetch(descriptor)
@@ -150,46 +157,95 @@ final class RealTransactionService: TransactionServiceProtocol {
         endDate: Date? = nil,
         venueId: UUID? = nil
     ) -> [PointTransaction] {
-        // Build predicate based on filters
-        var predicates: [Predicate<PointTransaction>] = []
+        // Build predicate based on available filters
+        // Note: Swift 6 predicates don't support dynamic combination well,
+        // so we create specific predicates for common filter combinations
 
-        // Always filter by user
-        predicates.append(#Predicate { $0.userId == userId })
+        let descriptor: FetchDescriptor<PointTransaction>
 
-        // Filter by type
-        if let type = type {
-            predicates.append(#Predicate { $0.type == type })
+        // Create predicate based on available filters
+        switch (type, startDate, endDate, venueId) {
+        case (let t?, let start?, let end?, let v?):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.type == t && $0.timestamp >= start && $0.timestamp <= end && $0.venueId == v },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (let t?, let start?, let end?, nil):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.type == t && $0.timestamp >= start && $0.timestamp <= end },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (let t?, let start?, nil, let v?):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.type == t && $0.timestamp >= start && $0.venueId == v },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (let t?, nil, let end?, let v?):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.type == t && $0.timestamp <= end && $0.venueId == v },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (let t?, let start?, nil, nil):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.type == t && $0.timestamp >= start },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (let t?, nil, let end?, nil):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.type == t && $0.timestamp <= end },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (let t?, nil, nil, let v?):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.type == t && $0.venueId == v },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (let t?, nil, nil, nil):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.type == t },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (nil, let start?, let end?, let v?):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.timestamp >= start && $0.timestamp <= end && $0.venueId == v },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (nil, let start?, let end?, nil):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.timestamp >= start && $0.timestamp <= end },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (nil, let start?, nil, let v?):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.timestamp >= start && $0.venueId == v },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (nil, nil, let end?, let v?):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.timestamp <= end && $0.venueId == v },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (nil, let start?, nil, nil):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.timestamp >= start },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (nil, nil, let end?, nil):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.timestamp <= end },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (nil, nil, nil, let v?):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId && $0.venueId == v },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        case (nil, nil, nil, nil):
+            descriptor = FetchDescriptor<PointTransaction>(
+                predicate: #Predicate { $0.userId == userId },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
         }
-
-        // Filter by venue
-        if let venueId = venueId {
-            predicates.append(#Predicate { $0.venueId == venueId })
-        }
-
-        // Filter by date range
-        if let startDate = startDate {
-            predicates.append(#Predicate { $0.timestamp >= startDate })
-        }
-
-        if let endDate = endDate {
-            predicates.append(#Predicate { $0.timestamp <= endDate })
-        }
-
-        // Combine predicates
-        let combinedPredicate = predicates.reduce(nil) { result, predicate in
-            if let result = result {
-                return #Predicate<PointTransaction> { transaction in
-                    result.evaluate(transaction) && predicate.evaluate(transaction)
-                }
-            } else {
-                return predicate
-            }
-        }
-
-        var descriptor = FetchDescriptor<PointTransaction>(
-            predicate: combinedPredicate,
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
 
         do {
             let transactions = try modelContext.fetch(descriptor)

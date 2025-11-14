@@ -50,11 +50,11 @@ struct BadgeConfigurationView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Text("Badges & Achievements")
-                .font(Typography.h2)
+                .font(Typography.titleLarge)
                 .foregroundColor(.textPrimary)
 
             Text("Create custom badges to reward members for visits, spending, referrals, and more.")
-                .font(Typography.body)
+                .font(Typography.bodyMedium)
                 .foregroundColor(.textSecondary)
         }
     }
@@ -69,11 +69,11 @@ struct BadgeConfigurationView: View {
 
             VStack(spacing: Theme.Spacing.sm) {
                 Text("No Badges Yet")
-                    .font(Typography.h3)
+                    .font(Typography.headlineLarge)
                     .foregroundColor(.textPrimary)
 
                 Text("Create achievement badges to motivate and reward your loyal customers")
-                    .font(Typography.body)
+                    .font(Typography.bodyMedium)
                     .foregroundColor(.textSecondary)
                     .multilineTextAlignment(.center)
             }
@@ -112,7 +112,7 @@ struct BadgeConfigurationView: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     HStack {
                         Text(badge.name)
-                            .font(Typography.h3)
+                            .font(Typography.headlineLarge)
                             .foregroundColor(.textPrimary)
 
                         Spacer()
@@ -128,7 +128,7 @@ struct BadgeConfigurationView: View {
                     }
 
                     Text(badge.badgeDescription)
-                        .font(Typography.body)
+                        .font(Typography.bodyMedium)
                         .foregroundColor(.textSecondary)
                 }
             }
@@ -138,7 +138,7 @@ struct BadgeConfigurationView: View {
             // Requirements
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 Text("Requirements")
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .fontWeight(.semibold)
                     .foregroundColor(.textSecondary)
 
@@ -173,7 +173,7 @@ struct BadgeConfigurationView: View {
                         Image(systemName: "pencil")
                         Text("Edit")
                     }
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.primary)
                 }
 
@@ -186,7 +186,7 @@ struct BadgeConfigurationView: View {
                         Image(systemName: "trash")
                         Text("Delete")
                     }
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.red)
                 }
             }
@@ -242,7 +242,7 @@ struct BadgeConfigurationView: View {
                 .frame(width: 20)
 
             Text(text)
-                .font(Typography.caption)
+                .font(Typography.captionMedium)
                 .foregroundColor(.textSecondary)
         }
     }
@@ -254,7 +254,7 @@ struct BadgeConfigurationView: View {
                 .foregroundColor(color)
 
             Text(text)
-                .font(Typography.caption)
+                .font(Typography.captionMedium)
                 .fontWeight(.semibold)
                 .foregroundColor(.textPrimary)
         }
@@ -364,7 +364,7 @@ struct BadgeEditorSheet: View {
                     // Icon Picker
                     VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                         Text("Icon")
-                            .font(Typography.bodyBold)
+                            .font(Typography.headlineMedium)
 
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 50))], spacing: Theme.Spacing.md) {
                             ForEach(iconOptions, id: \.self) { icon in
@@ -385,7 +385,7 @@ struct BadgeEditorSheet: View {
                     // Color Picker
                     VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                         Text("Color")
-                            .font(Typography.bodyBold)
+                            .font(Typography.headlineMedium)
 
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 40))], spacing: Theme.Spacing.md) {
                             ForEach(colorOptions, id: \.self) { colorHex in
@@ -474,7 +474,7 @@ struct BadgeEditorSheet: View {
                         ), in: 1.0...2.0, step: 0.1)
 
                         Text("Multiplier: \(formatMultiplier(bonusMultiplier ?? 1.0))")
-                            .font(Typography.caption)
+                            .font(Typography.captionMedium)
                             .foregroundColor(.textSecondary)
                     }
                 }

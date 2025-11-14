@@ -210,12 +210,12 @@ struct BonusIndicatorView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             Text("Bonus Multipliers")
-                .typography(.titleMedium)
-                .foregroundStyle(.textPrimary)
+                .font(.title2)
+                .foregroundStyle(.primary)
 
             Text("Active bonuses boost your points earnings")
-                .typography(.bodyMedium)
-                .foregroundStyle(.textSecondary)
+                .font(.body)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -249,11 +249,11 @@ struct BonusIndicatorView: View {
             // Total Multiplier Display
             VStack(spacing: Theme.Spacing.xs) {
                 Text("Total Multiplier")
-                    .typography(.bodyMedium)
-                    .foregroundStyle(.textSecondary)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
 
                 Text(String(format: "%.1f×", viewModel.totalMultiplier))
-                    .typography(.displayLarge)
+                    .font(.largeTitle)
                     .foregroundStyle(
                         LinearGradient(
                             colors: [.gold, .warning],
@@ -265,8 +265,8 @@ struct BonusIndicatorView: View {
 
             // Explanation
             Text("All active bonuses multiply together")
-                .typography(.bodySmall)
-                .foregroundStyle(.textTertiary)
+                .font(.caption)
+                .foregroundStyle(Color.gray.opacity(0.6))
         }
         .frame(maxWidth: .infinity)
         .padding(Theme.Spacing.lg)
@@ -298,8 +298,8 @@ struct BonusIndicatorView: View {
     private var venueBonusesSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("At \(viewModel.selectedVenue)", systemImage: "building.2.fill")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(.headline)
+                .foregroundStyle(.primary)
 
             VStack(spacing: Theme.Spacing.sm) {
                 ForEach(viewModel.venueSpecificBonuses) { bonus in
@@ -313,8 +313,8 @@ struct BonusIndicatorView: View {
     private var globalBonusesSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("Global Bonuses", systemImage: "globe")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(.headline)
+                .foregroundStyle(.primary)
 
             VStack(spacing: Theme.Spacing.sm) {
                 ForEach(viewModel.globalBonuses) { bonus in
@@ -349,12 +349,12 @@ struct BonusIndicatorView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: Theme.Spacing.sm) {
                         Text(bonus.name)
-                            .typography(.headlineMedium)
-                            .foregroundStyle(.textPrimary)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
 
                         // Multiplier Badge
                         Text(bonus.multiplierText)
-                            .typography(.bodySmall)
+                            .font(.caption)
                             .foregroundStyle(bonus.type.color)
                             .padding(.horizontal, Theme.Spacing.sm)
                             .padding(.vertical, 4)
@@ -363,8 +363,8 @@ struct BonusIndicatorView: View {
                     }
 
                     Text(bonus.description)
-                        .typography(.bodySmall)
-                        .foregroundStyle(.textSecondary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -373,16 +373,16 @@ struct BonusIndicatorView: View {
             // Countdown Timer
             HStack(spacing: Theme.Spacing.sm) {
                 Image(systemName: "timer")
-                    .foregroundStyle(bonus.timeRemaining < 3600 ? .error : .warning)
+                    .foregroundStyle(bonus.timeRemaining < 3600 ? Color.error : Color.warning)
                     .font(.body)
 
                 Text("Expires in:")
-                    .typography(.bodySmall)
-                    .foregroundStyle(.textSecondary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 Text(bonus.formattedTimeRemaining)
-                    .typography(.bodySmall)
-                    .foregroundStyle(bonus.timeRemaining < 3600 ? .error : .textPrimary)
+                    .font(.caption)
+                    .foregroundStyle(bonus.timeRemaining < 3600 ? Color.error : .primary)
                     .monospacedDigit()
 
                 Spacer()
@@ -390,7 +390,7 @@ struct BonusIndicatorView: View {
                 // Progress Bar
                 if bonus.timeRemaining < 3600 {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.error)
+                        .foregroundStyle(Color.error)
                         .font(.caption)
                 }
             }
@@ -421,16 +421,16 @@ struct BonusIndicatorView: View {
         VStack(spacing: Theme.Spacing.lg) {
             Image(systemName: "star.slash")
                 .font(.system(size: 64))
-                .foregroundStyle(.textTertiary)
+                .foregroundStyle(Color.gray.opacity(0.6))
 
             VStack(spacing: Theme.Spacing.sm) {
                 Text("No Active Bonuses")
-                    .typography(.titleMedium)
-                    .foregroundStyle(.textPrimary)
+                    .font(.title2)
+                    .foregroundStyle(.primary)
 
                 Text("Check in during happy hours or special events to earn bonus multipliers")
-                    .typography(.bodyMedium)
-                    .foregroundStyle(.textSecondary)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
         }
@@ -443,8 +443,8 @@ struct BonusIndicatorView: View {
     private var infoSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("How Bonuses Work", systemImage: "info.circle.fill")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(.headline)
+                .foregroundStyle(.primary)
 
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                 infoRow(
@@ -488,12 +488,12 @@ struct BonusIndicatorView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .typography(.bodyLarge)
-                    .foregroundStyle(.textPrimary)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
 
                 Text(description)
-                    .typography(.bodySmall)
-                    .foregroundStyle(.textSecondary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -517,11 +517,11 @@ struct BonusBadge: View {
 
             if !compact {
                 Text(bonus.name)
-                    .typography(.bodySmall)
+                    .font(.caption)
             }
 
             Text(bonus.multiplierText)
-                .typography(compact ? .bodySmall : .bodyMedium)
+                .font(compact ? .caption : .body)
                 .bold()
         }
         .foregroundStyle(.white)
@@ -539,35 +539,8 @@ struct BonusBadge: View {
     }
 }
 
-// MARK: - Helper Extension
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (1, 1, 1, 0)
-        }
-
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue:  Double(b) / 255,
-            opacity: Double(a) / 255
-        )
-    }
-}
-
 // MARK: - Preview
+// Note: Color(hex:) extension is defined in Color+Theme.swift
 #Preview("Bonus Indicator View") {
     NavigationStack {
         BonusIndicatorView()

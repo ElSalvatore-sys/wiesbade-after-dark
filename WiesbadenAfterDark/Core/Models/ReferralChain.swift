@@ -150,7 +150,7 @@ extension ReferralChain {
     }
 
     /// Add earnings to a specific level (1-5)
-    mutating func addEarnings(_ amount: Decimal, toLevel level: Int) {
+    func addEarnings(_ amount: Decimal, toLevel level: Int) {
         switch level {
         case 1: level1TotalEarnings += amount
         case 2: level2TotalEarnings += amount

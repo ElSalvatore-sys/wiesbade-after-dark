@@ -162,7 +162,10 @@ final class CheckInViewModel {
                 venueName: venue.name,
                 method: method,
                 eventId: event?.id,
-                eventMultiplier: eventMultiplier
+                eventMultiplier: eventMultiplier,
+                amountSpent: nil,
+                orderItems: nil,
+                venue: venue
             )
 
             // Update membership points

@@ -469,7 +469,7 @@ extension Venue {
             email: nil,
             website: "https://hotelamkochbrunnen.de",
             instagram: nil,
-            coverImageURL: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+            coverImageURL: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
             logoURL: nil,
             galleryURLs: [],
             dressCode: "Casual",

@@ -27,7 +27,13 @@ struct WiesbadenAfterDarkApp: App {
             Payment.self,
             PointsPurchase.self,
             Refund.self,
-            PointExpiration.self
+            PointExpiration.self,
+            // NEW MODELS from 11 agents
+            Product.self,              // Agent 1 & 3: Product model with inventory gamification
+            // OrderItem is a DTO struct, not a @Model - removed from schema
+            ReferralChain.self,        // Agent 4: 5-level referral tracking
+            BadgeConfig.self,          // Agent 9: Custom achievement badges
+            VenueTierConfig.self       // Agent 9: Venue-specific tier configuration
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -206,7 +212,7 @@ struct MainTabView: View {
                 }
                 .tag(4)
         }
-        .tint(Color.primary)
+        .tint(Color.gold)  // Use gold color for tab bar tint instead of .primary
     }
 }
 

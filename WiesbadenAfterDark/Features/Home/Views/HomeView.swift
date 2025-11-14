@@ -27,6 +27,12 @@ struct HomeView: View {
     @State private var showExpiringPointsSheet = false
     @State private var selectedMembership: VenueMembership?
 
+    // Check-in flow
+    @State private var showVenuePicker = false
+    @State private var selectedVenueForCheckIn: Venue?
+    @State private var selectedMembershipForCheckIn: VenueMembership?
+    @State private var showCheckInView = false
+
     // MARK: - Body
 
     var body: some View {
@@ -88,6 +94,33 @@ struct HomeView: View {
                 if let user = authViewModel.authState.user {
                     NavigationStack {
                         CheckInHistoryView(userId: user.id)
+                    }
+                }
+            }
+            .sheet(isPresented: $showVenuePicker) {
+                if let user = authViewModel.authState.user {
+                    VenuePickerView(
+                        venues: homeViewModel.venues,
+                        userMemberships: homeViewModel.memberships,
+                        userId: user.id
+                    ) { venue, membership in
+                        selectedVenueForCheckIn = venue
+                        selectedMembershipForCheckIn = membership
+                        showCheckInView = true
+                    }
+                }
+            }
+            .sheet(isPresented: $showCheckInView) {
+                if let user = authViewModel.authState.user,
+                   let venue = selectedVenueForCheckIn,
+                   let membership = selectedMembershipForCheckIn {
+                    NavigationStack {
+                        CheckInView(
+                            venue: venue,
+                            membership: membership,
+                            event: nil,
+                            userId: user.id
+                        )
                     }
                 }
             }
@@ -326,7 +359,7 @@ struct HomeView: View {
                             product: product,
                             venue: homeViewModel.venue(for: product),
                             multiplier: product.bonusMultiplier,
-                            expiresAt: product.expiresAt
+                            expiresAt: product.bonusEndDate
                         )
                         .onTapGesture {
                             selectedProduct = product
@@ -427,13 +460,13 @@ struct HomeView: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 12) {
-                // Check-In (Navigate to discover)
+                // Check-In (Show venue picker)
                 quickActionButton(
                     icon: "wave.3.right.circle.fill",
                     title: "Check In",
                     color: .purple
                 ) {
-                    // Navigate to discover tab
+                    showVenuePicker = true
                 }
 
                 // My Passes

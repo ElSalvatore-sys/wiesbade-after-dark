@@ -8,8 +8,8 @@
 
 import Foundation
 
-/// Order item for points calculation
-struct OrderItem: Codable, Sendable {
+/// Order item for points calculation (internal to calculator service)
+struct CalculationOrderItem: Codable, Sendable {
     let productId: UUID
     let name: String
     let category: ProductCategory
@@ -31,7 +31,7 @@ struct PointsCalculationResult: Codable, Sendable {
     let breakdown: [PointsBreakdownItem]
 
     var roundedPoints: Int {
-        return Int(totalPoints.rounded())
+        return NSDecimalNumber(decimal: totalPoints).intValue
     }
 }
 
@@ -67,7 +67,7 @@ protocol PointsCalculatorServiceProtocol: Sendable {
     ///   - venue: Venue for margin configuration
     /// - Returns: Detailed calculation result with breakdown
     func calculatePointsForOrder(
-        orderItems: [OrderItem],
+        orderItems: [CalculationOrderItem],
         venue: Venue
     ) -> PointsCalculationResult
 
@@ -100,6 +100,16 @@ final class PointsCalculatorService: PointsCalculatorServiceProtocol, @unchecked
 
     private init() {}
 
+    // MARK: - Helper Methods
+
+    /// Round a Decimal value to 2 decimal places
+    private func roundToTwoDecimals(_ value: Decimal) -> Decimal {
+        var rounded = value
+        var result = Decimal()
+        NSDecimalRound(&result, &rounded, 2, .plain)
+        return result
+    }
+
     // MARK: - Public Methods
 
     func calculatePoints(
@@ -123,11 +133,11 @@ final class PointsCalculatorService: PointsCalculatorServiceProtocol, @unchecked
         let finalPoints = basePoints * bonusMultiplier
 
         // Round to 2 decimal places
-        return (finalPoints * 100).rounded() / 100
+        return roundToTwoDecimals(finalPoints)
     }
 
     func calculatePointsForOrder(
-        orderItems: [OrderItem],
+        orderItems: [CalculationOrderItem],
         venue: Venue
     ) -> PointsCalculationResult {
         let venueMaxMargin = venue.maxMarginPercent
@@ -153,16 +163,16 @@ final class PointsCalculatorService: PointsCalculatorServiceProtocol, @unchecked
                 marginPercent: item.marginPercent,
                 marginRatio: marginRatio,
                 bonusMultiplier: item.bonusMultiplier,
-                points: (itemFinalPoints * 100).rounded() / 100
+                points: roundToTwoDecimals(itemFinalPoints)
             ))
         }
 
         let bonusPoints = totalPoints - basePoints
 
         return PointsCalculationResult(
-            totalPoints: (totalPoints * 100).rounded() / 100,
-            basePoints: (basePoints * 100).rounded() / 100,
-            bonusPoints: (bonusPoints * 100).rounded() / 100,
+            totalPoints: roundToTwoDecimals(totalPoints),
+            basePoints: roundToTwoDecimals(basePoints),
+            bonusPoints: roundToTwoDecimals(bonusPoints),
             breakdown: breakdown
         )
     }
@@ -177,9 +187,9 @@ final class PointsCalculatorService: PointsCalculatorServiceProtocol, @unchecked
         let categoryMargin: Decimal = switch category {
         case .food:
             venue.foodMarginPercent
-        case .beverage:
+        case .beverages, .beer, .wine, .spirits, .cocktails:
             venue.beverageMarginPercent
-        case .other:
+        case .desserts, .appetizers:
             venue.defaultMarginPercent
         }
 

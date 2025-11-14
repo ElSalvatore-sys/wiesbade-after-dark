@@ -67,7 +67,7 @@ struct ReferralEarning: Identifiable {
         var color: Color {
             switch self {
             case .pending: return .warning
-            case .completed: return .success
+            case .completed: return Color.success
             case .expired: return .textTertiary
             }
         }
@@ -84,8 +84,8 @@ final class PointsBreakdownViewModel {
     var categoryBreakdown: [PointsByCategory] {
         let data = [
             PointsByCategory(category: "Check-ins", points: 2450, color: .primary),
-            PointsByCategory(category: "Streaks", points: 1200, color: .success),
-            PointsByCategory(category: "Events", points: 800, color: .info),
+            PointsByCategory(category: "Streaks", points: 1200, color: Color.success),
+            PointsByCategory(category: "Events", points: 800, color: Color.info),
             PointsByCategory(category: "Referrals", points: 500, color: .warning),
             PointsByCategory(category: "Bonuses", points: 350, color: .primaryGradientEnd)
         ]
@@ -237,11 +237,11 @@ struct PointsBreakdownView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Total Points Earned")
-                        .typography(.bodyMedium)
-                        .foregroundStyle(.textSecondary)
+                        .font(Typography.bodyMedium)
+                        .foregroundStyle(.secondary)
 
                     Text("\(viewModel.totalPoints)")
-                        .typography(.displayMedium)
+                        .font(Typography.displayMedium)
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [.primaryGradientStart, .primaryGradientEnd],
@@ -255,13 +255,13 @@ struct PointsBreakdownView: View {
 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("Equivalent Value")
-                        .typography(.bodyMedium)
-                        .foregroundStyle(.textSecondary)
+                        .font(Typography.bodyMedium)
+                        .foregroundStyle(.secondary)
 
                     let euroValue = Decimal(viewModel.totalPoints) / 10
                     Text("€\(String(format: "%.2f", NSDecimalNumber(decimal: euroValue).doubleValue))")
-                        .typography(.titleLarge)
-                        .foregroundStyle(.success)
+                        .font(Typography.titleLarge)
+                        .foregroundStyle(Color.success)
                 }
             }
         }
@@ -273,8 +273,8 @@ struct PointsBreakdownView: View {
     private var categoryChartCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("Points by Category", systemImage: "chart.pie.fill")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.primary)
 
             // Pie Chart
             Chart(viewModel.categoryBreakdown) { item in
@@ -297,18 +297,18 @@ struct PointsBreakdownView: View {
                             .frame(width: 12, height: 12)
 
                         Text(item.category)
-                            .typography(.bodyMedium)
-                            .foregroundStyle(.textPrimary)
+                            .font(Typography.bodyMedium)
+                            .foregroundStyle(.primary)
 
                         Spacer()
 
                         Text("\(item.points) pts")
-                            .typography(.bodyMedium)
-                            .foregroundStyle(.textSecondary)
+                            .font(Typography.bodyMedium)
+                            .foregroundStyle(.secondary)
 
                         Text("(\(String(format: "%.1f", item.percentage))%)")
-                            .typography(.bodySmall)
-                            .foregroundStyle(.textTertiary)
+                            .font(Typography.bodySmall)
+                            .foregroundStyle(Color.gray.opacity(0.6))
                     }
                 }
             }
@@ -320,8 +320,8 @@ struct PointsBreakdownView: View {
     private var timelineChartCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("Points Over Time", systemImage: "chart.line.uptrend.xyaxis")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.primary)
 
             // Line Chart
             Chart(viewModel.timeline) { item in
@@ -366,7 +366,7 @@ struct PointsBreakdownView: View {
             .chartXAxis {
                 AxisMarks { _ in
                     AxisValueLabel()
-                        .foregroundStyle(.textSecondary)
+                        .foregroundStyle(.secondary)
                 }
             }
             .frame(height: 200)
@@ -375,11 +375,11 @@ struct PointsBreakdownView: View {
             let avgPoints = viewModel.timeline.reduce(0) { $0 + $1.points } / viewModel.timeline.count
             HStack(spacing: Theme.Spacing.sm) {
                 Image(systemName: "chart.bar.fill")
-                    .foregroundStyle(.info)
+                    .foregroundStyle(Color.info)
 
                 Text("Average: \(avgPoints) points/month")
-                    .typography(.bodySmall)
-                    .foregroundStyle(.textSecondary)
+                    .font(Typography.bodySmall)
+                    .foregroundStyle(.secondary)
             }
         }
         .cardStyle()
@@ -389,8 +389,8 @@ struct PointsBreakdownView: View {
     private var venuesBreakdownCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("Points by Venue", systemImage: "building.2.fill")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.primary)
 
             VStack(spacing: Theme.Spacing.sm) {
                 ForEach(viewModel.venueBreakdown) { venue in
@@ -423,20 +423,20 @@ struct PointsBreakdownView: View {
             // Venue Info
             VStack(alignment: .leading, spacing: 4) {
                 Text(venue.venueName)
-                    .typography(.bodyLarge)
-                    .foregroundStyle(.textPrimary)
+                    .font(Typography.bodyLarge)
+                    .foregroundStyle(.primary)
 
                 HStack(spacing: Theme.Spacing.xs) {
                     Text("\(venue.checkInCount) check-ins")
-                        .typography(.bodySmall)
-                        .foregroundStyle(.textSecondary)
+                        .font(Typography.bodySmall)
+                        .foregroundStyle(.secondary)
 
                     Text("•")
-                        .foregroundStyle(.textTertiary)
+                        .foregroundStyle(Color.gray.opacity(0.6))
 
                     Text(venue.formattedLastVisit)
-                        .typography(.bodySmall)
-                        .foregroundStyle(.textTertiary)
+                        .font(Typography.bodySmall)
+                        .foregroundStyle(Color.gray.opacity(0.6))
                 }
             }
 
@@ -445,12 +445,12 @@ struct PointsBreakdownView: View {
             // Points
             VStack(alignment: .trailing, spacing: 4) {
                 Text("\(venue.totalPoints)")
-                    .typography(.headlineMedium)
+                    .font(Typography.headlineMedium)
                     .foregroundStyle(.primary)
 
                 Text("points")
-                    .typography(.bodySmall)
-                    .foregroundStyle(.textSecondary)
+                    .font(Typography.bodySmall)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(Theme.Spacing.md)
@@ -463,14 +463,14 @@ struct PointsBreakdownView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             HStack {
                 Label("Referral Earnings", systemImage: "person.2.fill")
-                    .typography(.headlineMedium)
-                    .foregroundStyle(.textPrimary)
+                    .font(Typography.headlineMedium)
+                    .foregroundStyle(.primary)
 
                 Spacer()
 
                 Text("\(viewModel.totalReferralPoints) pts")
-                    .typography(.headlineMedium)
-                    .foregroundStyle(.success)
+                    .font(Typography.headlineMedium)
+                    .foregroundStyle(Color.success)
             }
 
             if viewModel.referralEarnings.isEmpty {
@@ -478,15 +478,15 @@ struct PointsBreakdownView: View {
                 VStack(spacing: Theme.Spacing.md) {
                     Image(systemName: "person.2.badge.gearshape")
                         .font(.system(size: 48))
-                        .foregroundStyle(.textTertiary)
+                        .foregroundStyle(Color.gray.opacity(0.6))
 
                     Text("No referrals yet")
-                        .typography(.bodyLarge)
-                        .foregroundStyle(.textSecondary)
+                        .font(Typography.bodyLarge)
+                        .foregroundStyle(.secondary)
 
                     Text("Invite friends to earn bonus points")
-                        .typography(.bodySmall)
-                        .foregroundStyle(.textTertiary)
+                        .font(Typography.bodySmall)
+                        .foregroundStyle(Color.gray.opacity(0.6))
                 }
                 .frame(maxWidth: .infinity)
                 .padding(Theme.Spacing.xl)
@@ -510,18 +510,18 @@ struct PointsBreakdownView: View {
                     .frame(width: 40, height: 40)
 
                 Text(referral.referredUserName.prefix(1))
-                    .typography(.headlineMedium)
+                    .font(Typography.headlineMedium)
                     .foregroundStyle(referral.status.color)
             }
 
             // Referral Info
             VStack(alignment: .leading, spacing: 4) {
                 Text(referral.referredUserName)
-                    .typography(.bodyMedium)
-                    .foregroundStyle(.textPrimary)
+                    .font(Typography.bodyMedium)
+                    .foregroundStyle(.primary)
 
                 Text(referral.status.displayText)
-                    .typography(.bodySmall)
+                    .font(Typography.bodySmall)
                     .foregroundStyle(referral.status.color)
             }
 
@@ -529,9 +529,9 @@ struct PointsBreakdownView: View {
 
             // Points
             Text("+\(referral.pointsEarned)")
-                .typography(.headlineMedium)
+                .font(Typography.headlineMedium)
                 .foregroundStyle(
-                    referral.status == .completed ? .success : .textTertiary
+                    referral.status == .completed ? Color.success : .textTertiary
                 )
         }
         .padding(Theme.Spacing.md)

@@ -118,11 +118,11 @@ struct TierConfigurationView: View {
             HStack {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     Text(venueName)
-                        .font(Typography.h2)
+                        .font(Typography.titleLarge)
                         .foregroundColor(.textPrimary)
 
                     Text("Configure your membership tier system")
-                        .font(Typography.caption)
+                        .font(Typography.captionMedium)
                         .foregroundColor(.textSecondary)
                 }
 
@@ -176,7 +176,7 @@ struct TierConfigurationView: View {
                     .font(.system(size: 16))
 
                 Text(tab.rawValue)
-                    .font(Typography.bodyBold)
+                    .font(Typography.headlineMedium)
             }
             .foregroundColor(selectedTab == tab ? .white : .textSecondary)
             .padding(.horizontal, Theme.Spacing.lg)
@@ -244,11 +244,11 @@ struct TierThresholdsEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
             Text("Spending Thresholds")
-                .font(Typography.h2)
+                .font(Typography.titleLarge)
                 .foregroundColor(.textPrimary)
 
             Text("Set the minimum spending required to reach each tier. Based on total lifetime spending at your venue.")
-                .font(Typography.body)
+                .font(Typography.bodyMedium)
                 .foregroundColor(.textSecondary)
 
             // Bronze Tier
@@ -300,13 +300,13 @@ struct TierThresholdsEditor: View {
                     .font(.system(size: 24))
 
                 Text(tier.displayName)
-                    .font(Typography.h3)
+                    .font(Typography.headlineLarge)
                     .foregroundColor(.textPrimary)
 
                 Spacer()
 
                 Text("\(formatMultiplier(multiplier)) pts")
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.white)
                     .padding(.horizontal, Theme.Spacing.md)
                     .padding(.vertical, Theme.Spacing.xs)
@@ -316,13 +316,13 @@ struct TierThresholdsEditor: View {
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 Text("Spending Range")
-                    .font(Typography.bodyBold)
+                    .font(Typography.headlineMedium)
                     .foregroundColor(.textSecondary)
 
                 HStack(spacing: Theme.Spacing.md) {
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         Text("From")
-                            .font(Typography.caption)
+                            .font(Typography.captionMedium)
                             .foregroundColor(.textSecondary)
 
                         TextField("Min", value: min, format: .currency(code: "EUR"))
@@ -334,7 +334,7 @@ struct TierThresholdsEditor: View {
                     if !isMaxTier {
                         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                             Text("To")
-                                .font(Typography.caption)
+                                .font(Typography.captionMedium)
                                 .foregroundColor(.textSecondary)
 
                             TextField("Max", value: max, format: .currency(code: "EUR"))
@@ -344,11 +344,11 @@ struct TierThresholdsEditor: View {
                     } else {
                         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                             Text("To")
-                                .font(Typography.caption)
+                                .font(Typography.captionMedium)
                                 .foregroundColor(.textSecondary)
 
                             Text("No Limit")
-                                .font(Typography.body)
+                                .font(Typography.bodyMedium)
                                 .foregroundColor(.textSecondary)
                                 .frame(height: 36)
                                 .padding(.horizontal, Theme.Spacing.sm)

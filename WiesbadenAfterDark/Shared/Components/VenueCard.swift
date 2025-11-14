@@ -15,35 +15,24 @@ struct VenueCard: View {
     var body: some View {
         Button(action: onTap) {
             ZStack(alignment: .topTrailing) {
-                // Background image
+                // Background image with caching
                 if let imageURL = venue.coverImageURL {
-                    AsyncImage(url: URL(string: imageURL)) { phase in
-                        switch phase {
-                        case .empty:
-                            Rectangle()
-                                .fill(Color.cardBackground)
-                                .overlay {
-                                    ProgressView()
-                                        .tint(.white)
-                                }
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        case .failure:
-                            Rectangle()
-                                .fill(Color.cardBackground)
-                                .overlay {
-                                    Image(systemName: "photo")
-                                        .foregroundColor(.textTertiary)
-                                }
-                        @unknown default:
-                            EmptyView()
-                        }
+                    CachedAsyncImage(url: URL(string: imageURL)) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(height: 200)
+                            .clipped()
+                    } placeholder: {
+                        Rectangle()
+                            .fill(Color.cardBackground)
+                            .frame(height: 200)
+                            .shimmer()
                     }
                 } else {
                     Rectangle()
                         .fill(Color.cardBackground)
+                        .frame(height: 200)
                 }
 
                 // Gradient overlay for text readability

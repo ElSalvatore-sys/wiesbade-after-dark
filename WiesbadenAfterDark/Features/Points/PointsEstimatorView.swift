@@ -35,7 +35,7 @@ final class PointsEstimatorViewModel {
             return "Enter amount to see calculation"
         }
 
-        let ratePercent = Int(selectedCategory.pointsRate * 100)
+        let ratePercent = NSDecimalNumber(decimal: selectedCategory.pointsRate * 100).intValue
         return "\(formattedAmount) \(selectedCategory.displayName.lowercased()) → ~\(estimatedPoints) points (\(ratePercent)% rate)"
     }
 }
@@ -84,8 +84,8 @@ enum PurchaseCategory: String, CaseIterable, Identifiable {
     var accentColor: Color {
         switch self {
         case .beverages: return .success
-        case .food: return .warning
-        case .other: return .info
+        case .food: return Color.warning
+        case .other: return Color.info
         }
     }
 }
@@ -131,12 +131,12 @@ struct PointsEstimatorView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             Text("Calculate Estimated Points")
-                .typography(.titleMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.titleMedium)
+                .foregroundStyle(.primary)
 
             Text("Preview how many points you could earn on your next purchase")
-                .typography(.bodyMedium)
-                .foregroundStyle(.textSecondary)
+                .font(Typography.bodyMedium)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -145,17 +145,17 @@ struct PointsEstimatorView: View {
     private var amountInputCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("Purchase Amount", systemImage: "eurosign.circle.fill")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.primary)
 
             HStack(spacing: Theme.Spacing.sm) {
                 Text("€")
-                    .typography(.titleLarge)
-                    .foregroundStyle(.textSecondary)
+                    .font(Typography.titleLarge)
+                    .foregroundStyle(.secondary)
 
                 TextField("0.00", text: $viewModel.amountText)
-                    .typography(.titleLarge)
-                    .foregroundStyle(.textPrimary)
+                    .font(Typography.titleLarge)
+                    .foregroundStyle(.primary)
                     .keyboardType(.decimalPad)
                     .focused($isAmountFocused)
                     .frame(maxWidth: .infinity)
@@ -171,8 +171,8 @@ struct PointsEstimatorView: View {
     private var categorySelectorCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("Purchase Category", systemImage: "tag.fill")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.primary)
 
             VStack(spacing: Theme.Spacing.sm) {
                 ForEach(PurchaseCategory.allCases) { category in
@@ -197,19 +197,19 @@ struct PointsEstimatorView: View {
                 // Category Info
                 VStack(alignment: .leading, spacing: 4) {
                     Text(category.displayName)
-                        .typography(.bodyLarge)
-                        .foregroundStyle(.textPrimary)
+                        .font(Typography.bodyLarge)
+                        .foregroundStyle(.primary)
 
                     Text(category.earningLevel)
-                        .typography(.bodySmall)
-                        .foregroundStyle(.textSecondary)
+                        .font(Typography.bodySmall)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
                 // Rate Badge
-                Text("\(Int(category.pointsRate * 100))%")
-                    .typography(.bodySmall)
+                Text("\(NSDecimalNumber(decimal: category.pointsRate * 100).intValue)%")
+                    .font(Typography.bodySmall)
                     .foregroundStyle(category.accentColor)
                     .padding(.horizontal, Theme.Spacing.sm)
                     .padding(.vertical, 4)
@@ -218,7 +218,7 @@ struct PointsEstimatorView: View {
 
                 // Selection Indicator
                 Image(systemName: viewModel.selectedCategory == category ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(viewModel.selectedCategory == category ? .primary : .textTertiary)
+                    .foregroundStyle(viewModel.selectedCategory == category ? .primary : Color.gray.opacity(0.6))
                     .font(.title3)
             }
             .padding(Theme.Spacing.md)
@@ -246,17 +246,17 @@ struct PointsEstimatorView: View {
         VStack(spacing: Theme.Spacing.md) {
             // "Estimated" Label
             Text("Estimated Points")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textSecondary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.secondary)
 
             // Large Points Display
             HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.sm) {
                 Text("~")
-                    .typography(.titleLarge)
-                    .foregroundStyle(.textTertiary)
+                    .font(Typography.titleLarge)
+                    .foregroundStyle(Color.gray.opacity(0.6))
 
                 Text("\(viewModel.estimatedPoints)")
-                    .typography(.displayLarge)
+                    .font(Typography.displayLarge)
                     .foregroundStyle(
                         LinearGradient(
                             colors: [.primaryGradientStart, .primaryGradientEnd],
@@ -266,16 +266,16 @@ struct PointsEstimatorView: View {
                     )
 
                 Text("points")
-                    .typography(.titleMedium)
-                    .foregroundStyle(.textSecondary)
+                    .font(Typography.titleMedium)
+                    .foregroundStyle(.secondary)
             }
 
             // Points Value in Euro
             if viewModel.estimatedPoints > 0 {
                 let euroValue = Decimal(viewModel.estimatedPoints) / 10
                 Text("≈ €\(String(format: "%.2f", NSDecimalNumber(decimal: euroValue).doubleValue)) value")
-                    .typography(.bodyMedium)
-                    .foregroundStyle(.textTertiary)
+                    .font(Typography.bodyMedium)
+                    .foregroundStyle(Color.gray.opacity(0.6))
             }
         }
         .frame(maxWidth: .infinity)
@@ -308,14 +308,14 @@ struct PointsEstimatorView: View {
     private var formulaCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("Calculation Breakdown", systemImage: "function")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.primary)
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 // Formula Display
                 Text(viewModel.formulaText)
-                    .typography(.bodyMedium)
-                    .foregroundStyle(.textSecondary)
+                    .font(Typography.bodyMedium)
+                    .foregroundStyle(.secondary)
                     .padding(Theme.Spacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.inputBackground)
@@ -325,12 +325,12 @@ struct PointsEstimatorView: View {
                 if viewModel.estimatedPoints > 0 {
                     HStack(alignment: .top, spacing: Theme.Spacing.sm) {
                         Image(systemName: "info.circle.fill")
-                            .foregroundStyle(.info)
+                            .foregroundStyle(Color.info)
                             .font(.body)
 
                         Text("Points are calculated based on purchase amount × category earning rate. Higher rates for beverages encourage in-venue spending.")
-                            .typography(.bodySmall)
-                            .foregroundStyle(.textTertiary)
+                            .font(Typography.bodySmall)
+                            .foregroundStyle(Color.gray.opacity(0.6))
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -343,17 +343,17 @@ struct PointsEstimatorView: View {
     private var disclaimerCard: some View {
         HStack(alignment: .top, spacing: Theme.Spacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.warning)
+                .foregroundStyle(Color.warning)
                 .font(.title3)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Estimate Only")
-                    .typography(.headlineSmall)
-                    .foregroundStyle(.textPrimary)
+                    .font(Typography.headlineSmall)
+                    .foregroundStyle(.primary)
 
                 Text("Final points calculated at checkout based on actual purchase details, active bonuses, and venue-specific multipliers.")
-                    .typography(.bodySmall)
-                    .foregroundStyle(.textSecondary)
+                    .font(Typography.bodySmall)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

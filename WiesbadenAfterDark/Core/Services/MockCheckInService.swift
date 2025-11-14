@@ -72,27 +72,35 @@ final class MockCheckInService: CheckInServiceProtocol {
             }
         }()
 
+        // Calculate weekend multiplier
+        let isWeekend = Calendar.current.isDateInWeekend(Date())
+        let weekendMultiplier: Decimal = isWeekend ? 1.2 : 1.0
+
         // Calculate points based on purchase or check-in
         let basePoints: Int
         let totalPoints: Int
         let calculationMethod: String
 
         if let items = orderItems, let venue = venue {
-            // Margin-based calculation with detailed order items
+            // Margin-based calculation using total amount from order items
+            // Note: MockCheckInService uses simplified calculation as it doesn't have detailed margin data
             let calculator = PointsCalculatorService.shared
-            let result = calculator.calculatePointsForOrder(orderItems: items, venue: venue)
+            let totalAmount = items.reduce(into: Decimal(0)) { $0 += $1.totalPrice }
 
-            totalPoints = result.roundedPoints
-            basePoints = result.roundedPoints // For order-based points, base = total
-            calculationMethod = "Margin-based (detailed order)"
+            let points = calculator.calculateSimplePoints(
+                amount: totalAmount,
+                category: .beverages, // Default category for mock
+                venue: venue,
+                bonusMultiplier: 1.0
+            )
+
+            totalPoints = NSDecimalNumber(decimal: points).intValue
+            basePoints = totalPoints
+            calculationMethod = "Margin-based (order total)"
 
             print("🎯 [CheckIn] Margin-based points calculation:")
             print("   Items: \(items.count)")
-            print("   Total amount: €\(items.reduce(Decimal(0)) { $0 + $1.subtotal })")
-            print("   Base points: \(result.basePoints)")
-            if result.bonusPoints > 0 {
-                print("   Bonus points: +\(result.bonusPoints)")
-            }
+            print("   Total amount: €\(NSDecimalNumber(decimal: totalAmount).doubleValue)")
             print("   Total: \(totalPoints) pts")
 
         } else if let amount = amountSpent, let venue = venue {
@@ -100,25 +108,23 @@ final class MockCheckInService: CheckInServiceProtocol {
             let calculator = PointsCalculatorService.shared
             let points = calculator.calculateSimplePoints(
                 amount: amount,
-                category: .other, // Default category when not specified
+                category: .beverages, // Default category when not specified
                 venue: venue,
                 bonusMultiplier: 1.0
             )
 
-            totalPoints = Int(points.rounded())
+            totalPoints = NSDecimalNumber(decimal: points).intValue
             basePoints = totalPoints
             calculationMethod = "Margin-based (simple)"
 
             print("🎯 [CheckIn] Simple margin-based points:")
             print("   Amount: €\(NSDecimalNumber(decimal: amount).doubleValue)")
-            print("   Category: Other (default)")
+            print("   Category: Beverages (default)")
             print("   Total: \(totalPoints) pts")
 
         } else {
             // Traditional check-in based points (no purchase)
             let checkInBasePoints = 50
-            let isWeekend = Calendar.current.isDateInWeekend(Date())
-            let weekendMultiplier: Decimal = isWeekend ? 1.2 : 1.0
 
             totalPoints = calculatePoints(
                 basePoints: checkInBasePoints,

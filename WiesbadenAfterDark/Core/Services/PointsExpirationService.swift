@@ -218,9 +218,10 @@ final class PointsExpirationService: @unchecked Sendable {
 
         for membership in memberships {
             // Check if tracking record exists
+            let membershipId = membership.id
             let fetchDescriptor = FetchDescriptor<PointExpiration>(
                 predicate: #Predicate<PointExpiration> {
-                    $0.membershipId == membership.id && !$0.isExpired
+                    $0.membershipId == membershipId && !$0.isExpired
                 }
             )
 
@@ -420,51 +421,58 @@ final class PointsExpirationService: @unchecked Sendable {
 
     // MARK: - Backend Integration
 
+    /// Request body for notifying backend of expired points
+    private struct ExpirationNotificationBody: Codable {
+        let userId: String
+        let venueId: String
+        let membershipId: String
+        let pointsExpired: Int
+        let expirationDate: String
+    }
+
+    /// Request body for notifying backend of activity update
+    private struct ActivityUpdateBody: Codable {
+        let venueId: String
+        let lastActivityDate: String
+    }
+
+    /// Response for backend expiration requests (generic success)
+    private struct BackendResponse: Codable {
+        let success: Bool
+        let message: String?
+    }
+
     /// Notify backend of expired points
     private func notifyBackendExpiration(for memberships: [VenueMembership]) async throws {
         for membership in memberships {
             let endpoint = "/api/v1/points/expire"
-            let body: [String: Any] = [
-                "userId": membership.userId.uuidString,
-                "venueId": membership.venueId.uuidString,
-                "membershipId": membership.id.uuidString,
-                "pointsExpired": membership.expiringPoints,
-                "expirationDate": ISO8601DateFormatter().string(from: Date())
-            ]
-
-            _ = try await apiClient.request(
-                endpoint: endpoint,
-                method: "POST",
-                body: body
+            let body = ExpirationNotificationBody(
+                userId: membership.userId.uuidString,
+                venueId: membership.venueId.uuidString,
+                membershipId: membership.id.uuidString,
+                pointsExpired: membership.expiringPoints,
+                expirationDate: ISO8601DateFormatter().string(from: Date())
             )
+
+            let _: BackendResponse = try await apiClient.post(endpoint, body: body, requiresAuth: true)
         }
     }
 
     /// Notify backend of activity update
     private func notifyBackendActivity(for membership: VenueMembership) async throws {
         let endpoint = "/api/v1/users/\(membership.userId.uuidString)/activity"
-        let body: [String: Any] = [
-            "venueId": membership.venueId.uuidString,
-            "lastActivityDate": ISO8601DateFormatter().string(from: membership.lastActivityDate)
-        ]
-
-        _ = try await apiClient.request(
-            endpoint: endpoint,
-            method: "PUT",
-            body: body
+        let body = ActivityUpdateBody(
+            venueId: membership.venueId.uuidString,
+            lastActivityDate: ISO8601DateFormatter().string(from: membership.lastActivityDate)
         )
+
+        // Note: APIClient doesn't have a PUT method, using POST for now
+        let _: BackendResponse = try await apiClient.post(endpoint, body: body, requiresAuth: true)
     }
 
     /// Fetch expiring points from backend
     func fetchExpiringPointsFromBackend(for userId: UUID) async throws -> [PointExpiration] {
-        let endpoint = "/api/v1/users/\(userId.uuidString)/expiring-points"
-
-        let response: [String: Any] = try await apiClient.request(
-            endpoint: endpoint,
-            method: "GET"
-        )
-
-        // Parse response (implementation depends on backend structure)
+        // Note: Backend integration not fully implemented yet
         // For now, return local data
         return try await fetchExpiringPoints(for: userId)
     }

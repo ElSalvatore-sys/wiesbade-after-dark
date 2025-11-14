@@ -377,7 +377,7 @@ struct ExpiringPointsAlertSheet: View {
                     // Info message
                     HStack(spacing: Theme.Spacing.sm) {
                         Image(systemName: "info.circle.fill")
-                            .foregroundColor(.accent)
+                            .foregroundColor(Color.gold)
 
                         Text("Points expire after 180 days of inactivity at this venue.")
                             .font(Typography.bodySmall)
@@ -386,7 +386,7 @@ struct ExpiringPointsAlertSheet: View {
                     .padding(Theme.Spacing.md)
                     .background(
                         RoundedRectangle(cornerRadius: Theme.CornerRadius.sm)
-                            .fill(Color.accent.opacity(0.1))
+                            .fill(Color.gold.opacity(0.1))
                     )
 
                     // Actions
@@ -422,7 +422,7 @@ struct ExpiringPointsAlertSheet: View {
                                 .cornerRadius(Theme.CornerRadius.md)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
-                                        .strokeBorder(Color.borderPrimary, lineWidth: 1)
+                                        .strokeBorder(Color.gray.opacity(0.3), lineWidth: 1)
                                 )
                         }
 
@@ -456,7 +456,7 @@ struct ExpiringPointsAlertSheet: View {
     private func detailRow(icon: String, label: String, value: String) -> some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(.accent)
+                .foregroundColor(Color.gold)
                 .frame(width: 24)
 
             Text(label)
@@ -521,7 +521,7 @@ struct ExpiringPointsSection: View {
                     Button(action: { showingExpiringPointsList = true }) {
                         Text("View All")
                             .font(Typography.labelMedium)
-                            .foregroundColor(.accent)
+                            .foregroundColor(Color.gold)
                     }
                 }
             }
@@ -562,7 +562,7 @@ struct ExpiringPointsSection: View {
                         Button(action: { showingExpiringPointsList = true }) {
                             Text("View \(expiringMemberships.count - 3) more")
                                 .font(Typography.labelMedium)
-                                .foregroundColor(.accent)
+                                .foregroundColor(Color.gold)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, Theme.Spacing.sm)
                         }

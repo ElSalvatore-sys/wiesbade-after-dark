@@ -122,12 +122,12 @@ struct TierUpgradeCelebrationView: View {
                 .transition(.scale.combined(with: .opacity))
 
             Text("You've reached \(toTier.displayName) tier!")
-                .font(Typography.h2)
+                .font(Typography.titleLarge)
                 .foregroundColor(Color(hex: toTier.color))
                 .transition(.scale.combined(with: .opacity))
 
             Text("at \(venueName)")
-                .font(Typography.body)
+                .font(Typography.bodyMedium)
                 .foregroundColor(.white.opacity(0.8))
                 .transition(.scale.combined(with: .opacity))
         }
@@ -138,7 +138,7 @@ struct TierUpgradeCelebrationView: View {
     private var benefitsPreview: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Text("New Benefits Unlocked")
-                .font(Typography.h3)
+                .font(Typography.headlineLarge)
                 .foregroundColor(.white)
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
@@ -189,7 +189,7 @@ struct TierUpgradeCelebrationView: View {
                 .frame(width: 24)
 
             Text(text)
-                .font(Typography.body)
+                .font(Typography.bodyMedium)
                 .foregroundColor(.white)
 
             Spacer()
@@ -380,11 +380,11 @@ struct BadgeAchievementToast: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Badge Unlocked!")
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.textSecondary)
 
                 Text(badgeName)
-                    .font(Typography.bodyBold)
+                    .font(Typography.headlineMedium)
                     .foregroundColor(.textPrimary)
             }
 

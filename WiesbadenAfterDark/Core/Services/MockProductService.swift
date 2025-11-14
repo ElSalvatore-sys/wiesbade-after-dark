@@ -133,7 +133,7 @@ final class MockProductService: ProductServiceProtocol {
             var product = products[index]
             product.bonusPointsActive = true
             product.bonusMultiplier = multiplier
-            product.bonusDescription = "Test Bonus"
+            product.bonusReason = "Test Bonus"
             product.bonusStartDate = Date()
             product.bonusEndDate = Calendar.current.date(byAdding: .hour, value: 2, to: Date())
             products[index] = product

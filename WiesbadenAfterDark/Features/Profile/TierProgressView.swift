@@ -77,12 +77,12 @@ struct TierProgressView: View {
 
             // Tier Name
             Text(progress.currentTier.displayName)
-                .font(Typography.h2)
+                .font(Typography.titleLarge)
                 .foregroundColor(.textPrimary)
 
             // Days at Tier
             Text("Member for \(progress.daysAtCurrentTier) days")
-                .font(Typography.caption)
+                .font(Typography.captionMedium)
                 .foregroundColor(.textSecondary)
 
             // Multiplier Badge
@@ -92,7 +92,7 @@ struct TierProgressView: View {
                     .foregroundColor(.yellow)
 
                 Text("\(formatMultiplier(progress.multiplier)) Points")
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .fontWeight(.semibold)
                     .foregroundColor(.textPrimary)
             }
@@ -110,13 +110,13 @@ struct TierProgressView: View {
             // Progress Text
             HStack {
                 Text(progress.progressText)
-                    .font(Typography.body)
+                    .font(Typography.bodyMedium)
                     .foregroundColor(.textPrimary)
 
                 Spacer()
 
                 Text("\(Int(progress.progressPercentage))%")
-                    .font(Typography.bodyBold)
+                    .font(Typography.headlineMedium)
                     .foregroundColor(.primary)
             }
 
@@ -152,7 +152,7 @@ struct TierProgressView: View {
                         .foregroundColor(.primary)
 
                     Text(amountNeeded)
-                        .font(Typography.caption)
+                        .font(Typography.captionMedium)
                         .foregroundColor(.textSecondary)
 
                     Spacer()
@@ -171,14 +171,14 @@ struct TierProgressView: View {
                     .font(.system(size: 20))
 
                 Text("Maximum Tier Reached!")
-                    .font(Typography.h3)
+                    .font(Typography.headlineLarge)
                     .foregroundColor(.textPrimary)
 
                 Spacer()
             }
 
             Text("You've achieved the highest tier at \(venueName). Enjoy all exclusive benefits!")
-                .font(Typography.body)
+                .font(Typography.bodyMedium)
                 .foregroundColor(.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -198,7 +198,7 @@ struct TierProgressView: View {
     private var benefitsSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Text("Your Benefits")
-                .font(Typography.h3)
+                .font(Typography.headlineLarge)
                 .foregroundColor(.textPrimary)
 
             ForEach(progress.perks) { perk in
@@ -210,11 +210,11 @@ struct TierProgressView: View {
 
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         Text(perk.name)
-                            .font(Typography.bodyBold)
+                            .font(Typography.headlineMedium)
                             .foregroundColor(.textPrimary)
 
                         Text(perk.description)
-                            .font(Typography.caption)
+                            .font(Typography.captionMedium)
                             .foregroundColor(.textSecondary)
                     }
 
@@ -230,7 +230,7 @@ struct TierProgressView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             HStack {
                 Text("Unlock at \(nextTier.displayName)")
-                    .font(Typography.h3)
+                    .font(Typography.headlineLarge)
                     .foregroundColor(.textPrimary)
 
                 Spacer()
@@ -248,7 +248,7 @@ struct TierProgressView: View {
                         .font(.system(size: 14))
 
                     Text("\(formatMultiplier(nextTier.defaultMultiplier)) Points Multiplier")
-                        .font(Typography.caption)
+                        .font(Typography.captionMedium)
                         .foregroundColor(.textSecondary)
                 }
 
@@ -258,7 +258,7 @@ struct TierProgressView: View {
                         .font(.system(size: 14))
 
                     Text("Exclusive perks and rewards")
-                        .font(Typography.caption)
+                        .font(Typography.captionMedium)
                         .foregroundColor(.textSecondary)
                 }
 
@@ -269,7 +269,7 @@ struct TierProgressView: View {
                             .font(.system(size: 14))
 
                         Text("VIP skip-the-line access")
-                            .font(Typography.caption)
+                            .font(Typography.captionMedium)
                             .foregroundColor(.textSecondary)
                     }
                 }
@@ -306,7 +306,7 @@ struct TierHistoryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
             Text("Tier History")
-                .font(Typography.h2)
+                .font(Typography.titleLarge)
                 .foregroundColor(.textPrimary)
 
             VStack(spacing: Theme.Spacing.md) {
@@ -361,12 +361,12 @@ struct TierHistoryView: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 HStack {
                     Text(tier.displayName)
-                        .font(Typography.bodyBold)
+                        .font(Typography.headlineMedium)
                         .foregroundColor(.textPrimary)
 
                     if isCurrent {
                         Text("Current")
-                            .font(Typography.caption)
+                            .font(Typography.captionMedium)
                             .foregroundColor(.white)
                             .padding(.horizontal, Theme.Spacing.sm)
                             .padding(.vertical, 2)
@@ -376,7 +376,7 @@ struct TierHistoryView: View {
                 }
 
                 Text(formattedDate(date))
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.textSecondary)
             }
 

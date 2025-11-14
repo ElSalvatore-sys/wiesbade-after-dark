@@ -19,11 +19,11 @@ final class MockVenueService: VenueServiceProtocol {
     /// All cached venues
     private lazy var allVenues: [Venue] = [
         Venue.mockDasWohnzimmer(),
-        Venue.mockParkCafe(),
         Venue.mockHarput(),
         Venue.mockEnte(),
         Venue.mockHotelKochbrunnen(),
         Venue.mockEuroPalace(),
+        Venue.mockParkCafe(),
         Venue.mockVillaImTal(),
         Venue.mockKulturpalast()
     ]

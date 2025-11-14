@@ -32,9 +32,9 @@ struct EarningCategory: Identifiable {
 
         var color: Color {
             switch self {
-            case .high: return .success
+            case .high: return Color.success
             case .medium: return .warning
-            case .low: return .info
+            case .low: return Color.info
             }
         }
 
@@ -194,12 +194,12 @@ struct CategoryBreakdownView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             Text("Points by Category")
-                .typography(.titleMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.titleMedium)
+                .foregroundStyle(.primary)
 
             Text("Different purchases earn points at different rates")
-                .typography(.bodyMedium)
-                .foregroundStyle(.textSecondary)
+                .font(Typography.bodyMedium)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -210,17 +210,17 @@ struct CategoryBreakdownView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Best Rate")
-                        .typography(.bodySmall)
-                        .foregroundStyle(.textSecondary)
+                        .font(Typography.bodySmall)
+                        .foregroundStyle(.secondary)
 
                     if let highest = viewModel.highestEarningCategory {
                         Text(highest.name)
-                            .typography(.headlineMedium)
-                            .foregroundStyle(.success)
+                            .font(Typography.headlineMedium)
+                            .foregroundStyle(Color.success)
 
                         Text(highest.rateText)
-                            .typography(.titleLarge)
-                            .foregroundStyle(.success)
+                            .font(Typography.titleLarge)
+                            .foregroundStyle(Color.success)
                     }
                 }
 
@@ -233,17 +233,17 @@ struct CategoryBreakdownView: View {
 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("Standard Rate")
-                        .typography(.bodySmall)
-                        .foregroundStyle(.textSecondary)
+                        .font(Typography.bodySmall)
+                        .foregroundStyle(.secondary)
 
                     if let lowest = viewModel.lowestEarningCategory {
                         Text(lowest.name)
-                            .typography(.headlineMedium)
-                            .foregroundStyle(.info)
+                            .font(Typography.headlineMedium)
+                            .foregroundStyle(Color.info)
 
                         Text(lowest.rateText)
-                            .typography(.titleLarge)
-                            .foregroundStyle(.info)
+                            .font(Typography.titleLarge)
+                            .foregroundStyle(Color.info)
                     }
                 }
             }
@@ -255,8 +255,8 @@ struct CategoryBreakdownView: View {
                 let percentDifference = (difference / lowest.rate) * 100
 
                 Text("Beverages earn \(Int(percentDifference))% more points than standard purchases")
-                    .typography(.bodySmall)
-                    .foregroundStyle(.textTertiary)
+                    .font(Typography.bodySmall)
+                    .foregroundStyle(Color.gray.opacity(0.6))
                     .multilineTextAlignment(.center)
             }
         }
@@ -268,19 +268,19 @@ struct CategoryBreakdownView: View {
     private var amountSelectorCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("Compare Earnings", systemImage: "chart.bar.xaxis")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.primary)
 
             VStack(spacing: Theme.Spacing.sm) {
                 Text("For €\(String(format: "%.0f", NSDecimalNumber(decimal: viewModel.selectedAmount).doubleValue)) purchase")
-                    .typography(.bodyMedium)
-                    .foregroundStyle(.textSecondary)
+                    .font(Typography.bodyMedium)
+                    .foregroundStyle(.secondary)
 
                 // Amount Slider
                 HStack(spacing: Theme.Spacing.md) {
                     Text("€10")
-                        .typography(.bodySmall)
-                        .foregroundStyle(.textTertiary)
+                        .font(Typography.bodySmall)
+                        .foregroundStyle(Color.gray.opacity(0.6))
 
                     Slider(
                         value: Binding(
@@ -293,8 +293,8 @@ struct CategoryBreakdownView: View {
                     .tint(.primary)
 
                     Text("€500")
-                        .typography(.bodySmall)
-                        .foregroundStyle(.textTertiary)
+                        .font(Typography.bodySmall)
+                        .foregroundStyle(Color.gray.opacity(0.6))
                 }
             }
         }
@@ -305,8 +305,8 @@ struct CategoryBreakdownView: View {
     private var comparisonChartCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("Points Comparison", systemImage: "chart.bar.fill")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.primary)
 
             // Bar Chart
             Chart(viewModel.categoryComparisons) { item in
@@ -324,15 +324,15 @@ struct CategoryBreakdownView: View {
                 .cornerRadius(4)
                 .annotation(position: .trailing, spacing: 8) {
                     Text("\(item.points) pts")
-                        .typography(.bodySmall)
-                        .foregroundStyle(.textPrimary)
+                        .font(Typography.bodySmall)
+                        .foregroundStyle(.primary)
                 }
             }
             .chartXAxis(.hidden)
             .chartYAxis {
                 AxisMarks { _ in
                     AxisValueLabel()
-                        .foregroundStyle(.textSecondary)
+                        .foregroundStyle(.secondary)
                 }
             }
             .frame(height: CGFloat(viewModel.categories.count * 50))
@@ -344,8 +344,8 @@ struct CategoryBreakdownView: View {
     private var categoriesListSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("All Categories", systemImage: "list.bullet.rectangle.fill")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.primary)
 
             VStack(spacing: Theme.Spacing.sm) {
                 ForEach(viewModel.categories) { category in
@@ -382,8 +382,8 @@ struct CategoryBreakdownView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: Theme.Spacing.sm) {
                             Text(category.name)
-                                .typography(.bodyLarge)
-                                .foregroundStyle(.textPrimary)
+                                .font(Typography.bodyLarge)
+                                .foregroundStyle(.primary)
 
                             // Level Badge
                             HStack(spacing: 4) {
@@ -391,7 +391,7 @@ struct CategoryBreakdownView: View {
                                     .font(.caption2)
 
                                 Text(category.level.displayName)
-                                    .typography(.bodySmall)
+                                    .font(Typography.bodySmall)
                             }
                             .foregroundStyle(category.level.color)
                             .padding(.horizontal, 8)
@@ -401,8 +401,8 @@ struct CategoryBreakdownView: View {
                         }
 
                         Text(category.description)
-                            .typography(.bodySmall)
-                            .foregroundStyle(.textSecondary)
+                            .font(Typography.bodySmall)
+                            .foregroundStyle(.secondary)
                             .lineLimit(isExpanded ? nil : 1)
                     }
 
@@ -411,11 +411,11 @@ struct CategoryBreakdownView: View {
                     // Rate and Expand Icon
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(category.rateText)
-                            .typography(.titleMedium)
+                            .font(Typography.titleMedium)
                             .foregroundStyle(category.level.color)
 
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .foregroundStyle(.textTertiary)
+                            .foregroundStyle(Color.gray.opacity(0.6))
                             .font(.caption)
                     }
                 }
@@ -431,8 +431,8 @@ struct CategoryBreakdownView: View {
                     // Examples
                     VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                         Text("Examples:")
-                            .typography(.bodySmall)
-                            .foregroundStyle(.textSecondary)
+                            .font(Typography.bodySmall)
+                            .foregroundStyle(.secondary)
 
                         ForEach(category.examples, id: \.self) { example in
                             HStack(spacing: Theme.Spacing.sm) {
@@ -441,8 +441,8 @@ struct CategoryBreakdownView: View {
                                     .frame(width: 6, height: 6)
 
                                 Text(example)
-                                    .typography(.bodySmall)
-                                    .foregroundStyle(.textPrimary)
+                                    .font(Typography.bodySmall)
+                                    .foregroundStyle(.primary)
                             }
                         }
                     }
@@ -450,19 +450,19 @@ struct CategoryBreakdownView: View {
                     // Calculation Example
                     VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                         Text("Earnings Calculator:")
-                            .typography(.bodySmall)
-                            .foregroundStyle(.textSecondary)
+                            .font(Typography.bodySmall)
+                            .foregroundStyle(.secondary)
 
                         HStack(spacing: Theme.Spacing.md) {
                             ForEach([50, 100, 200], id: \.self) { amount in
                                 let points = category.calculatePoints(for: Decimal(amount))
                                 VStack(spacing: 4) {
                                     Text("€\(amount)")
-                                        .typography(.bodySmall)
-                                        .foregroundStyle(.textSecondary)
+                                        .font(Typography.bodySmall)
+                                        .foregroundStyle(.secondary)
 
                                     Text("\(points) pts")
-                                        .typography(.bodyMedium)
+                                        .font(Typography.bodyMedium)
                                         .foregroundStyle(category.level.color)
                                 }
                                 .frame(maxWidth: .infinity)
@@ -488,13 +488,13 @@ struct CategoryBreakdownView: View {
     private var tipsSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Label("Earning Tips", systemImage: "lightbulb.fill")
-                .typography(.headlineMedium)
-                .foregroundStyle(.textPrimary)
+                .font(Typography.headlineMedium)
+                .foregroundStyle(.primary)
 
             VStack(spacing: Theme.Spacing.md) {
                 tipCard(
                     icon: "wineglass.fill",
-                    color: .success,
+                    color: Color.success,
                     title: "Focus on Beverages",
                     description: "Drink purchases earn the highest points rate at 10%. Order cocktails and premium drinks to maximize earnings."
                 )
@@ -515,7 +515,7 @@ struct CategoryBreakdownView: View {
 
                 tipCard(
                     icon: "arrow.triangle.2.circlepath",
-                    color: .info,
+                    color: Color.info,
                     title: "Mix Categories",
                     description: "Combine different categories in one visit. Food + beverages adds up to substantial points earnings."
                 )
@@ -538,12 +538,12 @@ struct CategoryBreakdownView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .typography(.bodyLarge)
-                    .foregroundStyle(.textPrimary)
+                    .font(Typography.bodyLarge)
+                    .foregroundStyle(.primary)
 
                 Text(description)
-                    .typography(.bodySmall)
-                    .foregroundStyle(.textSecondary)
+                    .font(Typography.bodySmall)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -567,7 +567,7 @@ struct CategoryLevelBadge: View {
 
             if !compact {
                 Text(level.displayName)
-                    .typography(.bodySmall)
+                    .font(Typography.bodySmall)
             }
         }
         .foregroundStyle(level.color)

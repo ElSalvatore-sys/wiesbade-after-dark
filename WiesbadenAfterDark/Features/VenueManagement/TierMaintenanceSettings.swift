@@ -38,11 +38,11 @@ struct TierMaintenanceSettings: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Text("Tier Maintenance")
-                .font(Typography.h2)
+                .font(Typography.titleLarge)
                 .foregroundColor(.textPrimary)
 
             Text("Configure how members maintain their tier status and when tiers reset or downgrade.")
-                .font(Typography.body)
+                .font(Typography.bodyMedium)
                 .foregroundColor(.textSecondary)
         }
     }
@@ -57,12 +57,12 @@ struct TierMaintenanceSettings: View {
                     .font(.system(size: 20))
 
                 Text("Tier Reset Policy")
-                    .font(Typography.h3)
+                    .font(Typography.headlineLarge)
                     .foregroundColor(.textPrimary)
             }
 
             Text("Determine if and when member tiers reset to the starting level")
-                .font(Typography.caption)
+                .font(Typography.captionMedium)
                 .foregroundColor(.textSecondary)
 
             Picker("Reset Policy", selection: $config.tierResetPolicy) {
@@ -79,7 +79,7 @@ struct TierMaintenanceSettings: View {
                     .font(.system(size: 16))
 
                 Text(config.tierResetPolicy.description)
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.textSecondary)
             }
             .padding(Theme.Spacing.md)
@@ -101,12 +101,12 @@ struct TierMaintenanceSettings: View {
                     .font(.system(size: 20))
 
                 Text("Inactivity Downgrade")
-                    .font(Typography.h3)
+                    .font(Typography.headlineLarge)
                     .foregroundColor(.textPrimary)
             }
 
             Text("Automatically downgrade tier after period of inactivity")
-                .font(Typography.caption)
+                .font(Typography.captionMedium)
                 .foregroundColor(.textSecondary)
 
             Toggle("Enable Inactivity Downgrade", isOn: Binding(
@@ -119,7 +119,7 @@ struct TierMaintenanceSettings: View {
             if config.inactivityDowngradeAfterDays != nil {
                 VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                     Text("Days of Inactivity: \(config.inactivityDowngradeAfterDays ?? 0)")
-                        .font(Typography.bodyBold)
+                        .font(Typography.headlineMedium)
                         .foregroundColor(.textPrimary)
 
                     Slider(
@@ -134,20 +134,20 @@ struct TierMaintenanceSettings: View {
 
                     HStack {
                         Text("30 days")
-                            .font(Typography.caption)
+                            .font(Typography.captionMedium)
                             .foregroundColor(.textSecondary)
 
                         Spacer()
 
                         Text("365 days")
-                            .font(Typography.caption)
+                            .font(Typography.captionMedium)
                             .foregroundColor(.textSecondary)
                     }
                 }
 
                 // Example Message
                 Text("Members will be downgraded one tier if inactive for \(config.inactivityDowngradeAfterDays ?? 0) days")
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.textSecondary)
                     .padding(Theme.Spacing.md)
                     .background(Color.orange.opacity(0.1))
@@ -169,12 +169,12 @@ struct TierMaintenanceSettings: View {
                     .font(.system(size: 20))
 
                 Text("Monthly Spending Requirement")
-                    .font(Typography.h3)
+                    .font(Typography.headlineLarge)
                     .foregroundColor(.textPrimary)
             }
 
             Text("Require minimum monthly spending to maintain current tier")
-                .font(Typography.caption)
+                .font(Typography.captionMedium)
                 .foregroundColor(.textSecondary)
 
             Toggle("Require Monthly Spending", isOn: Binding(
@@ -188,7 +188,7 @@ struct TierMaintenanceSettings: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                     HStack {
                         Text("Required Amount:")
-                            .font(Typography.bodyBold)
+                            .font(Typography.headlineMedium)
                             .foregroundColor(.textPrimary)
 
                         Spacer()
@@ -209,7 +209,7 @@ struct TierMaintenanceSettings: View {
                 // Tier Levels Suggestion
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     Text("Suggested by Tier:")
-                        .font(Typography.caption)
+                        .font(Typography.captionMedium)
                         .foregroundColor(.textSecondary)
 
                     HStack(spacing: Theme.Spacing.md) {
@@ -233,11 +233,11 @@ struct TierMaintenanceSettings: View {
         }) {
             VStack(spacing: Theme.Spacing.xs) {
                 Text(tier.displayName)
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .foregroundColor(.textSecondary)
 
                 Text("€\(amount)")
-                    .font(Typography.caption)
+                    .font(Typography.captionMedium)
                     .fontWeight(.semibold)
                     .foregroundColor(Color(hex: tier.color))
             }
@@ -258,12 +258,12 @@ struct TierMaintenanceSettings: View {
                     .font(.system(size: 20))
 
                 Text("Grace Period")
-                    .font(Typography.h3)
+                    .font(Typography.headlineLarge)
                     .foregroundColor(.textPrimary)
             }
 
             Text("Give members extra time before downgrading or resetting their tier")
-                .font(Typography.caption)
+                .font(Typography.captionMedium)
                 .foregroundColor(.textSecondary)
 
             Toggle("Enable Grace Period", isOn: $config.hasGracePeriod)
@@ -271,7 +271,7 @@ struct TierMaintenanceSettings: View {
             if config.hasGracePeriod {
                 VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                     Text("Grace Period: \(config.gracePeriodDays) days")
-                        .font(Typography.bodyBold)
+                        .font(Typography.headlineMedium)
                         .foregroundColor(.textPrimary)
 
                     Slider(
@@ -286,13 +286,13 @@ struct TierMaintenanceSettings: View {
 
                     HStack {
                         Text("1 week")
-                            .font(Typography.caption)
+                            .font(Typography.captionMedium)
                             .foregroundColor(.textSecondary)
 
                         Spacer()
 
                         Text("3 months")
-                            .font(Typography.caption)
+                            .font(Typography.captionMedium)
                             .foregroundColor(.textSecondary)
                     }
                 }
@@ -304,7 +304,7 @@ struct TierMaintenanceSettings: View {
                         .font(.system(size: 16))
 
                     Text("Members get \(config.gracePeriodDays) extra days to meet requirements before tier changes")
-                        .font(Typography.caption)
+                        .font(Typography.captionMedium)
                         .foregroundColor(.textSecondary)
                 }
                 .padding(Theme.Spacing.md)
@@ -328,7 +328,7 @@ struct TierMaintenanceSettings: View {
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                     Text("Best Practices")
-                        .font(Typography.bodyBold)
+                        .font(Typography.headlineMedium)
                         .foregroundColor(.textPrimary)
 
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
@@ -363,7 +363,7 @@ struct TierMaintenanceSettings: View {
                 .frame(width: 16)
 
             Text(text)
-                .font(Typography.caption)
+                .font(Typography.captionMedium)
                 .foregroundColor(.textSecondary)
         }
     }

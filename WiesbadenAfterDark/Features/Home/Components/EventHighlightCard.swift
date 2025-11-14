@@ -238,20 +238,19 @@ struct EventHighlightCard: View {
 #Preview("Event Highlight Cards") {
     let venue = Venue(
         name: "Das Wohnzimmer",
+        slug: "das-wohnzimmer",
         type: .club,
-        address: Address(
-            street: "Langgasse 38",
-            city: "Wiesbaden",
-            postalCode: "65183",
-            country: "Germany",
-            latitude: 50.0826,
-            longitude: 8.2400
-        )
+        description: "Cozy club in Wiesbaden",
+        address: "Langgasse 38",
+        city: "Wiesbaden",
+        postalCode: "65183",
+        latitude: 50.0826,
+        longitude: 8.2400
     )
 
     let events = Event.mockEventsForVenue(venue.id)
 
-    return ScrollView {
+    ScrollView {
         VStack(spacing: 20) {
             // Today event
             EventHighlightCard(
