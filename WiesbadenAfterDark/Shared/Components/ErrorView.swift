@@ -45,7 +45,7 @@ struct ErrorView: View {
 }
 
 /// Comprehensive app error types with user-friendly messaging
-enum AppError: Error {
+enum AppError: Error, Equatable {
     case noInternet
     case serverError(message: String? = nil)
     case authenticationFailed
@@ -56,6 +56,26 @@ enum AppError: Error {
     case tokenExpired
     case networkTimeout
     case unknown(Error? = nil)
+
+    static func == (lhs: AppError, rhs: AppError) -> Bool {
+        switch (lhs, rhs) {
+        case (.noInternet, .noInternet),
+             (.authenticationFailed, .authenticationFailed),
+             (.userAlreadyExists, .userAlreadyExists),
+             (.invalidCode, .invalidCode),
+             (.invalidPhoneNumber, .invalidPhoneNumber),
+             (.invalidReferralCode, .invalidReferralCode),
+             (.tokenExpired, .tokenExpired),
+             (.networkTimeout, .networkTimeout):
+            return true
+        case (.serverError(let lhsMsg), .serverError(let rhsMsg)):
+            return lhsMsg == rhsMsg
+        case (.unknown, .unknown):
+            return true
+        default:
+            return false
+        }
+    }
 
     var title: String {
         switch self {

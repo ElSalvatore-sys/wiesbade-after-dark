@@ -14,6 +14,7 @@ struct VerificationCodeView: View {
     @Environment(AuthenticationViewModel.self) private var viewModel
     @State private var code: String = ""
     @State private var showError: Bool = false
+    @State private var showErrorAlert: Bool = false
 
     var phoneNumber: String
     var onSuccess: () -> Void
@@ -98,6 +99,7 @@ struct VerificationCodeView: View {
             if newValue != nil {
                 withAnimation {
                     showError = true
+                    showErrorAlert = true
                     // Clear code on error
                     code = ""
                 }
@@ -106,7 +108,7 @@ struct VerificationCodeView: View {
                 }
             }
         }
-        .alert("Error", isPresented: $viewModel.showError) {
+        .alert("Error", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) {
                 viewModel.clearError()
             }

@@ -14,6 +14,7 @@ struct PhoneInputView: View {
     @Environment(AuthenticationViewModel.self) private var viewModel
     @State private var phoneNumber: String = ""
     @State private var showError: Bool = false
+    @State private var showErrorAlert: Bool = false
 
     var onContinue: () -> Void
 
@@ -87,13 +88,14 @@ struct PhoneInputView: View {
             if newValue != nil {
                 withAnimation {
                     showError = true
+                    showErrorAlert = true
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showError = false
                 }
             }
         }
-        .alert("Error", isPresented: $viewModel.showError) {
+        .alert("Error", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) {
                 viewModel.clearError()
             }

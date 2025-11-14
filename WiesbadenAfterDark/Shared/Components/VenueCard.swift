@@ -98,12 +98,12 @@ struct VenueCard: View {
                     // Points Rate Badge
                     HStack(spacing: 4) {
                         Image(systemName: "star.circle.fill")
-                            .foregroundColor(.accent)
+                            .foregroundColor(.gold)
                             .font(.caption)
                         Text("Earn up to 10% in points")
                             .font(Typography.captionMedium)
                             .fontWeight(.medium)
-                            .foregroundColor(.accent)
+                            .foregroundColor(.gold)
                     }
                     .padding(.top, 4)
                 }
