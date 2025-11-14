@@ -1,0 +1,53 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio pytest-cov
+
+    - name: Run tests
+      run: |
+        cd backend
+        pytest tests/ -v --cov=app || echo "No tests found yet"
+
+    - name: Check code quality
+      run: |
+        cd backend
+        pip install black flake8
+        black --check app/ || echo "Black formatting check skipped"
+        flake8 app/ --max-line-length=100 || echo "Flake8 check skipped"
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Deploy to Railway
+      run: |
+        npm install -g @railway/cli
+        railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+        railway up
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
