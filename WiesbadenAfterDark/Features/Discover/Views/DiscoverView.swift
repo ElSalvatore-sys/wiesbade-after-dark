@@ -12,48 +12,44 @@ struct DiscoverView: View {
     @Environment(VenueViewModel.self) private var viewModel
     @State private var navigationPath = NavigationPath()
 
-    // Grid layout
-    private let columns = [
-        GridItem(.flexible(), spacing: Theme.Spacing.md),
-        GridItem(.flexible(), spacing: Theme.Spacing.md)
-    ]
-
     var body: some View {
         NavigationStack(path: $navigationPath) {
             ZStack {
                 // Background
                 Color.appBackground.ignoresSafeArea()
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                        // Header
-                        Text("Discover Venues")
-                            .font(Typography.displayMedium)
-                            .foregroundColor(.textPrimary)
-                            .padding(.horizontal, Theme.Spacing.lg)
-                            .padding(.top, Theme.Spacing.md)
+                GeometryReader { geometry in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                            // Header
+                            Text("Discover Venues")
+                                .font(Typography.displayMedium)
+                                .foregroundColor(.textPrimary)
+                                .padding(.horizontal, geometry.size.width * 0.05)
+                                .padding(.top, Theme.Spacing.md)
 
-                        // Venues grid
-                        if viewModel.venues.isEmpty && !viewModel.isLoading {
-                            EmptyStateView()
-                        } else {
-                            LazyVGrid(columns: columns, spacing: Theme.Spacing.md) {
-                                ForEach(viewModel.venues, id: \.id) { venue in
-                                    VenueCard(venue: venue) {
-                                        Task {
-                                            await viewModel.selectVenue(venue)
-                                            navigationPath.append(venue.id)
+                            // Venues list (single column, responsive)
+                            if viewModel.venues.isEmpty && !viewModel.isLoading {
+                                EmptyStateView()
+                            } else {
+                                LazyVStack(spacing: 20) {
+                                    ForEach(viewModel.venues, id: \.id) { venue in
+                                        VenueCard(venue: venue) {
+                                            Task {
+                                                await viewModel.selectVenue(venue)
+                                                navigationPath.append(venue.id)
+                                            }
                                         }
+                                        .padding(.horizontal, geometry.size.width * 0.05)
                                     }
                                 }
                             }
-                            .padding(.horizontal, Theme.Spacing.lg)
                         }
+                        .padding(.bottom, Theme.Spacing.xl)
                     }
-                    .padding(.bottom, Theme.Spacing.xl)
-                }
-                .refreshable {
-                    await viewModel.fetchVenues()
+                    .refreshable {
+                        await viewModel.fetchVenues()
+                    }
                 }
 
                 // Loading overlay
