@@ -1,6 +1,7 @@
 """
 WiesbadenAfterDark API - Main Application
 """
+from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -32,12 +33,19 @@ app.add_middleware(
 # Health check endpoint
 @app.get("/health", tags=["health"])
 async def health_check():
-    """Health check endpoint"""
+    """Enhanced health check with config validation"""
     return JSONResponse(
         content={
             "status": "healthy",
-            "service": settings.PROJECT_NAME,
+            "environment": getattr(settings, "ENVIRONMENT", "unknown"),
             "version": settings.VERSION,
+            "timestamp": datetime.utcnow().isoformat(),
+            "config": {
+                "database": "connected" if settings.DATABASE_URL else "missing",
+                "supabase": "configured" if settings.SUPABASE_URL else "not configured",
+                "twilio": "configured" if getattr(settings, "TWILIO_ACCOUNT_SID", None) else "not configured",
+                "jwt_secret": "set" if settings.SECRET_KEY else "missing",
+            },
         }
     )
 

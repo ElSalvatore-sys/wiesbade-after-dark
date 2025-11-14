@@ -1,7 +1,9 @@
 """
 Configuration settings for WiesbadenAfterDark API
 """
+import os
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from typing import Optional
 
 
@@ -16,13 +18,17 @@ class Settings(BaseSettings):
     # Database Settings (Supabase PostgreSQL)
     DATABASE_URL: str
 
-    # Supabase Settings
-    SUPABASE_URL: str
-    SUPABASE_KEY: str
-    SUPABASE_JWT_SECRET: str
+    # Supabase Settings (Optional - not critical for basic operation)
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    SUPABASE_JWT_SECRET: Optional[str] = None
 
     # JWT Settings
-    SECRET_KEY: str
+    SECRET_KEY: str = Field(
+        default_factory=lambda: os.getenv("SECRET_KEY")
+        or os.getenv("JWT_SECRET_KEY")
+        or "dev-secret-key-change-in-production"
+    )
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
