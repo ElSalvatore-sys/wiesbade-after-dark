@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Phone number text field with country code and auto-formatting
+@MainActor
 struct PhoneTextField: View {
     // MARK: - Properties
 
@@ -16,18 +17,6 @@ struct PhoneTextField: View {
     var placeholder: String = "170 1234567"
 
     @FocusState private var isFocused: Bool
-
-    // MARK: - Computed Properties
-
-    /// Formatted phone number for display
-    private var displayText: String {
-        if phoneNumber.isEmpty {
-            return ""
-        }
-        return phoneNumber.formattedAsPhoneNumber()
-            .replacingOccurrences(of: countryCode, with: "")
-            .trimmingCharacters(in: .whitespaces)
-    }
 
     // MARK: - Body
 
@@ -56,15 +45,12 @@ struct PhoneTextField: View {
                 .keyboardType(.numberPad)
                 .focused($isFocused)
                 .onChange(of: phoneNumber) { oldValue, newValue in
-                    // Filter to digits only
-                    let filtered = newValue.digitsOnly
+                    // Filter to digits only and limit length in one pass
+                    let filtered = String(newValue.filter { $0.isNumber }.prefix(11))
 
-                    // Limit to reasonable length (11 digits max for German mobile)
-                    let limited = String(filtered.prefix(11))
-
-                    // Update if changed
-                    if limited != phoneNumber.digitsOnly {
-                        phoneNumber = limited
+                    // Only update if different to avoid infinite loop
+                    if filtered != newValue {
+                        phoneNumber = filtered
                     }
                 }
         }
@@ -75,7 +61,6 @@ struct PhoneTextField: View {
             RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
                 .stroke(isFocused ? Color.primary : Color.clear, lineWidth: Theme.BorderWidth.regular)
         )
-        .animation(Theme.Animation.quick, value: isFocused)
     }
 }
 

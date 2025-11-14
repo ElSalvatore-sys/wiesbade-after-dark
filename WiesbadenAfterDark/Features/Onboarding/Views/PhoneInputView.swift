@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Phone number input screen
+@MainActor
 struct PhoneInputView: View {
     // MARK: - Properties
 
@@ -67,7 +68,6 @@ struct PhoneInputView: View {
                 }
             }
             .padding(.horizontal, Theme.Spacing.lg)
-            .animation(Theme.Animation.standard, value: viewModel.error)
 
             Spacer()
 
@@ -83,14 +83,12 @@ struct PhoneInputView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.appBackground.ignoresSafeArea())
-        .hideKeyboardOnTap()
         .onChange(of: viewModel.error) { oldValue, newValue in
             if newValue != nil {
-                withAnimation {
-                    showError = true
-                    showErrorAlert = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                showError = true
+                showErrorAlert = true
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 500_000_000)
                     showError = false
                 }
             }
