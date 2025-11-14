@@ -51,6 +51,12 @@ struct HomeView: View {
                             .padding(.horizontal)
                     }
 
+                    // Recent Transactions
+                    if !homeViewModel.recentTransactions.isEmpty {
+                        RecentTransactionsView(transactions: homeViewModel.recentTransactions)
+                            .padding(.horizontal)
+                    }
+
                     // Event Highlights Section
                     eventHighlightsSection
 
@@ -174,28 +180,39 @@ struct HomeView: View {
     // MARK: - Points Balance Card
 
     private var pointsBalanceCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Total Points")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.textSecondary)
+        VStack(spacing: 12) {
+            // "Your Points" label
+            Text("Your Points")
+                .font(.subheadline)
+                .foregroundStyle(Color.textSecondary)
 
-                    Text("\(homeViewModel.totalPoints)")
-                        .font(.system(size: 48, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.primaryGradient)
-                }
-
-                Spacer()
+            // HUGE Points Balance
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(homeViewModel.totalPoints)")
+                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.orange, Color.gold],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
 
                 Image(systemName: "star.circle.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(Color.gold)
+                    .font(.system(size: 44))
+                    .foregroundStyle(Color.orange)
             }
+
+            // Euro value conversion
+            Text("= €\(homeViewModel.totalPoints) value")
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.textSecondary)
 
             // Venue breakdown (if multiple memberships)
             if homeViewModel.memberships.count > 1 {
                 Divider()
+                    .padding(.vertical, 4)
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Points by Venue")
@@ -221,14 +238,35 @@ struct HomeView: View {
                 }
             }
         }
-        .padding(20)
-        .background(Color.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.xl))
+        .frame(maxWidth: .infinity)
+        .padding(24)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color.orange.opacity(0.12),
+                    Color.orange.opacity(0.05)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color.orange.opacity(0.3), Color.gold.opacity(0.2)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2
+                )
+        )
         .shadow(
-            color: Theme.Shadow.md.color,
-            radius: Theme.Shadow.md.radius,
-            x: Theme.Shadow.md.x,
-            y: Theme.Shadow.md.y
+            color: Color.orange.opacity(0.15),
+            radius: 20,
+            x: 0,
+            y: 10
         )
     }
 
@@ -687,6 +725,93 @@ struct NearbyVenueCard: View {
             x: Theme.Shadow.md.x,
             y: Theme.Shadow.md.y
         )
+    }
+}
+
+// MARK: - Recent Transactions View Component
+
+struct RecentTransactionsView: View {
+    let transactions: [PointTransaction]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Recent Activity")
+                .font(.headline)
+                .foregroundStyle(Color.textPrimary)
+
+            if transactions.isEmpty {
+                // Empty state
+                VStack(spacing: 12) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 32))
+                        .foregroundStyle(Color.textTertiary)
+
+                    Text("No transactions yet")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(transactions.prefix(5).enumerated()), id: \.element.id) { index, transaction in
+                        HStack(spacing: 12) {
+                            // Icon
+                            Image(systemName: transaction.source.icon)
+                                .font(.system(size: 20))
+                                .foregroundStyle(transactionColor(for: transaction))
+                                .frame(width: 40, height: 40)
+                                .background(transactionColor(for: transaction).opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                            // Description and date
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(transaction.shortDescription)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.textPrimary)
+                                    .lineLimit(1)
+
+                                Text(transaction.timeAgo)
+                                    .font(.caption)
+                                    .foregroundStyle(Color.textSecondary)
+                            }
+
+                            Spacer()
+
+                            // Amount
+                            Text(transaction.formattedAmount)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(transaction.amount > 0 ? Color.success : Color.error)
+                        }
+                        .padding(.vertical, 12)
+
+                        // Divider (except for last item)
+                        if index < min(4, transactions.count - 1) {
+                            Divider()
+                        }
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(Color.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+        .shadow(
+            color: Theme.Shadow.md.color,
+            radius: Theme.Shadow.md.radius,
+            x: Theme.Shadow.md.x,
+            y: Theme.Shadow.md.y
+        )
+    }
+
+    private func transactionColor(for transaction: PointTransaction) -> Color {
+        switch transaction.type {
+        case .earn: return .blue
+        case .redeem: return .red
+        case .bonus: return .green
+        case .refund: return .orange
+        }
     }
 }
 
