@@ -63,12 +63,12 @@ struct VerificationCodeView: View {
                 }
 
                 // Error Message
-                if let error = viewModel.errorMessage {
+                if let error = viewModel.error {
                     HStack {
                         Image(systemName: "exclamationmark.circle.fill")
                             .foregroundColor(.error)
 
-                        Text(error)
+                        Text(error.message)
                             .font(Typography.captionMedium)
                             .foregroundColor(.error)
 
@@ -79,7 +79,7 @@ struct VerificationCodeView: View {
                 }
             }
             .padding(.horizontal, Theme.Spacing.lg)
-            .animation(Theme.Animation.standard, value: viewModel.errorMessage)
+            .animation(Theme.Animation.standard, value: viewModel.error)
 
             Spacer()
 
@@ -94,7 +94,7 @@ struct VerificationCodeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.appBackground.ignoresSafeArea())
         .hideKeyboardOnTap()
-        .onChange(of: viewModel.errorMessage) { oldValue, newValue in
+        .onChange(of: viewModel.error) { oldValue, newValue in
             if newValue != nil {
                 withAnimation {
                     showError = true
@@ -104,6 +104,20 @@ struct VerificationCodeView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showError = false
                 }
+            }
+        }
+        .alert("Error", isPresented: $viewModel.showError) {
+            Button("OK", role: .cancel) {
+                viewModel.clearError()
+            }
+            if let error = viewModel.error, error.isRetryable {
+                Button("Retry") {
+                    handleResendCode()
+                }
+            }
+        } message: {
+            if let error = viewModel.error {
+                Text(error.message)
             }
         }
     }

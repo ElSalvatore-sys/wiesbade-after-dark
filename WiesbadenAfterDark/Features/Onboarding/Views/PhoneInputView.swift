@@ -51,12 +51,12 @@ struct PhoneInputView: View {
                     .shake(showError)
 
                 // Error Message
-                if let error = viewModel.errorMessage {
+                if let error = viewModel.error {
                     HStack {
                         Image(systemName: "exclamationmark.circle.fill")
                             .foregroundColor(.error)
 
-                        Text(error)
+                        Text(error.message)
                             .font(Typography.captionMedium)
                             .foregroundColor(.error)
 
@@ -66,7 +66,7 @@ struct PhoneInputView: View {
                 }
             }
             .padding(.horizontal, Theme.Spacing.lg)
-            .animation(Theme.Animation.standard, value: viewModel.errorMessage)
+            .animation(Theme.Animation.standard, value: viewModel.error)
 
             Spacer()
 
@@ -83,7 +83,7 @@ struct PhoneInputView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.appBackground.ignoresSafeArea())
         .hideKeyboardOnTap()
-        .onChange(of: viewModel.errorMessage) { oldValue, newValue in
+        .onChange(of: viewModel.error) { oldValue, newValue in
             if newValue != nil {
                 withAnimation {
                     showError = true
@@ -91,6 +91,20 @@ struct PhoneInputView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showError = false
                 }
+            }
+        }
+        .alert("Error", isPresented: $viewModel.showError) {
+            Button("OK", role: .cancel) {
+                viewModel.clearError()
+            }
+            if let error = viewModel.error, error.isRetryable {
+                Button("Retry") {
+                    handleContinue()
+                }
+            }
+        } message: {
+            if let error = viewModel.error {
+                Text(error.message)
             }
         }
     }
@@ -102,7 +116,7 @@ struct PhoneInputView: View {
             await viewModel.sendVerificationCode(to: phoneNumber)
 
             // Navigate to verification if no error
-            if viewModel.errorMessage == nil {
+            if viewModel.error == nil {
                 onContinue()
             }
         }
