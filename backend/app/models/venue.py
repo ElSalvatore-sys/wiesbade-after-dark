@@ -1,72 +1,66 @@
 """
-Venue model for WiesbadenAfterDark
+Venue model
 """
-from sqlalchemy import Column, String, Integer, Text, DECIMAL, DateTime, Index, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, DateTime, Boolean, Float, Integer, ForeignKey, Text
 from sqlalchemy.orm import relationship
-import uuid
 from datetime import datetime
+import uuid
 
-from app.models.base import Base
+from app.core.database import Base
 
 
 class Venue(Base):
+    """Venue model for bars, clubs, and other establishments"""
+
     __tablename__ = "venues"
 
-    # Primary Key
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False, index=True)
+    type = Column(String, nullable=False)  # bar, club, restaurant, etc.
+    description = Column(Text, nullable=True)
 
-    # Basic Info
-    name = Column(String(200), nullable=False)
-    type = Column(String(50), nullable=False)  # bar, club, restaurant, cafe
-    description = Column(Text)
-    image_url = Column(String(500))
+    # Owner
+    owner_id = Column(String, ForeignKey("users.id"), nullable=False)
 
     # Location
-    address = Column(String(500))
-    latitude = Column(DECIMAL(10, 8))
-    longitude = Column(DECIMAL(11, 8))
-
-    # Metrics
-    rating = Column(DECIMAL(3, 2), default=0, nullable=False)
-    member_count = Column(Integer, default=0, nullable=False)
+    address = Column(String, nullable=False)
+    city = Column(String, nullable=False, default="Wiesbaden")
+    postal_code = Column(String, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
 
     # Contact
-    phone_number = Column(String(20))
-    email = Column(String(255))
-    website = Column(String(500))
+    phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    website = Column(String, nullable=True)
 
-    # Business Configuration (Margin percentages for points calculation)
-    food_margin_percent = Column(DECIMAL(5, 2), default=30, nullable=False)
-    beverage_margin_percent = Column(DECIMAL(5, 2), default=80, nullable=False)
-    default_margin_percent = Column(DECIMAL(5, 2), default=50, nullable=False)
+    # Media
+    logo_url = Column(String, nullable=True)
+    cover_image_url = Column(String, nullable=True)
+    images = Column(String, nullable=True)  # JSON array of image URLs
 
-    # Points multiplier for special promotions
-    points_multiplier = Column(DECIMAL(3, 2), default=1.0, nullable=False)
+    # Hours & Status
+    opening_hours = Column(String, nullable=True)  # JSON string
+    is_active = Column(Boolean, default=True, nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
+
+    # Features
+    has_events = Column(Boolean, default=False, nullable=False)
+    amenities = Column(String, nullable=True)  # JSON array
+    tags = Column(String, nullable=True)  # JSON array
+
+    # Tier Configuration
+    tier_config = Column(String, nullable=True)  # JSON configuration for tiers
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
-    venue_memberships = relationship("VenueMembership", back_populates="venue", cascade="all, delete-orphan")
+    owner = relationship("User", back_populates="owned_venues")
     products = relationship("Product", back_populates="venue", cascade="all, delete-orphan")
-    check_ins = relationship("CheckIn", back_populates="venue", cascade="all, delete-orphan")
-    events = relationship("Event", back_populates="venue", cascade="all, delete-orphan")
-    venue_tier_configs = relationship("VenueTierConfig", back_populates="venue", cascade="all, delete-orphan")
-
-    # Constraints
-    __table_args__ = (
-        CheckConstraint('rating >= 0 AND rating <= 5', name='check_rating_range'),
-        CheckConstraint('member_count >= 0', name='check_member_count_positive'),
-        CheckConstraint('food_margin_percent >= 0 AND food_margin_percent <= 100', name='check_food_margin_range'),
-        CheckConstraint('beverage_margin_percent >= 0 AND beverage_margin_percent <= 100', name='check_beverage_margin_range'),
-        CheckConstraint('default_margin_percent >= 0 AND default_margin_percent <= 100', name='check_default_margin_range'),
-        CheckConstraint('points_multiplier > 0', name='check_points_multiplier_positive'),
-        Index('idx_venue_type', 'type'),
-        Index('idx_venue_location', 'latitude', 'longitude'),
-        Index('idx_venue_rating', 'rating'),
-    )
+    memberships = relationship("VenueMembership", back_populates="venue", cascade="all, delete-orphan")
+    special_offers = relationship("SpecialOffer", back_populates="venue", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Venue {self.name} ({self.type})>"
+        return f"<Venue(id={self.id}, name={self.name}, type={self.type})>"

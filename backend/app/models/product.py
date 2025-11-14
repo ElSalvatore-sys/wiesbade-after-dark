@@ -1,67 +1,56 @@
 """
-Product model for WiesbadenAfterDark
-Tracks products/items available at venues with pricing and bonus points
+Product model
 """
-from sqlalchemy import Column, String, Integer, Boolean, DECIMAL, DateTime, ForeignKey, Index, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, DateTime, Boolean, Float, Integer, ForeignKey, Text
 from sqlalchemy.orm import relationship
-import uuid
 from datetime import datetime
+import uuid
 
-from app.models.base import Base
+from app.core.database import Base
 
 
 class Product(Base):
+    """Product model for items/services available at venues"""
+
     __tablename__ = "products"
 
-    # Primary Key
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    venue_id = Column(String, ForeignKey("venues.id"), nullable=False)
 
-    # Foreign Keys
-    venue_id = Column(UUID(as_uuid=True), ForeignKey("venues.id", ondelete="CASCADE"), nullable=False)
+    # Product Info
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    category = Column(String, nullable=False)  # drink, food, service, etc.
+    subcategory = Column(String, nullable=True)
 
-    # Basic Info
-    name = Column(String(200), nullable=False)
-    category = Column(String(50), nullable=False)  # beverages, food, merchandise, etc.
-    description = Column(String(500))
-    image_url = Column(String(500))
+    # Pricing
+    price = Column(Float, nullable=False)
+    currency = Column(String, default="EUR", nullable=False)
 
-    # Pricing (DECIMAL for financial precision)
-    price = Column(DECIMAL(10, 2), nullable=False)
-    cost = Column(DECIMAL(10, 2))  # For margin calculation
-    margin_percent = Column(DECIMAL(5, 2))  # Calculated: (price - cost) / price * 100
+    # Points & Bonuses
+    points_value = Column(Integer, default=0, nullable=False)  # Base points earned
+    has_bonus = Column(Boolean, default=False, nullable=False)
+    bonus_multiplier = Column(Float, nullable=True)  # e.g., 1.5 for 50% bonus
+    bonus_description = Column(String, nullable=True)
 
-    # Inventory
-    stock_quantity = Column(Integer, default=0, nullable=False)
+    # Availability
     is_available = Column(Boolean, default=True, nullable=False)
+    stock_quantity = Column(Integer, nullable=True)
 
-    # Bonus Points System
-    bonus_points_active = Column(Boolean, default=False, nullable=False)
-    bonus_multiplier = Column(DECIMAL(3, 2), default=1.0, nullable=False)  # 1.0 = 1x, 2.0 = 2x, etc.
-    bonus_description = Column(String(200))
-    bonus_start_date = Column(DateTime(timezone=True))
-    bonus_end_date = Column(DateTime(timezone=True))
+    # Media
+    image_url = Column(String, nullable=True)
+    images = Column(String, nullable=True)  # JSON array
+
+    # Metadata
+    tags = Column(String, nullable=True)  # JSON array
+    allergens = Column(String, nullable=True)  # JSON array
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
     venue = relationship("Venue", back_populates="products")
 
-    # Constraints
-    __table_args__ = (
-        CheckConstraint('price >= 0', name='check_price_positive'),
-        CheckConstraint('cost >= 0', name='check_cost_positive'),
-        CheckConstraint('margin_percent >= 0 AND margin_percent <= 100', name='check_margin_range'),
-        CheckConstraint('stock_quantity >= 0', name='check_stock_positive'),
-        CheckConstraint('bonus_multiplier > 0', name='check_bonus_multiplier_positive'),
-        Index('idx_product_venue', 'venue_id'),
-        Index('idx_product_category', 'category'),
-        Index('idx_product_bonus_active', 'bonus_points_active'),
-        Index('idx_product_available', 'is_available'),
-        Index('idx_product_venue_category', 'venue_id', 'category'),
-    )
-
     def __repr__(self):
-        return f"<Product {self.name} at venue={self.venue_id}>"
+        return f"<Product(id={self.id}, name={self.name}, category={self.category})>"
