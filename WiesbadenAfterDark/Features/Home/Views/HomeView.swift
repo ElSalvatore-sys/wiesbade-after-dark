@@ -216,8 +216,8 @@ struct HomeView: View {
                     .foregroundStyle(Color.orange)
             }
 
-            // Euro value conversion
-            Text("= €\(homeViewModel.totalPoints) value")
+            // Euro value conversion (10 points = €1)
+            Text("= €\(String(format: "%.2f", Double(homeViewModel.totalPoints) / 10.0)) value")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.textSecondary)
