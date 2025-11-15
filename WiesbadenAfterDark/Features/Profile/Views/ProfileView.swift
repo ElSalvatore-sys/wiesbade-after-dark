@@ -2,116 +2,140 @@
 //  ProfileView.swift
 //  WiesbadenAfterDark
 //
-//  User profile with memberships and settings
+//  Ultra-minimal profile with only 4 essential sections
 //
 
 import SwiftUI
 
-/// Main profile view
+/// Main profile view - Drastically simplified to 4 sections
 struct ProfileView: View {
     @Environment(AuthenticationViewModel.self) private var authViewModel
 
     @State private var showingSignOutAlert = false
 
+    private var user: User? {
+        authViewModel.authState.user
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: Theme.Spacing.xl) {
-                    // Profile header
-                    ProfileHeader(user: authViewModel.authState.user)
-
-                    Divider()
-                        .background(Color.textTertiary.opacity(0.2))
-                        .padding(.horizontal, Theme.Spacing.lg)
-
-                    // Referral section (prominent)
-                    if let user = authViewModel.authState.user {
-                        VStack(spacing: Theme.Spacing.md) {
-                            ReferralCard(
-                                referralCode: user.referralCode,
-                                totalEarnings: Int(user.totalPointsEarned * 0.25)
+                VStack(spacing: 24) {
+                    // SECTION 1: USER HEADER
+                    VStack(spacing: 16) {
+                        // Avatar with gradient
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 100, height: 100)
+                            .shadow(color: Color.blue.opacity(0.3), radius: 12, x: 0, y: 4)
+                            .overlay(
+                                Text(userInitials)
+                                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
                             )
 
-                            ReferralExplanationView()
+                        VStack(spacing: 4) {
+                            if let user = user {
+                                Text(user.formattedPhoneNumber)
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.textPrimary)
+
+                                Text("Member since \(memberSince)")
+                                    .font(.caption)
+                                    .foregroundColor(.textSecondary)
+                            }
                         }
+                    }
+                    .padding(.top, 20)
+
+                    // SECTION 2: REFERRAL CARD (Compact)
+                    if let user = user {
+                        ReferralCardCompact(
+                            code: user.referralCode,
+                            totalEarned: Int(user.totalPointsEarned * 0.25)
+                        )
                         .padding(.horizontal, Theme.Spacing.lg)
-
-                        Divider()
-                            .background(Color.textTertiary.opacity(0.2))
-                            .padding(.horizontal, Theme.Spacing.lg)
                     }
 
-                    // Account section
-                    AccountSection(user: authViewModel.authState.user)
+                    // SECTION 3: MAIN ACTIONS (4 items max)
+                    VStack(spacing: 0) {
+                        if let user = user {
+                            ProfileActionButton(
+                                icon: "star.circle.fill",
+                                title: "My Points",
+                                subtitle: "\(user.totalPointsAvailable) points available",
+                                color: .orange
+                            ) {
+                                // Navigate to points detail
+                            }
 
-                    Divider()
-                        .background(Color.textTertiary.opacity(0.2))
-                        .padding(.horizontal, Theme.Spacing.lg)
+                            Divider().padding(.leading, 60)
+                        }
 
-                    // Memberships section
-                    MembershipsSection()
+                        ProfileActionButton(
+                            icon: "building.2.fill",
+                            title: "Venue Memberships",
+                            subtitle: "View your memberships",
+                            color: .blue
+                        ) {
+                            // Navigate to memberships
+                        }
 
-                    Divider()
-                        .background(Color.textTertiary.opacity(0.2))
-                        .padding(.horizontal, Theme.Spacing.lg)
+                        Divider().padding(.leading, 60)
 
-                    // Expiring Points section
-                    if let userId = authViewModel.authState.user?.id {
-                        ExpiringPointsSection(userId: userId)
+                        NavigationLink(destination: NotificationSettingsView()) {
+                            ProfileActionButton(
+                                icon: "bell.fill",
+                                title: "Notifications",
+                                subtitle: "Manage preferences",
+                                color: .purple
+                            )
+                        }
+                        .buttonStyle(.plain)
 
-                        Divider()
-                            .background(Color.textTertiary.opacity(0.2))
-                            .padding(.horizontal, Theme.Spacing.lg)
+                        Divider().padding(.leading, 60)
+
+                        NavigationLink(destination: HelpSupportView()) {
+                            ProfileActionButton(
+                                icon: "questionmark.circle.fill",
+                                title: "Help & Support",
+                                subtitle: "Get assistance",
+                                color: .green
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
+                    .background(Color.cardBackground)
+                    .cornerRadius(Theme.CornerRadius.lg)
+                    .padding(.horizontal, Theme.Spacing.lg)
 
-                    // Payments section
-                    if let userId = authViewModel.authState.user?.id {
-                        PaymentsSection(userId: userId)
-
-                        Divider()
-                            .background(Color.textTertiary.opacity(0.2))
-                            .padding(.horizontal, Theme.Spacing.lg)
-                    }
-
-                    // Wallet Passes section
-                    if let userId = authViewModel.authState.user?.id {
-                        WalletPassesSection(userId: userId)
-
-                        Divider()
-                            .background(Color.textTertiary.opacity(0.2))
-                            .padding(.horizontal, Theme.Spacing.lg)
-
-                        // Check-In History section
-                        CheckInHistorySection(userId: userId)
-
-                        Divider()
-                            .background(Color.textTertiary.opacity(0.2))
-                            .padding(.horizontal, Theme.Spacing.lg)
-                    }
-
-                    // Settings section
-                    SettingsSection()
-
-                    // Sign out button
-                    Button(action: {
+                    // SECTION 4: SIGN OUT
+                    Button {
                         showingSignOutAlert = true
-                    }) {
+                    } label: {
                         Text("Sign Out")
-                            .font(Typography.button)
-                            .fontWeight(.semibold)
+                            .font(.headline)
                             .foregroundColor(.error)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 54)
+                            .padding()
                             .background(Color.error.opacity(0.1))
                             .cornerRadius(Theme.CornerRadius.lg)
                     }
                     .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
                 }
-                .padding(.vertical, Theme.Spacing.lg)
             }
             .background(Color.appBackground)
             .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .alert("Sign Out", isPresented: $showingSignOutAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Sign Out", role: .destructive) {
@@ -122,525 +146,155 @@ struct ProfileView: View {
             }
         }
     }
-}
 
-// MARK: - Profile Header
-private struct ProfileHeader: View {
-    let user: User?
+    // MARK: - Computed Properties
 
-    private var initials: String {
+    private var userInitials: String {
         guard let user = user else { return "?" }
-        // Extract last 2 digits from phone number for unique identifier
         let digits = user.phoneNumber.filter { $0.isNumber }
         if digits.count >= 2 {
             return String(digits.suffix(2))
         } else if digits.count == 1 {
             return String(digits)
         }
-        return "WL" // Fallback: Wiesbaden Loyalty
+        return "WL"
     }
 
-    var body: some View {
-        VStack(spacing: Theme.Spacing.md) {
-            // Avatar
-            ZStack {
-                Circle()
-                    .fill(Color.primaryGradient)
-                    .frame(width: 100, height: 100)
-                    .shadow(color: Color.primary.opacity(0.3), radius: 12, x: 0, y: 4)
-
-                Text(initials)
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-            }
-
-            // Phone number
-            if let user = user {
-                Text(user.formattedPhoneNumber)
-                    .font(Typography.titleMedium)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
-            }
-        }
-    }
-}
-
-// MARK: - Account Section
-private struct AccountSection: View {
-    let user: User?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Account")
-                .font(Typography.titleMedium)
-                .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
-                .padding(.horizontal, Theme.Spacing.lg)
-
-            VStack(spacing: 0) {
-                // Phone number
-                if let user = user {
-                    InfoRow(
-                        icon: "phone.fill",
-                        label: "Phone Number",
-                        value: user.formattedPhoneNumber
-                    )
-
-                    Divider()
-                        .padding(.leading, 56)
-                        .background(Color.textTertiary.opacity(0.2))
-
-                    // Referral code
-                    InfoRow(
-                        icon: "gift.fill",
-                        label: "Referral Code",
-                        value: user.referralCode
-                    )
-
-                    Divider()
-                        .padding(.leading, 56)
-                        .background(Color.textTertiary.opacity(0.2))
-
-                    // Member since
-                    InfoRow(
-                        icon: "calendar",
-                        label: "Member Since",
-                        value: user.memberSinceFormatted
-                    )
-                }
-            }
-            .background(Color.cardBackground)
-            .cornerRadius(Theme.CornerRadius.lg)
-            .padding(.horizontal, Theme.Spacing.lg)
-        }
-    }
-}
-
-private struct InfoRow: View {
-    let icon: String
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack(spacing: Theme.Spacing.md) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundColor(.primary)
-                .frame(width: 24)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(Typography.captionMedium)
-                    .foregroundColor(.textSecondary)
-
-                Text(value)
-                    .font(Typography.bodyMedium)
-                    .foregroundColor(.textPrimary)
-            }
-
-            Spacer()
-        }
-        .padding(Theme.Spacing.md)
-    }
-}
-
-// MARK: - Memberships Section
-private struct MembershipsSection: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Venue Memberships")
-                .font(Typography.titleMedium)
-                .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
-                .padding(.horizontal, Theme.Spacing.lg)
-
-            // Placeholder for memberships
-            VStack(spacing: Theme.Spacing.lg) {
-                Image(systemName: "building.2")
-                    .font(.system(size: 40))
-                    .foregroundColor(.textTertiary)
-
-                Text("No Memberships Yet")
-                    .font(Typography.bodyMedium)
-                    .foregroundColor(.textSecondary)
-
-                Text("Join venues to start earning points and rewards!")
-                    .font(Typography.captionMedium)
-                    .foregroundColor(.textTertiary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Theme.Spacing.xl)
-            .background(Color.cardBackground)
-            .cornerRadius(Theme.CornerRadius.lg)
-            .padding(.horizontal, Theme.Spacing.lg)
-        }
-    }
-}
-
-// MARK: - Settings Section
-private struct SettingsSection: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Settings")
-                .font(Typography.titleMedium)
-                .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
-                .padding(.horizontal, Theme.Spacing.lg)
-
-            VStack(spacing: 0) {
-                NavigationLink(destination: NotificationSettingsView()) {
-                    SettingsRowContent(
-                        icon: "bell.fill",
-                        iconColor: .purple,
-                        label: "Notifications"
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-
-                Divider()
-                    .padding(.leading, 56)
-                    .background(Color.textTertiary.opacity(0.2))
-
-                NavigationLink(destination: PrivacySecurityView()) {
-                    SettingsRowContent(
-                        icon: "lock.fill",
-                        iconColor: .blue,
-                        label: "Privacy & Security"
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-
-                Divider()
-                    .padding(.leading, 56)
-                    .background(Color.textTertiary.opacity(0.2))
-
-                NavigationLink(destination: HelpSupportView()) {
-                    SettingsRowContent(
-                        icon: "questionmark.circle.fill",
-                        iconColor: .green,
-                        label: "Help & Support"
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-
-                Divider()
-                    .padding(.leading, 56)
-                    .background(Color.textTertiary.opacity(0.2))
-
-                NavigationLink(destination: LegalView()) {
-                    SettingsRowContent(
-                        icon: "doc.text.fill",
-                        iconColor: .gray,
-                        label: "Terms & Privacy Policy"
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .background(Color.cardBackground)
-            .cornerRadius(Theme.CornerRadius.lg)
-            .padding(.horizontal, Theme.Spacing.lg)
-        }
-    }
-}
-
-// MARK: - Settings Row Content
-private struct SettingsRowContent: View {
-    let icon: String
-    let iconColor: Color
-    let label: String
-
-    var body: some View {
-        HStack(spacing: Theme.Spacing.md) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(iconColor)
-                .frame(width: 24, height: 24)
-
-            Text(label)
-                .font(Typography.bodyMedium)
-                .foregroundColor(.textPrimary)
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.textTertiary)
-        }
-        .padding(.horizontal, Theme.Spacing.lg)
-        .padding(.vertical, Theme.Spacing.md)
-        .contentShape(Rectangle())
-    }
-}
-
-
-// MARK: - Wallet Passes Section
-private struct WalletPassesSection: View {
-    let userId: UUID
-
-    @State private var viewModel: CheckInViewModel
-    @State private var showAllPasses = false
-
-    init(userId: UUID) {
-        self.userId = userId
-        self._viewModel = State(initialValue: CheckInViewModel(
-            checkInService: MockCheckInService.shared,
-            walletPassService: MockWalletPassService.shared
-        ))
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            HStack {
-                Text("Wallet Passes")
-                    .font(Typography.titleMedium)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
-
-                Spacer()
-
-                if !viewModel.walletPasses.isEmpty {
-                    NavigationLink(destination: MyPassesView(userId: userId)) {
-                        Text("See All")
-                            .font(Typography.captionMedium)
-                            .foregroundColor(.primary)
-                    }
-                }
-            }
-            .padding(.horizontal, Theme.Spacing.lg)
-
-            if viewModel.walletPasses.isEmpty {
-                // Empty state
-                VStack(spacing: Theme.Spacing.md) {
-                    Image(systemName: "wallet.pass")
-                        .font(.system(size: 32))
-                        .foregroundColor(.textTertiary)
-
-                    Text("No Wallet Passes")
-                        .font(Typography.bodyMedium)
-                        .foregroundColor(.textSecondary)
-
-                    Text("Generate passes from venue rewards tabs")
-                        .font(Typography.captionMedium)
-                        .foregroundColor(.textTertiary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Theme.Spacing.xl)
-                .background(Color.cardBackground)
-                .cornerRadius(Theme.CornerRadius.lg)
-                .padding(.horizontal, Theme.Spacing.lg)
-            } else {
-                // Show first 2 passes
-                VStack(spacing: Theme.Spacing.md) {
-                    ForEach(viewModel.walletPasses.prefix(2)) { pass in
-                        NavigationLink(destination: WalletPassDetailView(pass: pass)) {
-                            WalletPassCard(pass: pass, mode: .compact)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, Theme.Spacing.lg)
-            }
-        }
-        .task {
-            await viewModel.fetchWalletPasses(userId: userId)
-        }
-    }
-}
-
-// MARK: - Check-In History Section
-private struct CheckInHistorySection: View {
-    let userId: UUID
-
-    @State private var viewModel: CheckInViewModel
-
-    init(userId: UUID) {
-        self.userId = userId
-        self._viewModel = State(initialValue: CheckInViewModel(
-            checkInService: MockCheckInService.shared,
-            walletPassService: MockWalletPassService.shared
-        ))
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            HStack {
-                Text("Recent Check-Ins")
-                    .font(Typography.titleMedium)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
-
-                Spacer()
-
-                if !viewModel.checkIns.isEmpty {
-                    NavigationLink(destination: CheckInHistoryView(userId: userId)) {
-                        Text("See All")
-                            .font(Typography.captionMedium)
-                            .foregroundColor(.primary)
-                    }
-                }
-            }
-            .padding(.horizontal, Theme.Spacing.lg)
-
-            if viewModel.checkIns.isEmpty {
-                // Empty state
-                VStack(spacing: Theme.Spacing.md) {
-                    Image(systemName: "clock.badge.checkmark")
-                        .font(.system(size: 32))
-                        .foregroundColor(.textTertiary)
-
-                    Text("No Check-Ins Yet")
-                        .font(Typography.bodyMedium)
-                        .foregroundColor(.textSecondary)
-
-                    Text("Visit venues and check in to earn points")
-                        .font(Typography.captionMedium)
-                        .foregroundColor(.textTertiary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Theme.Spacing.xl)
-                .background(Color.cardBackground)
-                .cornerRadius(Theme.CornerRadius.lg)
-                .padding(.horizontal, Theme.Spacing.lg)
-            } else {
-                // Show first 3 check-ins
-                VStack(spacing: Theme.Spacing.md) {
-                    ForEach(viewModel.checkIns.prefix(3)) { checkIn in
-                        CheckInCard(checkIn: checkIn, mode: .compact)
-                    }
-                }
-                .padding(.horizontal, Theme.Spacing.lg)
-            }
-        }
-        .task {
-            await viewModel.fetchCheckInHistory(userId: userId)
-        }
-    }
-}
-
-// MARK: - User Extension
-private extension User {
-    var memberSinceFormatted: String {
+    private var memberSince: String {
+        guard let user = user else { return "..." }
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter.string(from: createdAt)
+        formatter.dateFormat = "MMM yyyy"
+        return formatter.string(from: user.createdAt)
     }
 }
 
-// MARK: - Payments Section
-private struct PaymentsSection: View {
-    let userId: UUID
+// MARK: - Compact Referral Card
+private struct ReferralCardCompact: View {
+    let code: String
+    let totalEarned: Int
+
+    @State private var showCopied = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            // Section Header
+        VStack(spacing: 16) {
             HStack {
-                Text("Payments & Bookings")
-                    .font(Typography.headlineLarge)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Your Referral Code")
+                        .font(.caption)
+                        .foregroundColor(.textSecondary)
+
+                    Text(code)
+                        .font(.system(size: 28, weight: .bold, design: .monospaced))
+                        .foregroundColor(.blue)
+                }
 
                 Spacer()
+
+                Button {
+                    UIPasteboard.general.string = code
+                    showCopied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        showCopied = false
+                    }
+                } label: {
+                    Image(systemName: showCopied ? "checkmark.circle.fill" : "doc.on.doc.fill")
+                        .font(.title2)
+                        .foregroundColor(.blue)
+                }
             }
-            .padding(.horizontal, Theme.Spacing.lg)
 
-            // Buy Points Button
-            NavigationLink(destination: BuyPointsView(userId: userId)) {
-                HStack(spacing: Theme.Spacing.md) {
-                    Image(systemName: "star.circle.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.primary)
+            Divider()
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Buy Points")
-                            .font(Typography.bodyLarge)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.textPrimary)
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Earned from Referrals")
+                        .font(.caption)
+                        .foregroundColor(.textSecondary)
 
-                        Text("Get bonus points on larger packages")
-                            .font(Typography.bodySmall)
+                    Text("\(totalEarned) points")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.success)
+                }
+
+                Spacer()
+
+                ShareLink(item: "Join Wiesbaden After Dark with code: \(code)") {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Share")
+                    }
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.blue)
+                    .cornerRadius(8)
+                }
+            }
+
+            // Compact benefit note
+            Text("Earn 25% when friends check in!")
+                .font(.caption2)
+                .foregroundColor(.textTertiary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .background(Color.blue.opacity(0.1))
+        .cornerRadius(Theme.CornerRadius.lg)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Action Button
+private struct ProfileActionButton: View {
+    let icon: String
+    let title: String
+    var subtitle: String? = nil
+    let color: Color
+    var action: (() -> Void)? = nil
+
+    var body: some View {
+        Button {
+            action?()
+        } label: {
+            HStack(spacing: Theme.Spacing.md) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundColor(color)
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(Typography.bodyMedium)
+                        .fontWeight(.medium)
+                        .foregroundColor(.textPrimary)
+
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(Typography.captionMedium)
                             .foregroundColor(.textSecondary)
                     }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14))
-                        .foregroundColor(.textTertiary)
                 }
-                .padding(Theme.Spacing.md)
-                .background(Color.cardBackground)
-                .cornerRadius(Theme.CornerRadius.md)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.textTertiary)
             }
-            .padding(.horizontal, Theme.Spacing.lg)
-
-            // My Bookings Button
-            NavigationLink(destination: MyBookingsView()) {
-                HStack(spacing: Theme.Spacing.md) {
-                    Image(systemName: "calendar.badge.checkmark")
-                        .font(.system(size: 24))
-                        .foregroundColor(.primary)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("My Bookings")
-                            .font(Typography.bodyLarge)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.textPrimary)
-
-                        Text("View upcoming and past bookings")
-                            .font(Typography.bodySmall)
-                            .foregroundColor(.textSecondary)
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14))
-                        .foregroundColor(.textTertiary)
-                }
-                .padding(Theme.Spacing.md)
-                .background(Color.cardBackground)
-                .cornerRadius(Theme.CornerRadius.md)
-            }
-            .padding(.horizontal, Theme.Spacing.lg)
-
-            // Payment History Button
-            NavigationLink(destination: PaymentHistoryView(userId: userId)) {
-                HStack(spacing: Theme.Spacing.md) {
-                    Image(systemName: "creditcard")
-                        .font(.system(size: 24))
-                        .foregroundColor(.primary)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Payment History")
-                            .font(Typography.bodyLarge)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.textPrimary)
-
-                        Text("View all transactions")
-                            .font(Typography.bodySmall)
-                            .foregroundColor(.textSecondary)
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14))
-                        .foregroundColor(.textTertiary)
-                }
-                .padding(Theme.Spacing.md)
-                .background(Color.cardBackground)
-                .cornerRadius(Theme.CornerRadius.md)
-            }
-            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(Theme.Spacing.md)
         }
     }
 }
 
 // MARK: - Preview
-#Preview("Profile View") {
+#Preview("Profile View - Minimal") {
     ProfileView()
         .environment(AuthenticationViewModel())
 }
