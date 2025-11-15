@@ -152,7 +152,7 @@ struct EventHighlightsSection: View {
 
 #Preview("Event Highlights Section - Today") {
     EventHighlightsSection(
-        todayEvents: Event.mockEventsForVenue(venueId: Venue.mockVenues[0].id),
+        todayEvents: Event.mockEventsForVenue(Venue.mockVenues[0].id),
         upcomingEvents: [],
         venues: Venue.mockVenues,
         onEventTap: { _ in }
@@ -162,7 +162,7 @@ struct EventHighlightsSection: View {
 #Preview("Event Highlights Section - Upcoming") {
     EventHighlightsSection(
         todayEvents: [],
-        upcomingEvents: Event.mockEventsForVenue(venueId: Venue.mockVenues[0].id),
+        upcomingEvents: Event.mockEventsForVenue(Venue.mockVenues[0].id),
         venues: Venue.mockVenues,
         onEventTap: { _ in }
     )

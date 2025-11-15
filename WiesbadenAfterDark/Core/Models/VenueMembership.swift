@@ -182,4 +182,11 @@ extension VenueMembership {
             lastVisitAt: Calendar.current.date(byAdding: .day, value: -3, to: Date())
         )
     }
+
+    /// All mock memberships for previews
+    static var mockMemberships: [VenueMembership] {
+        let userId = UUID()
+        let venueId = UUID()
+        return [mockMembership(userId: userId, venueId: venueId)]
+    }
 }

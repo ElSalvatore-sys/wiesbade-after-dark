@@ -248,7 +248,7 @@ extension Venue {
 
         // Find next open day
         for offset in 1...7 {
-            let nextDay = calendar.date(byAdding: .day, value: offset, to: now)!
+            guard let nextDay = calendar.date(byAdding: .day, value: offset, to: now) else { continue }
             let nextWeekday = calendar.component(.weekday, from: nextDay)
             let nextDayName = getDayName(from: nextWeekday)
 
@@ -611,5 +611,19 @@ extension Venue {
             totalEvents: 26,
             totalPosts: 112
         )
+    }
+
+    /// All mock venues for previews and testing
+    static var mockVenues: [Venue] {
+        return [
+            mockDasWohnzimmer(),
+            mockParkCafe(),
+            mockHarput(),
+            mockEnte(),
+            mockHotelKochbrunnen(),
+            mockEuroPalace(),
+            mockVillaImTal(),
+            mockKulturpalast()
+        ]
     }
 }

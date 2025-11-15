@@ -164,4 +164,9 @@ extension User {
             isActive: true
         )
     }
+
+    /// All mock users for previews
+    static var mockUsers: [User] {
+        return [mock()]
+    }
 }

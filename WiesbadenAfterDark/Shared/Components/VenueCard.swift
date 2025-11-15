@@ -110,7 +110,7 @@ struct VenueCard: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .background(Color(.systemBackground))
+            .background(Color.cardBackground)
             .cornerRadius(Theme.CornerRadius.lg)
             .shadow(
                 color: Color.black.opacity(0.08),

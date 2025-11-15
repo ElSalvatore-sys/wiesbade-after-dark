@@ -32,12 +32,12 @@ struct VenueRewardsTab: View {
                 // Membership check
                 if let membership = viewModel.membership {
                     // Points balance header
-                    PointsBalanceCard(membership: membership, venue: venue)
+                    VenuePointsBalanceCard(membership: membership, venue: venue)
                         .padding(.horizontal, Theme.Spacing.lg)
                         .padding(.top, Theme.Spacing.md)
 
                     // Quick Actions (Check-In & Wallet Pass)
-                    QuickActionsSection(
+                    VenueQuickActionsSection(
                         venue: venue,
                         membership: membership,
                         onCheckInTap: {
@@ -157,9 +157,9 @@ struct VenueRewardsTab: View {
     }
 }
 
-// MARK: - Quick Actions Section
+// MARK: - Quick Actions Section (Venue Specific)
 
-private struct QuickActionsSection: View {
+private struct VenueQuickActionsSection: View {
     @Environment(AuthenticationViewModel.self) private var authViewModel
 
     let venue: Venue
@@ -221,8 +221,8 @@ private struct QuickActionsSection: View {
     }
 }
 
-// MARK: - Points Balance Card
-private struct PointsBalanceCard: View {
+// MARK: - Points Balance Card (Venue Specific)
+private struct VenuePointsBalanceCard: View {
     let membership: VenueMembership
     let venue: Venue
 

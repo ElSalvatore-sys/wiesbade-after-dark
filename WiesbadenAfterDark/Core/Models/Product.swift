@@ -297,7 +297,7 @@ extension Product {
 
     /// Mock orange juice expiring soon (gamification example)
     static func mockOrangeJuice(venueId: UUID) -> Product {
-        let expiryDate = Calendar.current.date(byAdding: .hour, value: 6, to: Date())!
+        let expiryDate = Calendar.current.date(byAdding: .hour, value: 6, to: Date()) ?? Date()
         return Product(
             venueId: venueId,
             name: "Fresh Orange Juice",
@@ -338,7 +338,7 @@ extension Product {
 
     /// Mock currywurst daily special
     static func mockCurrywurst(venueId: UUID) -> Product {
-        let expiresTonight = Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: Date())!
+        let expiresTonight = Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: Date()) ?? Date()
         return Product(
             venueId: venueId,
             name: "Currywurst Special",
@@ -404,5 +404,11 @@ extension Product {
             mockBurger(venueId: venueId),
             mockDessert(venueId: venueId)
         ]
+    }
+
+    /// All mock products for previews (uses random venue ID)
+    static var mockProducts: [Product] {
+        let venueId = UUID()
+        return mockProductsForVenue(venueId)
     }
 }
