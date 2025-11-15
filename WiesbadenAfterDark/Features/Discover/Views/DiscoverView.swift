@@ -11,6 +11,7 @@ import SwiftUI
 struct DiscoverView: View {
     @Environment(VenueViewModel.self) private var viewModel
     @State private var navigationPath = NavigationPath()
+    @State private var selectedVenueId: UUID?
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -35,9 +36,13 @@ struct DiscoverView: View {
                                 LazyVStack(spacing: 20) {
                                     ForEach(viewModel.venues, id: \.id) { venue in
                                         VenueCard(venue: venue) {
-                                            Task {
-                                                await viewModel.selectVenue(venue)
-                                                navigationPath.append(venue.id)
+                                            // CRITICAL FIX: Only select if not already selected
+                                            if selectedVenueId != venue.id {
+                                                selectedVenueId = venue.id
+                                                Task {
+                                                    await viewModel.selectVenue(venue)
+                                                    navigationPath.append(venue.id)
+                                                }
                                             }
                                         }
                                         .padding(.horizontal, geometry.size.width * 0.05)
@@ -62,6 +67,12 @@ struct DiscoverView: View {
             .navigationDestination(for: UUID.self) { venueId in
                 if let venue = viewModel.venues.first(where: { $0.id == venueId }) {
                     VenueDetailView(venue: venue)
+                        .onDisappear {
+                            // CRITICAL FIX: Clear state when navigating back
+                            print("🔙 [DiscoverView] Navigating back, clearing state")
+                            selectedVenueId = nil
+                            viewModel.clearSelectedVenue()
+                        }
                 }
             }
             .task {

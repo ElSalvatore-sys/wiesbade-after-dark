@@ -213,6 +213,13 @@ struct MainTabView: View {
                 .tag(4)
         }
         .tint(Color.gold)  // Use gold color for tab bar tint instead of .primary
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
+            // CRITICAL FIX: Handle memory warnings by clearing caches
+            print("⚠️ [Memory] Received memory warning - clearing caches")
+            URLCache.shared.removeAllCachedResponses()
+            URLCache.shared.diskCapacity = 0
+            URLCache.shared.memoryCapacity = 0
+        }
     }
 }
 

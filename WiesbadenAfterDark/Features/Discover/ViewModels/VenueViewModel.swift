@@ -35,6 +35,14 @@ final class VenueViewModel {
     var isLoading: Bool = false
     var errorMessage: String?
 
+    // MARK: - Memory Safeguards
+
+    /// Tracks if we're currently loading details to prevent duplicate calls
+    private var isLoadingDetails = false
+
+    /// Tracks the last loaded venue ID to prevent re-loading the same venue
+    private var loadedVenueId: UUID?
+
     // MARK: - Initialization
 
     init(
@@ -79,9 +87,21 @@ final class VenueViewModel {
 
     /// Selects a venue and loads its details
     func selectVenue(_ venue: Venue) async {
+        // CRITICAL FIX: Prevent infinite loop by checking if same venue is already loading/loaded
+        guard venue.id != loadedVenueId else {
+            print("⚠️ [VenueViewModel] Venue \(venue.name) already loaded, skipping")
+            return
+        }
+
+        guard !isLoadingDetails else {
+            print("⚠️ [VenueViewModel] Already loading venue details, skipping")
+            return
+        }
+
         print("🏢 [VenueViewModel] Selecting venue: \(venue.name)")
 
         selectedVenue = venue
+        loadedVenueId = venue.id
 
         // Load venue details concurrently
         await loadVenueDetails(venueId: venue.id)
@@ -89,7 +109,20 @@ final class VenueViewModel {
 
     /// Loads all details for a venue (events, rewards, posts, membership)
     private func loadVenueDetails(venueId: UUID) async {
+        // CRITICAL FIX: Set loading flag to prevent concurrent loads
+        guard !isLoadingDetails else {
+            print("⚠️ [VenueViewModel] Already loading details, skipping")
+            return
+        }
+
+        isLoadingDetails = true
         isLoading = true
+
+        // Use defer to ensure flags are reset even if error occurs
+        defer {
+            isLoadingDetails = false
+            isLoading = false
+        }
 
         // Load all venue details concurrently
         async let eventsTask = venueService.fetchEvents(venueId: venueId)
@@ -101,17 +134,14 @@ final class VenueViewModel {
             rewards = try await rewardsTask
             communityPosts = try await postsTask
 
-            print("✅ [VenueViewModel] Loaded venue details")
+            print("✅ [VenueViewModel] Loaded venue details for \(venueId)")
             print("   Events: \(events.count)")
             print("   Rewards: \(rewards.count)")
             print("   Posts: \(communityPosts.count)")
 
-            isLoading = false
-
         } catch {
             errorMessage = error.localizedDescription
             print("❌ [VenueViewModel] Failed to load venue details: \(error)")
-            isLoading = false
         }
     }
 
@@ -246,6 +276,20 @@ final class VenueViewModel {
     /// Reloads venue details
     func refreshVenueDetails() async {
         guard let venue = selectedVenue else { return }
+        // Reset the loaded venue ID to allow re-loading
+        loadedVenueId = nil
         await loadVenueDetails(venueId: venue.id)
+    }
+
+    /// Clears selected venue and resets state (call when navigating back)
+    func clearSelectedVenue() {
+        print("🧹 [VenueViewModel] Clearing selected venue")
+        selectedVenue = nil
+        loadedVenueId = nil
+        isLoadingDetails = false
+        events = []
+        rewards = []
+        communityPosts = []
+        membership = nil
     }
 }
