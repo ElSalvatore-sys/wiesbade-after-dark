@@ -67,9 +67,11 @@ struct WiesbadenAfterDarkApp: App {
                     .environment(authViewModel)
                     .environment(venueViewModel)
                     .modelContainer(sharedModelContainer)
+                    .preferredColorScheme(.dark)  // Force dark mode
             } else {
                 // Loading state while initializing
                 ProgressView()
+                    .preferredColorScheme(.dark)  // Force dark mode
                     .onAppear {
                         // Initialize view models with model context
                         let context = sharedModelContainer.mainContext
