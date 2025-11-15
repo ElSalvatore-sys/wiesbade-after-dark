@@ -24,17 +24,25 @@ jobs:
         pip install -r requirements.txt
         pip install pytest pytest-asyncio pytest-cov
 
-    - name: Run tests
+    - name: Run tests with coverage
       run: |
         cd backend
-        pytest tests/ -v --cov=app || echo "No tests found yet"
+        pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./backend/coverage.xml
+        flags: backend
+        name: backend-coverage
+        fail_ci_if_error: true
 
     - name: Check code quality
       run: |
         cd backend
         pip install black flake8
-        black --check app/ || echo "Black formatting check skipped"
-        flake8 app/ --max-line-length=100 || echo "Flake8 check skipped"
+        black --check app/
+        flake8 app/ --max-line-length=100
 
   deploy:
     needs: test

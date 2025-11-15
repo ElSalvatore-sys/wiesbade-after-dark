@@ -35,8 +35,14 @@ class Settings(BaseSettings):
     # Points Expiration
     POINTS_EXPIRATION_DAYS: int = 180
 
-    # CORS
-    BACKEND_CORS_ORIGINS: list[str] = ["*"]
+    # CORS - Restricted to production backend and localhost for development
+    BACKEND_CORS_ORIGINS: list[str] = [
+        "https://wiesbade-after-dark-production.up.railway.app",
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+    ]
 
     class Config:
         env_file = ".env"

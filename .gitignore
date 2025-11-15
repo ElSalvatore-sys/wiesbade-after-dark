@@ -329,6 +329,18 @@ WiesbadenAfterDark/CHANGELOG*
 WiesbadenAfterDark/LICENSE*
 
 # ========================================
+# Build Logs (NEVER COMMIT)
+# ========================================
+
+# Build logs should be CI/CD artifacts, not repository files
+*.log
+build_*.log
+build*.log
+last_build.log
+*_build.log
+verification*.log
+
+# ========================================
 # Project-Specific Additions
 # ========================================
 

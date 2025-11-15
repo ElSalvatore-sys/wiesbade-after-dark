@@ -1,0 +1,27 @@
+# Code owners are automatically requested for review when someone opens a pull request that modifies code that they own
+
+# Default owner for everything
+* @ElSalvatore-sys
+
+# Backend Python code
+/backend/ @ElSalvatore-sys
+
+# iOS Swift code
+/WiesbadenAfterDark/ @ElSalvatore-sys
+/WiesbadenAfterDarkTests/ @ElSalvatore-sys
+
+# GitHub Actions workflows
+/.github/workflows/ @ElSalvatore-sys
+
+# Documentation
+/docs/ @ElSalvatore-sys
+README.md @ElSalvatore-sys
+SECURITY.md @ElSalvatore-sys
+
+# Configuration files
+*.yml @ElSalvatore-sys
+*.yaml @ElSalvatore-sys
+*.json @ElSalvatore-sys
+
+# Database migrations (critical - always review)
+/backend/alembic/versions/ @ElSalvatore-sys
