@@ -391,3 +391,19 @@ If at any point Archon operations fail:
 3. Never abandon the Archon integration - find workarounds if needed
 Remember: The success of this execution depends on maintaining systematic task management through Archon throughout the entire process. This ensures accountability, progress tracking, and quality delivery.
 
+
+---
+## 📚 Project Memory (Auto-Updated)
+
+This project has automated memory management:
+
+- **Main Memory:** `.claude/project-memory.md` (auto-updates on every commit)
+- **Central Knowledge Base:** `.claude/knowledge-base/` (symlink to shared docs)
+- **Update Frequency:** Automatic via GitHub Actions + weekly summaries
+
+**GitHub Action Status:**
+- Auto-updates on push to main/develop/cleanup branches
+- Weekly summaries every Sunday at midnight UTC
+- Manual trigger available via workflow dispatch
+
+To manually trigger: Visit GitHub Actions → "Auto-Update Project Memory" → Run workflow

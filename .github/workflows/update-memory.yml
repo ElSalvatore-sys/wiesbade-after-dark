@@ -1,0 +1,257 @@
+name: Auto-Update Project Memory
+
+on:
+  push:
+    branches: [ main, develop, cleanup/homeview-refactor ]
+  pull_request:
+    types: [ closed ]
+    branches: [ main, develop ]
+  schedule:
+    # Weekly summary every Sunday at midnight UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    # Manual trigger option
+
+jobs:
+  update-memory:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50  # Get last 50 commits for analysis
+          
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          pip install gitpython pyyaml
+          
+      - name: Analyze Recent Changes
+        id: analyze
+        run: |
+          python << 'EOF'
+          import git
+          import json
+          import os
+          from datetime import datetime, timedelta
+          from collections import defaultdict
+          
+          repo = git.Repo('.')
+          
+          # Get commits from last week (or since last run)
+          since_date = datetime.now() - timedelta(days=7)
+          recent_commits = list(repo.iter_commits('HEAD', since=since_date, max_count=50))
+          
+          # Analyze commit patterns
+          file_changes = defaultdict(int)
+          commit_messages = []
+          authors = set()
+          
+          for commit in recent_commits:
+              commit_messages.append({
+                  'hash': commit.hexsha[:7],
+                  'message': commit.message.strip().split('\n')[0],  # First line only
+                  'author': commit.author.name,
+                  'date': commit.committed_datetime.strftime('%Y-%m-%d %H:%M')
+              })
+              authors.add(commit.author.name)
+              
+              # Track file changes
+              for item in commit.stats.files:
+                  file_changes[item] += 1
+          
+          # Identify most modified files
+          top_files = sorted(file_changes.items(), key=lambda x: x[1], reverse=True)[:10]
+          
+          # Count TODOs in codebase
+          todo_count = 0
+          for root, dirs, files in os.walk('.'):
+              # Skip node_modules, .git, build directories
+              dirs[:] = [d for d in dirs if d not in ['node_modules', '.git', 'build', 'dist', '.build']]
+              for file in files:
+                  if file.endswith(('.swift', '.py', '.js', '.ts')):
+                      try:
+                          with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as f:
+                              content = f.read()
+                              todo_count += content.count('TODO')
+                              todo_count += content.count('FIXME')
+                      except:
+                          pass
+          
+          # Count Swift files
+          swift_files = sum(1 for root, dirs, files in os.walk('.') for f in files if f.endswith('.swift'))
+          
+          # Count Python files
+          python_files = sum(1 for root, dirs, files in os.walk('.') for f in files if f.endswith('.py'))
+          
+          # Output as JSON for next step
+          analysis = {
+              'commit_count': len(recent_commits),
+              'commits': commit_messages[:10],  # Last 10 commits
+              'authors': list(authors),
+              'top_modified_files': [{'file': f, 'changes': c} for f, c in top_files],
+              'todo_count': todo_count,
+              'swift_file_count': swift_files,
+              'python_file_count': python_files,
+              'analysis_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+          }
+          
+          with open('commit_analysis.json', 'w') as f:
+              json.dump(analysis, f, indent=2)
+          
+          print(f"Analyzed {len(recent_commits)} commits")
+          print(f"Found {todo_count} TODOs/FIXMEs")
+          print(f"Swift files: {swift_files}, Python files: {python_files}")
+          EOF
+          
+      - name: Update Project Memory
+        run: |
+          python << 'EOF'
+          import json
+          import re
+          from datetime import datetime
+          
+          # Load analysis
+          with open('commit_analysis.json', 'r') as f:
+              analysis = json.load(f)
+          
+          # Read current project memory
+          memory_file = 'CLAUDE_PROJECT_MEMORY.md'
+          try:
+              with open(memory_file, 'r') as f:
+                  memory_content = f.read()
+          except FileNotFoundError:
+              print("Project memory file not found, will create new one")
+              memory_content = ""
+          
+          # Update timestamp
+          timestamp = datetime.now().strftime('%B %d, %Y')
+          memory_content = re.sub(
+              r'\*\*Last Updated:\*\* .+?  ',
+              f'**Last Updated:** {timestamp} (Auto-generated)  ',
+              memory_content
+          )
+          
+          # Update recent activity section
+          recent_activity_md = "### Recent Activity (Last 7 Days)\n"
+          for commit in analysis['commits'][:5]:
+              recent_activity_md += f"- {commit['date']} - {commit['message']}\n"
+          
+          # Replace Recent Activity section
+          memory_content = re.sub(
+              r'### Recent Activity \(Last \d+ (Days|Hours)\)(.*?)(?=\n##|\n---|\Z)',
+              recent_activity_md,
+              memory_content,
+              flags=re.DOTALL
+          )
+          
+          # Update code metrics
+          metrics_section = f"""### Code Metrics
+- **Total Files:** (auto-count in future)
+- **Swift Files:** {analysis['swift_file_count']}
+- **Python Files:** {analysis['python_file_count']}+
+- **TODOs/FIXMEs:** {analysis['todo_count']}
+- **Last Analysis:** {analysis['analysis_date']}
+"""
+          
+          # If metrics section exists, replace it
+          if '### Code Metrics' in memory_content:
+              memory_content = re.sub(
+                  r'### Code Metrics(.*?)(?=\n###|\n##|\Z)',
+                  metrics_section,
+                  memory_content,
+                  flags=re.DOTALL
+              )
+          
+          # Update top modified files (add to memory)
+          top_files_md = "\n### Most Modified Files (Last Week)\n"
+          for file_info in analysis['top_modified_files'][:5]:
+              top_files_md += f"- `{file_info['file']}` ({file_info['changes']} changes)\n"
+          
+          # Append or update section
+          if '### Most Modified Files' in memory_content:
+              memory_content = re.sub(
+                  r'### Most Modified Files \(Last Week\)(.*?)(?=\n##|\n---|\Z)',
+                  top_files_md,
+                  memory_content,
+                  flags=re.DOTALL
+              )
+          else:
+              # Add before "Memory Maintenance" section if it exists
+              if '## 🧠 Memory Maintenance' in memory_content:
+                  memory_content = memory_content.replace(
+                      '## 🧠 Memory Maintenance',
+                      top_files_md + '\n## 🧠 Memory Maintenance'
+                  )
+          
+          # Write updated memory
+          with open(memory_file, 'w') as f:
+              f.write(memory_content)
+          
+          print(f"✅ Updated {memory_file}")
+          print(f"   - Timestamp: {timestamp}")
+          print(f"   - Commits analyzed: {analysis['commit_count']}")
+          print(f"   - TODOs found: {analysis['todo_count']}")
+          EOF
+          
+      - name: Commit Memory Updates
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Check if there are changes
+          if git diff --quiet CLAUDE_PROJECT_MEMORY.md; then
+            echo "No changes to project memory"
+          else
+            git add CLAUDE_PROJECT_MEMORY.md
+            git commit -m "🤖 Auto-update project memory [skip ci]"
+            git push
+            echo "✅ Project memory updated and pushed"
+          fi
+          
+      - name: Create Weekly Summary (Sundays only)
+        if: github.event.schedule == '0 0 * * 0'
+        run: |
+          python << 'EOF'
+          import json
+          from datetime import datetime
+          
+          with open('commit_analysis.json', 'r') as f:
+              analysis = json.load(f)
+          
+          summary = f"""# Weekly Summary - {datetime.now().strftime('%B %d, %Y')}
+          
+## Activity
+- **Commits This Week:** {analysis['commit_count']}
+- **Contributors:** {', '.join(analysis['authors'])}
+- **TODOs/FIXMEs:** {analysis['todo_count']}
+          
+## Recent Changes
+"""
+          for commit in analysis['commits'][:10]:
+              summary += f"- [{commit['hash']}] {commit['message']} ({commit['date']})\n"
+          
+          summary += f"""
+## Most Active Files
+"""
+          for file_info in analysis['top_modified_files'][:10]:
+              summary += f"- `{file_info['file']}` ({file_info['changes']} changes)\n"
+          
+          # Save summary
+          filename = f"weekly_summary_{datetime.now().strftime('%Y%m%d')}.md"
+          with open(filename, 'w') as f:
+              f.write(summary)
+          
+          print(f"✅ Created {filename}")
+          EOF
+          
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Memory update failed! Check logs."
+          # In future: Send notification via Slack/Discord webhook
