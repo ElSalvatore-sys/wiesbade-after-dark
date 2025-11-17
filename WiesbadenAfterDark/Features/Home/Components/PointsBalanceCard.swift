@@ -46,7 +46,7 @@ struct PointsBalanceCard: View {
             }
 
             // Euro value conversion
-            Text("= €\(totalPoints) value")
+            Text("= €\(totalPoints / 10) value")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.textSecondary)
