@@ -33,7 +33,10 @@ struct WiesbadenAfterDarkApp: App {
             // OrderItem is a DTO struct, not a @Model - removed from schema
             ReferralChain.self,        // Agent 4: 5-level referral tracking
             BadgeConfig.self,          // Agent 9: Custom achievement badges
-            VenueTierConfig.self       // Agent 9: Venue-specific tier configuration
+            VenueTierConfig.self,      // Agent 9: Venue-specific tier configuration
+            // COMMUNITY FEATURE: Social feed models
+            Post.self,                 // Social posts (check-ins, status, photos)
+            Comment.self               // Comments on posts
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -198,8 +201,8 @@ struct MainTabView: View {
                 }
                 .tag(2)
 
-            // Community tab (placeholder)
-            CommunityPlaceholderView()
+            // Community tab
+            CommunityView()
                 .tabItem {
                     Label("Community", systemImage: "person.2.fill")
                 }
