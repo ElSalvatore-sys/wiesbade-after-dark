@@ -31,6 +31,9 @@ final class VenueViewModel {
     var communityPosts: [CommunityPost] = []
     var membership: VenueMembership?
 
+    // Inventory offers (active deals with bonus points)
+    var inventoryOffers: [Product] = []
+
     // UI State
     var isLoading: Bool = false
     var errorMessage: String?
@@ -76,6 +79,9 @@ final class VenueViewModel {
                 try? context.save()
             }
 
+            // Load inventory offers after venues are loaded
+            await loadInventoryOffers()
+
             isLoading = false
 
         } catch {
@@ -83,6 +89,20 @@ final class VenueViewModel {
             print("❌ [VenueViewModel] Failed to fetch venues: \(error)")
             isLoading = false
         }
+    }
+
+    /// Loads active inventory offers (products with bonus points)
+    func loadInventoryOffers() async {
+        print("🔥 [VenueViewModel] Loading inventory offers")
+
+        // For now, create mock data with active bonuses
+        // TODO: Replace with real API call when backend is ready
+        let mockOffers = venues.flatMap { venue in
+            Product.mockProductsForVenue(venue.id).filter { $0.bonusPointsActive }
+        }
+
+        inventoryOffers = mockOffers
+        print("✅ [VenueViewModel] Loaded \(inventoryOffers.count) active deals")
     }
 
     /// Selects a venue and loads its details
