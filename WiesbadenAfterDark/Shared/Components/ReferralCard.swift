@@ -36,14 +36,21 @@ struct ReferralCard: View {
 
                 Button(action: {
                     UIPasteboard.general.string = referralCode
-                    showCopied = true
+                    HapticManager.shared.copied()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        showCopied = true
+                    }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        showCopied = false
+                        withAnimation {
+                            showCopied = false
+                        }
                     }
                 }) {
                     Image(systemName: showCopied ? "checkmark.circle.fill" : "doc.on.doc")
                         .font(.title2)
                         .foregroundColor(.blue)
+                        .scaleEffect(showCopied ? 1.2 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: showCopied)
                 }
             }
 

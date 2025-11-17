@@ -80,6 +80,18 @@ struct DiscoverView: View {
                     await viewModel.fetchVenues()
                 }
             }
+            .alert("Error Loading Venues", isPresented: .constant(viewModel.errorMessage != nil)) {
+                Button("OK") {
+                    viewModel.errorMessage = nil
+                }
+                Button("Retry") {
+                    Task {
+                        await viewModel.fetchVenues()
+                    }
+                }
+            } message: {
+                Text(viewModel.errorMessage ?? "Could not load venues. Please check your connection.")
+            }
         }
     }
 }

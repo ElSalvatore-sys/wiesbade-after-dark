@@ -37,70 +37,101 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Active Bonuses Banner (if any)
-                    if homeViewModel.hasActiveBonuses {
-                        activeBonusesBanner
-                            .padding(.horizontal)
-                    }
-
-                    // Points Balance Card
-                    if homeViewModel.totalPoints > 0 {
-                        pointsBalanceCard
-                            .padding(.horizontal)
-                    }
-
-                    // Referral Card (Prominent)
-                    if let user = authViewModel.authState.user {
-                        VStack(spacing: 12) {
-                            ReferralCard(
-                                referralCode: user.referralCode,
-                                totalEarnings: Int(user.totalPointsEarned * 0.25) // Estimate 25% from referrals
-                            )
-
-                            ReferralExplanationView()
+            ZStack {
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Active Bonuses Banner (if any)
+                        if homeViewModel.hasActiveBonuses {
+                            activeBonusesBanner
+                                .padding(.horizontal)
                         }
-                        .padding(.horizontal)
-                    }
 
-                    // Recent Transactions
-                    if !homeViewModel.recentTransactions.isEmpty {
-                        RecentTransactionsView(transactions: homeViewModel.recentTransactions)
+                        // Points Balance Card
+                        if homeViewModel.totalPoints > 0 {
+                            pointsBalanceCard
+                                .padding(.horizontal)
+                        }
+
+                        // Referral Card (Prominent)
+                        if let user = authViewModel.authState.user {
+                            VStack(spacing: 12) {
+                                ReferralCard(
+                                    referralCode: user.referralCode,
+                                    totalEarnings: Int(user.totalPointsEarned * 0.25) // Estimate 25% from referrals
+                                )
+
+                                ReferralExplanationView()
+                            }
                             .padding(.horizontal)
+                        }
+
+                        // Recent Transactions
+                        if !homeViewModel.recentTransactions.isEmpty {
+                            RecentTransactionsView(transactions: homeViewModel.recentTransactions)
+                                .padding(.horizontal)
+                        }
+
+                        // Event Highlights Section
+                        eventHighlightsSection
+
+                        // Inventory Offers Section
+                        inventoryOffersSection
+
+                        // Nearby Venues Section
+                        nearbyVenuesSection
+
+                        // Quick Actions
+                        quickActionsSection
+                            .padding(.horizontal)
+
+                        Spacer()
+                            .frame(height: 40)
                     }
-
-                    // Event Highlights Section
-                    eventHighlightsSection
-
-                    // Inventory Offers Section
-                    inventoryOffersSection
-
-                    // Nearby Venues Section
-                    nearbyVenuesSection
-
-                    // Quick Actions
-                    quickActionsSection
-                        .padding(.horizontal)
-
-                    Spacer()
-                        .frame(height: 40)
+                    .padding(.top)
                 }
-                .padding(.top)
+                .background(Color.appBackground.ignoresSafeArea())
+                .navigationTitle("Home")
+                .navigationBarTitleDisplayMode(.large)
+                .refreshable {
+                    if let user = authViewModel.authState.user {
+                        await homeViewModel.refresh(userId: user.id)
+                    }
+                }
+                .task {
+                    // Load home data on appear
+                    if let user = authViewModel.authState.user {
+                        await homeViewModel.loadHomeData(userId: user.id)
+                    }
+                }
+
+                // Loading overlay - show only on initial load
+                if homeViewModel.isLoading && homeViewModel.venues.isEmpty {
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .primary))
+                            .scaleEffect(1.5)
+
+                        Text("Loading your points...")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.appBackground)
+                }
             }
-            .background(Color.appBackground.ignoresSafeArea())
-            .navigationTitle("Home")
-            .navigationBarTitleDisplayMode(.large)
-            .refreshable {
-                if let user = authViewModel.authState.user {
-                    await homeViewModel.refresh(userId: user.id)
+            .alert("Error", isPresented: .constant(homeViewModel.errorMessage != nil)) {
+                Button("OK") {
+                    homeViewModel.clearError()
                 }
-            }
-            .task {
-                // Load home data on appear
-                if let user = authViewModel.authState.user {
-                    await homeViewModel.loadHomeData(userId: user.id)
+                Button("Retry") {
+                    if let user = authViewModel.authState.user {
+                        Task {
+                            await homeViewModel.loadHomeData(userId: user.id)
+                        }
+                    }
                 }
+            } message: {
+                Text(homeViewModel.errorMessage ?? "An error occurred")
             }
             .sheet(isPresented: $showMyPasses) {
                 if let user = authViewModel.authState.user {
@@ -216,8 +247,8 @@ struct HomeView: View {
                     .foregroundStyle(Color.orange)
             }
 
-            // Euro value conversion
-            Text("= €\(homeViewModel.totalPoints) value")
+            // Euro value conversion (10:1 ratio - 10 points = €1)
+            Text("= €\(homeViewModel.totalPoints / 10) value")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.textSecondary)
@@ -517,6 +548,7 @@ struct HomeView: View {
                     title: "Check In",
                     color: .purple
                 ) {
+                    HapticManager.shared.medium()
                     showVenuePicker = true
                 }
 
@@ -526,6 +558,7 @@ struct HomeView: View {
                     title: "My Passes",
                     color: .blue
                 ) {
+                    HapticManager.shared.light()
                     showMyPasses = true
                 }
 
@@ -535,6 +568,7 @@ struct HomeView: View {
                     title: "History",
                     color: .green
                 ) {
+                    HapticManager.shared.light()
                     showCheckInHistory = true
                 }
 
@@ -544,6 +578,7 @@ struct HomeView: View {
                     title: "Refer Friend",
                     color: .orange
                 ) {
+                    HapticManager.shared.light()
                     // Share referral code
                     if let user = authViewModel.authState.user {
                         shareReferralCode(user.referralCode)
@@ -594,6 +629,17 @@ struct HomeView: View {
             .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
+        .buttonStyle(ScaleButtonStyle())
+    }
+}
+
+// MARK: - Scale Button Style for Subtle Animation
+
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
     }
 
     // MARK: - Computed Properties
