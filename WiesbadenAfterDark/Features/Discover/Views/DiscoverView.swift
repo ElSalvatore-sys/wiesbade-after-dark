@@ -29,6 +29,61 @@ struct DiscoverView: View {
                                 .padding(.horizontal, geometry.size.width * 0.05)
                                 .padding(.top, Theme.Spacing.md)
 
+                            // Active Deals Section (moved from Home)
+                            if !viewModel.inventoryOffers.isEmpty {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    // Section Header
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Active Deals")
+                                                .font(.title3)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(.textPrimary)
+
+                                            Text("Bonus points on these items")
+                                                .font(.caption)
+                                                .foregroundColor(.textSecondary)
+                                        }
+
+                                        Spacer()
+
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "flame.fill")
+                                                .font(.caption)
+                                                .foregroundColor(.orange)
+
+                                            Text("\(viewModel.inventoryOffers.count) deals")
+                                                .font(.subheadline)
+                                                .fontWeight(.semibold)
+                                                .foregroundColor(.textSecondary)
+                                        }
+                                    }
+                                    .padding(.horizontal, geometry.size.width * 0.05)
+
+                                    // Deals ScrollView
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 12) {
+                                            ForEach(viewModel.inventoryOffers.prefix(10), id: \.id) { product in
+                                                InventoryOfferCard(
+                                                    product: product,
+                                                    venue: viewModel.venues.first(where: { $0.id == product.venueId }),
+                                                    multiplier: product.bonusMultiplier,
+                                                    expiresAt: product.bonusEndDate
+                                                )
+                                                .frame(width: 320)
+                                            }
+                                        }
+                                        .padding(.horizontal, geometry.size.width * 0.05)
+                                    }
+                                }
+                                .padding(.vertical, 8)
+
+                                // Divider
+                                Divider()
+                                    .padding(.horizontal, geometry.size.width * 0.05)
+                                    .padding(.vertical, 8)
+                            }
+
                             // Venues list (single column, responsive)
                             if viewModel.venues.isEmpty && !viewModel.isLoading {
                                 EmptyStateView()
