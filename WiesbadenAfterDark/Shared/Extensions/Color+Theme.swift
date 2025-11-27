@@ -66,6 +66,23 @@ extension Color {
     /// Silver color (#E5E7EB)
     static let silver = Color(hex: "#E5E7EB")
 
+    // MARK: - Tier Colors
+
+    /// Bronze tier color (#CD7F32)
+    static let tierBronze = Color(hex: "CD7F32")
+
+    /// Silver tier color (#C0C0C0)
+    static let tierSilver = Color(hex: "C0C0C0")
+
+    /// Gold tier color (#FFD700)
+    static let tierGold = Color(hex: "FFD700")
+
+    /// Platinum tier color (#E5E4E2)
+    static let tierPlatinum = Color(hex: "E5E4E2")
+
+    /// Diamond tier color (#B9F2FF)
+    static let tierDiamond = Color(hex: "B9F2FF")
+
     // MARK: - Gradient Helpers
 
     /// Primary gradient (purple to pink)

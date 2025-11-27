@@ -37,76 +37,70 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Points Balance Card
-                        if homeViewModel.totalPoints > 0 {
-                            pointsBalanceCard
-                                .padding(.horizontal)
-                        }
-
-                        // Quick Actions (Check-in, Wallet)
-                        quickActionsSection
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Active Bonuses Banner (if any)
+                    if homeViewModel.hasActiveBonuses {
+                        activeBonusesBanner
                             .padding(.horizontal)
+                    }
 
-                        // Recent Transactions
-                        if !homeViewModel.recentTransactions.isEmpty {
-                            RecentTransactionsView(transactions: homeViewModel.recentTransactions)
-                                .padding(.horizontal)
+                    // Points Balance Card
+                    if homeViewModel.totalPoints > 0 {
+                        pointsBalanceCard
+                            .padding(.horizontal)
+                    }
+
+                    // Referral Card (Prominent)
+                    if let user = authViewModel.authState.user {
+                        VStack(spacing: 12) {
+                            ReferralCard(
+                                referralCode: user.referralCode,
+                                totalEarnings: Int(user.totalPointsEarned * 0.25) // Estimate 25% from referrals
+                            )
+
+                            ReferralExplanationView()
                         }
-
-                        // Event Highlights Section
-                        eventHighlightsSection
-
-                        Spacer()
-                            .frame(height: 40)
+                        .padding(.horizontal)
                     }
-                    .padding(.top)
+
+                    // Recent Transactions
+                    if !homeViewModel.recentTransactions.isEmpty {
+                        RecentTransactionsView(transactions: homeViewModel.recentTransactions)
+                            .padding(.horizontal)
+                    }
+
+                    // Event Highlights Section
+                    eventHighlightsSection
+
+                    // Inventory Offers Section
+                    inventoryOffersSection
+
+                    // Nearby Venues Section
+                    nearbyVenuesSection
+
+                    // Quick Actions
+                    quickActionsSection
+                        .padding(.horizontal)
+
+                    Spacer()
+                        .frame(height: 40)
                 }
-                .background(Color.appBackground.ignoresSafeArea())
-                .navigationTitle("Home")
-                .navigationBarTitleDisplayMode(.large)
-                .refreshable {
-                    if let user = authViewModel.authState.user {
-                        await homeViewModel.refresh(userId: user.id)
-                    }
-                }
-                .task {
-                    // Load home data on appear
-                    if let user = authViewModel.authState.user {
-                        await homeViewModel.loadHomeData(userId: user.id)
-                    }
-                }
-
-                // Loading overlay - show only on initial load
-                if homeViewModel.isLoading && homeViewModel.venues.isEmpty {
-                    VStack(spacing: 16) {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .primary))
-                            .scaleEffect(1.5)
-
-                        Text("Loading your points...")
-                            .font(.subheadline)
-                            .foregroundStyle(Color.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.appBackground)
+                .padding(.top)
+            }
+            .background(Color.appBackground.ignoresSafeArea())
+            .navigationTitle("Home")
+            .navigationBarTitleDisplayMode(.large)
+            .refreshable {
+                if let user = authViewModel.authState.user {
+                    await homeViewModel.refresh(userId: user.id)
                 }
             }
-            .alert("Error", isPresented: .constant(homeViewModel.errorMessage != nil)) {
-                Button("OK") {
-                    homeViewModel.clearError()
+            .task {
+                // Load home data on appear
+                if let user = authViewModel.authState.user {
+                    await homeViewModel.loadHomeData(userId: user.id)
                 }
-                Button("Retry") {
-                    if let user = authViewModel.authState.user {
-                        Task {
-                            await homeViewModel.loadHomeData(userId: user.id)
-                        }
-                    }
-                }
-            } message: {
-                Text(homeViewModel.errorMessage ?? "An error occurred")
             }
             .sheet(isPresented: $showMyPasses) {
                 if let user = authViewModel.authState.user {
@@ -152,6 +146,50 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Active Bonuses Banner
+
+    private var activeBonusesBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "flame.fill")
+                .font(.title2)
+                .foregroundStyle(Color.gold)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Active Bonuses")
+                    .font(.headline)
+                    .foregroundStyle(Color.textPrimary)
+
+                if let summary = homeViewModel.activeBonusesSummary() {
+                    Text(summary)
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                }
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(Color.textTertiary)
+        }
+        .padding(16)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color.gold.opacity(0.15),
+                    Color.warning.opacity(0.1)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                .strokeBorder(Color.gold.opacity(0.3), lineWidth: 1)
+        )
+    }
+
     // MARK: - Points Balance Card
 
     private var pointsBalanceCard: some View {
@@ -178,8 +216,8 @@ struct HomeView: View {
                     .foregroundStyle(Color.orange)
             }
 
-            // Euro value conversion (10:1 ratio - 10 points = €1)
-            Text("= €\(homeViewModel.totalPoints / 10) value")
+            // Euro value conversion
+            Text("= €\(homeViewModel.totalPoints) value")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.textSecondary)
@@ -331,6 +369,136 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Inventory Offers Section
+
+    private var inventoryOffersSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section Header
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Special Offers")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.textPrimary)
+
+                    Text("Limited time bonus points")
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                }
+
+                Spacer()
+
+                if !homeViewModel.inventoryOffers.isEmpty {
+                    HStack(spacing: 4) {
+                        Image(systemName: "star.fill")
+                            .font(.caption2)
+
+                        Text("\(homeViewModel.inventoryOffers.count) deals")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundStyle(Color.gold)
+                }
+            }
+            .padding(.horizontal)
+
+            // Offer Cards
+            if !homeViewModel.inventoryOffers.isEmpty {
+                VStack(spacing: 12) {
+                    ForEach(homeViewModel.inventoryOffers.prefix(5), id: \.id) { product in
+                        InventoryOfferCard(
+                            product: product,
+                            venue: homeViewModel.venue(for: product),
+                            multiplier: product.bonusMultiplier,
+                            expiresAt: product.bonusEndDate
+                        )
+                        .onTapGesture {
+                            selectedProduct = product
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            } else {
+                // Empty state
+                VStack(spacing: 12) {
+                    Image(systemName: "tag")
+                        .font(.system(size: 48))
+                        .foregroundStyle(Color.textTertiary)
+
+                    Text("No special offers right now")
+                        .font(.headline)
+                        .foregroundStyle(Color.textPrimary)
+
+                    Text("Check back later for bonus point deals!")
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+                .padding(.horizontal)
+            }
+        }
+    }
+
+    // MARK: - Nearby Venues Section
+
+    private var nearbyVenuesSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section Header
+            HStack {
+                Text("Nearby Venues")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(Color.textPrimary)
+
+                Spacer()
+
+                if !homeViewModel.nearbyVenues.isEmpty {
+                    Button {
+                        // Navigate to discover tab
+                    } label: {
+                        Text("See All")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.primary)
+                    }
+                }
+            }
+            .padding(.horizontal)
+
+            // Venue Cards
+            if !homeViewModel.nearbyVenues.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 16) {
+                        ForEach(homeViewModel.nearbyVenues, id: \.id) { venue in
+                            NearbyVenueCard(
+                                venue: venue,
+                                distance: homeViewModel.distance(to: venue),
+                                pointsBalance: homeViewModel.pointsBalance(for: venue.id)
+                            )
+                            .frame(width: 280)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            } else {
+                // Show all venues if no location
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 16) {
+                        ForEach(homeViewModel.venues.prefix(5), id: \.id) { venue in
+                            NearbyVenueCard(
+                                venue: venue,
+                                distance: nil,
+                                pointsBalance: homeViewModel.pointsBalance(for: venue.id)
+                            )
+                            .frame(width: 280)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            }
+        }
+    }
+
     // MARK: - Quick Actions
 
     private var quickActionsSection: some View {
@@ -349,7 +517,6 @@ struct HomeView: View {
                     title: "Check In",
                     color: .purple
                 ) {
-                    HapticManager.shared.medium()
                     showVenuePicker = true
                 }
 
@@ -359,7 +526,6 @@ struct HomeView: View {
                     title: "My Passes",
                     color: .blue
                 ) {
-                    HapticManager.shared.light()
                     showMyPasses = true
                 }
 
@@ -369,7 +535,6 @@ struct HomeView: View {
                     title: "History",
                     color: .green
                 ) {
-                    HapticManager.shared.light()
                     showCheckInHistory = true
                 }
 
@@ -379,7 +544,6 @@ struct HomeView: View {
                     title: "Refer Friend",
                     color: .orange
                 ) {
-                    HapticManager.shared.light()
                     // Share referral code
                     if let user = authViewModel.authState.user {
                         shareReferralCode(user.referralCode)
@@ -430,7 +594,6 @@ struct HomeView: View {
             .background(Color.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
-        .buttonStyle(ScaleButtonStyle())
     }
 
     // MARK: - Computed Properties

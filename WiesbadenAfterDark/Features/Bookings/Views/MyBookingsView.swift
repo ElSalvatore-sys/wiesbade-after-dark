@@ -39,25 +39,6 @@ struct MyBookingsView: View {
                 .pickerStyle(.segmented)
                 .padding()
 
-                // DEBUG: Show user ID
-                if let userId = currentUserId {
-                    Text("User ID: \(userId.uuidString)")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                        .padding(.bottom, 4)
-                } else {
-                    Text("❌ NO USER ID")
-                        .font(.caption2)
-                        .foregroundColor(.red)
-                        .padding(.bottom, 4)
-                }
-
-                // DEBUG: Show counts
-                Text("DB: \(allBookings.count) | Mine: \(userBookings.count) | Showing: \(displayedBookings.count)")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .padding(.bottom, 8)
-
                 // Bookings List
                 if selectedTab == .upcoming {
                     if displayedBookings.isEmpty {
