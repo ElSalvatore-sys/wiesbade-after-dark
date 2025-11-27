@@ -59,33 +59,33 @@ final class HomeViewModel {
 
     // MARK: - Data Loading Methods
 
-    /// Loads all home page data
+    /// Loads all home page data with parallel fetching for optimal performance
     func loadHomeData(userId: UUID) async {
-        print("🏠 [HomeViewModel] Loading home data")
+        print("🏠 [HomeViewModel] Loading home data (parallel)")
+        let startTime = CFAbsoluteTimeGetCurrent()
 
         isLoading = true
         errorMessage = nil
 
         do {
-            // Load venues
+            // STEP 1: Load venues first (required for other operations)
             venues = try await venueService.fetchVenues()
+            print("   ✓ Venues loaded: \(venues.count)")
 
-            // Load events from all venues
-            await loadAllEvents()
+            // STEP 2: Load everything else in PARALLEL using async let
+            async let eventsTask: () = loadAllEventsParallel()
+            async let offersTask: () = loadInventoryOffers()
+            async let membershipsTask: () = loadMemberships(userId: userId)
+            async let transactionsTask: () = loadRecentTransactions(userId: userId)
 
-            // Load inventory offers
-            await loadInventoryOffers()
-
-            // Load user memberships
-            await loadMemberships(userId: userId)
-
-            // Load recent transactions
-            await loadRecentTransactions(userId: userId)
+            // Wait for all parallel tasks to complete
+            _ = await (eventsTask, offersTask, membershipsTask, transactionsTask)
 
             // Calculate nearby venues if location is available
             updateNearbyVenues()
 
-            print("✅ [HomeViewModel] Home data loaded successfully")
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            print("✅ [HomeViewModel] Home data loaded in \(String(format: "%.2f", elapsed))s")
             isLoading = false
 
         } catch {
@@ -106,9 +106,28 @@ final class HomeViewModel {
 
     // MARK: - Events Methods
 
-    /// Loads events from all venues and categorizes them
+    /// Loads events from all venues using batch fetch (OPTIMIZED)
+    private func loadAllEventsParallel() async {
+        print("🎫 [HomeViewModel] Loading events (batch)")
+
+        do {
+            // Use batch fetch instead of per-venue iteration
+            allEvents = try await venueService.fetchAllEvents()
+
+            // Categorize events
+            categorizeEvents()
+
+            print("   ✓ Events loaded: \(allEvents.count)")
+        } catch {
+            print("⚠️ [HomeViewModel] Failed to load events: \(error)")
+            allEvents = []
+        }
+    }
+
+    /// Legacy: Loads events from all venues and categorizes them (SLOW - sequential)
+    @available(*, deprecated, message: "Use loadAllEventsParallel() for better performance")
     private func loadAllEvents() async {
-        print("🎫 [HomeViewModel] Loading events")
+        print("🎫 [HomeViewModel] Loading events (sequential - deprecated)")
 
         var allEventsList: [Event] = []
 

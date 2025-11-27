@@ -13,8 +13,8 @@ import Foundation
 final class MockVenueService: VenueServiceProtocol {
     // MARK: - Properties
 
-    /// Simulated network delay in seconds
-    private let networkDelay: TimeInterval = 1.0
+    /// Simulated network delay in seconds (reduced for faster demo experience)
+    private let networkDelay: TimeInterval = 0.3
 
     /// All cached venues
     private lazy var allVenues: [Venue] = [

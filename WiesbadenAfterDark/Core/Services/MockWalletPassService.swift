@@ -13,7 +13,7 @@ final class MockWalletPassService: WalletPassServiceProtocol {
 
     static let shared = MockWalletPassService()
 
-    private let networkDelay: TimeInterval = 1.0
+    private let networkDelay: TimeInterval = 0.3  // Reduced for faster demo experience
 
     // In-memory storage for mock data
     private var passes: [WalletPass] = []

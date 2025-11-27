@@ -14,8 +14,8 @@ final class MockCheckInService: CheckInServiceProtocol {
 
     static let shared = MockCheckInService()
 
-    private let nfcScanDelay: TimeInterval = 2.0
-    private let networkDelay: TimeInterval = 1.0
+    private let nfcScanDelay: TimeInterval = 0.8  // Reduced for faster demo experience
+    private let networkDelay: TimeInterval = 0.3  // Reduced for faster demo experience
 
     // In-memory storage for mock data
     private var checkIns: [CheckIn] = []

@@ -15,8 +15,8 @@ import Foundation
 final class MockAuthService: AuthServiceProtocol {
     // MARK: - Properties
 
-    /// Simulated network delay in seconds
-    private let networkDelay: TimeInterval = 2.0
+    /// Simulated network delay in seconds (reduced for faster demo experience)
+    private let networkDelay: TimeInterval = 0.5
 
     /// List of valid mock referral codes for testing
     private let validReferralCodes = ["WIESBADEN2024", "VIP123", "WELCOME"]

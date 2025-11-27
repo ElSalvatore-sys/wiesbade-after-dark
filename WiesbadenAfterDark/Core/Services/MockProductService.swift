@@ -13,8 +13,8 @@ import Foundation
 final class MockProductService: ProductServiceProtocol {
     // MARK: - Properties
 
-    /// Simulated network delay in seconds
-    private let networkDelay: TimeInterval = 1.0
+    /// Simulated network delay in seconds (reduced for faster demo experience)
+    private let networkDelay: TimeInterval = 0.3
 
     /// Cache of products per venue
     private var productCache: [UUID: [Product]] = [:]
