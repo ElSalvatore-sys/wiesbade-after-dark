@@ -39,7 +39,7 @@ struct HomeView: View {
         NavigationStack {
             ZStack {
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: Theme.Spacing.lg) {
                         // Points Balance Card
                         if homeViewModel.totalPoints > 0 {
                             pointsBalanceCard
@@ -60,7 +60,7 @@ struct HomeView: View {
                         eventHighlightsSection
 
                         Spacer()
-                            .frame(height: 40)
+                            .frame(height: Theme.Spacing.xl)
                     }
                     .padding(.top)
                 }
@@ -81,7 +81,7 @@ struct HomeView: View {
 
                 // Loading overlay - show only on initial load
                 if homeViewModel.isLoading && homeViewModel.venues.isEmpty {
-                    VStack(spacing: 16) {
+                    VStack(spacing: Theme.Spacing.md) {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .primary))
                             .scaleEffect(1.5)
@@ -155,14 +155,14 @@ struct HomeView: View {
     // MARK: - Points Balance Card
 
     private var pointsBalanceCard: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Theme.Spacing.cardGap) {
             // "Your Points" label
             Text("Your Points")
                 .font(.subheadline)
                 .foregroundStyle(Color.textSecondary)
 
             // HUGE Points Balance
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.sm) {
                 Text("\(homeViewModel.totalPoints)")
                     .font(.system(size: 64, weight: .bold, design: .rounded))
                     .foregroundStyle(
@@ -187,9 +187,9 @@ struct HomeView: View {
             // Venue breakdown (if multiple memberships)
             if homeViewModel.memberships.count > 1 {
                 Divider()
-                    .padding(.vertical, 4)
+                    .padding(.vertical, Theme.Spacing.xs)
 
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                     Text("Points by Venue")
                         .font(.caption)
                         .foregroundStyle(Color.textSecondary)
@@ -214,7 +214,7 @@ struct HomeView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(24)
+        .padding(Theme.Spacing.lg)
         .background(
             LinearGradient(
                 colors: [
@@ -225,9 +225,9 @@ struct HomeView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
                 .strokeBorder(
                     LinearGradient(
                         colors: [Color.orange.opacity(0.3), Color.gold.opacity(0.2)],
@@ -248,10 +248,10 @@ struct HomeView: View {
     // MARK: - Event Highlights Section
 
     private var eventHighlightsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             // Section Header
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     Text(eventSectionTitle)
                         .font(.title2)
                         .fontWeight(.bold)
@@ -277,7 +277,7 @@ struct HomeView: View {
             // Event Cards
             if !homeViewModel.todayEvents.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 16) {
+                    HStack(spacing: Theme.Spacing.md) {
                         ForEach(homeViewModel.todayEvents.prefix(3), id: \.id) { event in
                             EventHighlightCard(
                                 event: event,
@@ -294,7 +294,7 @@ struct HomeView: View {
                 }
             } else if !homeViewModel.upcomingEvents.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 16) {
+                    HStack(spacing: Theme.Spacing.md) {
                         ForEach(homeViewModel.upcomingEvents.prefix(3), id: \.id) { event in
                             EventHighlightCard(
                                 event: event,
@@ -311,7 +311,7 @@ struct HomeView: View {
                 }
             } else {
                 // Empty state
-                VStack(spacing: 12) {
+                VStack(spacing: Theme.Spacing.cardGap) {
                     Image(systemName: "calendar.badge.exclamationmark")
                         .font(.system(size: 48))
                         .foregroundStyle(Color.textTertiary)
@@ -325,7 +325,7 @@ struct HomeView: View {
                         .foregroundStyle(Color.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 40)
+                .padding(.vertical, Theme.Spacing.xl)
                 .padding(.horizontal)
             }
         }
@@ -334,7 +334,7 @@ struct HomeView: View {
     // MARK: - Quick Actions
 
     private var quickActionsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Text("Quick Actions")
                 .font(.headline)
                 .foregroundStyle(Color.textPrimary)
@@ -342,7 +342,7 @@ struct HomeView: View {
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible())
-            ], spacing: 12) {
+            ], spacing: Theme.Spacing.cardGap) {
                 // Check-In (Show venue picker)
                 quickActionButton(
                     icon: "wave.3.right.circle.fill",
@@ -400,9 +400,9 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.sm))
             }
-            .padding(.top, 8)
+            .padding(.top, Theme.Spacing.sm)
         }
     }
 
@@ -415,7 +415,7 @@ struct HomeView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 12) {
+            VStack(spacing: Theme.Spacing.cardGap) {
                 Image(systemName: icon)
                     .font(.title2)
                     .foregroundStyle(color)
@@ -426,9 +426,9 @@ struct HomeView: View {
                     .foregroundStyle(Color.textPrimary)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
+            .padding(.vertical, Theme.Spacing.cardPadding)
             .background(Color.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
         }
         .buttonStyle(ScaleButtonStyle())
     }
@@ -494,7 +494,7 @@ struct NearbyVenueCard: View {
             .clipped()
 
             // Venue Info
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 Text(venue.name)
                     .font(.headline)
                     .foregroundStyle(Color.textPrimary)
@@ -516,7 +516,7 @@ struct NearbyVenueCard: View {
                 }
 
                 if pointsBalance > 0 {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Theme.Spacing.xs) {
                         Image(systemName: "star.fill")
                             .font(.caption2)
 
@@ -527,7 +527,7 @@ struct NearbyVenueCard: View {
                     .foregroundStyle(Color.gold)
                 }
             }
-            .padding(12)
+            .padding(Theme.Spacing.cardGap)
         }
         .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
@@ -546,14 +546,14 @@ struct RecentTransactionsView: View {
     let transactions: [PointTransaction]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             Text("Recent Activity")
                 .font(.headline)
                 .foregroundStyle(Color.textPrimary)
 
             if transactions.isEmpty {
                 // Empty state
-                VStack(spacing: 12) {
+                VStack(spacing: Theme.Spacing.cardGap) {
                     Image(systemName: "clock")
                         .font(.system(size: 32))
                         .foregroundStyle(Color.textTertiary)
@@ -563,21 +563,21 @@ struct RecentTransactionsView: View {
                         .foregroundStyle(Color.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 24)
+                .padding(.vertical, Theme.Spacing.lg)
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(transactions.prefix(5).enumerated()), id: \.element.id) { index, transaction in
-                        HStack(spacing: 12) {
+                        HStack(spacing: Theme.Spacing.cardGap) {
                             // Icon
                             Image(systemName: transaction.source.icon)
                                 .font(.system(size: 20))
                                 .foregroundStyle(transactionColor(for: transaction))
                                 .frame(width: 40, height: 40)
                                 .background(transactionColor(for: transaction).opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.sm))
 
                             // Description and date
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                                 Text(transaction.shortDescription)
                                     .font(.subheadline)
                                     .foregroundStyle(Color.textPrimary)
@@ -596,7 +596,7 @@ struct RecentTransactionsView: View {
                                 .fontWeight(.semibold)
                                 .foregroundStyle(transaction.amount > 0 ? Color.success : Color.error)
                         }
-                        .padding(.vertical, 12)
+                        .padding(.vertical, Theme.Spacing.cardGap)
 
                         // Divider (except for last item)
                         if index < min(4, transactions.count - 1) {
@@ -606,7 +606,7 @@ struct RecentTransactionsView: View {
                 }
             }
         }
-        .padding(20)
+        .padding(Theme.Spacing.cardPadding)
         .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
         .shadow(

@@ -31,10 +31,10 @@ struct DiscoverView: View {
 
                             // Active Deals Section (moved from Home)
                             if !viewModel.inventoryOffers.isEmpty {
-                                VStack(alignment: .leading, spacing: 12) {
+                                VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
                                     // Section Header
                                     HStack {
-                                        VStack(alignment: .leading, spacing: 2) {
+                                        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                                             Text("Active Deals")
                                                 .font(.title3)
                                                 .fontWeight(.bold)
@@ -47,7 +47,7 @@ struct DiscoverView: View {
 
                                         Spacer()
 
-                                        HStack(spacing: 4) {
+                                        HStack(spacing: Theme.Spacing.xs) {
                                             Image(systemName: "flame.fill")
                                                 .font(.caption)
                                                 .foregroundColor(.orange)
@@ -62,7 +62,7 @@ struct DiscoverView: View {
 
                                     // Deals ScrollView
                                     ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: 12) {
+                                        HStack(spacing: Theme.Spacing.cardGap) {
                                             ForEach(viewModel.inventoryOffers.prefix(10), id: \.id) { product in
                                                 InventoryOfferCard(
                                                     product: product,
@@ -76,19 +76,19 @@ struct DiscoverView: View {
                                         .padding(.horizontal, geometry.size.width * 0.05)
                                     }
                                 }
-                                .padding(.vertical, 8)
+                                .padding(.vertical, Theme.Spacing.sm)
 
                                 // Divider
                                 Divider()
                                     .padding(.horizontal, geometry.size.width * 0.05)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, Theme.Spacing.sm)
                             }
 
                             // Venues list (single column, responsive)
                             if viewModel.venues.isEmpty && !viewModel.isLoading {
                                 EmptyStateView()
                             } else {
-                                LazyVStack(spacing: 20) {
+                                LazyVStack(spacing: Theme.Spacing.cardPadding) {
                                     ForEach(viewModel.venues, id: \.id) { venue in
                                         VenueCard(venue: venue) {
                                             // CRITICAL FIX: Only select if not already selected
@@ -169,7 +169,7 @@ private struct EmptyStateView: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 100)
+        .padding(.top, Theme.Spacing.xxl * 2)
         .padding(.horizontal, Theme.Spacing.xl)
     }
 }
