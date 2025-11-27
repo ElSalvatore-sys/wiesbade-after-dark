@@ -44,7 +44,7 @@ struct VenueCard: View {
                 .frame(height: 180)
 
                 // Content Section
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
                     // Title & Rating Row
                     HStack(alignment: .top) {
                         Text(venue.name)
@@ -56,7 +56,7 @@ struct VenueCard: View {
                         Spacer()
 
                         // Rating
-                        HStack(spacing: 4) {
+                        HStack(spacing: Theme.Spacing.xs) {
                             Image(systemName: "star.fill")
                                 .foregroundColor(.gold)
                                 .font(.caption)
@@ -67,8 +67,8 @@ struct VenueCard: View {
                     }
 
                     // Member Count Row
-                    HStack(spacing: 8) {
-                        HStack(spacing: 4) {
+                    HStack(spacing: Theme.Spacing.sm) {
+                        HStack(spacing: Theme.Spacing.xs) {
                             Image(systemName: "person.2.fill")
                                 .font(.caption2)
                             Text("\(venue.memberCount) members")
@@ -78,7 +78,7 @@ struct VenueCard: View {
 
                         // Open status indicator
                         if venue.isOpenNow {
-                            HStack(spacing: 4) {
+                            HStack(spacing: Theme.Spacing.xs) {
                                 Circle()
                                     .fill(Color.green)
                                     .frame(width: 6, height: 6)
@@ -96,7 +96,7 @@ struct VenueCard: View {
                         .lineLimit(2)
 
                     // Points Rate Badge
-                    HStack(spacing: 4) {
+                    HStack(spacing: Theme.Spacing.xs) {
                         Image(systemName: "star.circle.fill")
                             .foregroundColor(.gold)
                             .font(.caption)
@@ -105,18 +105,22 @@ struct VenueCard: View {
                             .fontWeight(.medium)
                             .foregroundColor(.gold)
                     }
-                    .padding(.top, 4)
+                    .padding(.top, Theme.Spacing.xs)
                 }
-                .padding(16)
+                .padding(Theme.Spacing.md)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .background(Color(.systemBackground))
-            .cornerRadius(Theme.CornerRadius.lg)
+            .background(Color.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                    .stroke(Color.cardBorder, lineWidth: 1)
+            )
             .shadow(
-                color: Color.black.opacity(0.08),
-                radius: 8,
-                x: 0,
-                y: 4
+                color: Theme.Shadow.md.color,
+                radius: Theme.Shadow.md.radius,
+                x: Theme.Shadow.md.x,
+                y: Theme.Shadow.md.y
             )
         }
         .buttonStyle(ScaleButtonStyle())

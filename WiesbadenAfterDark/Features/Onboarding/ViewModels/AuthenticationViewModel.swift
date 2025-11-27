@@ -25,6 +25,8 @@ final class AuthenticationViewModel {
     var authState: AuthenticationState = .initializing
     var currentPhoneNumber: String = ""
     var currentReferralCode: String?
+    var pendingFirstName: String?
+    var pendingLastName: String?
     var isLoading: Bool = false
     var error: AppError?
     var showError: Bool = false
@@ -231,12 +233,16 @@ final class AuthenticationViewModel {
         error = nil
         showError = false
 
+        // Use provided name or fall back to pending name from NameInputView
+        let finalFirstName = firstName ?? pendingFirstName
+        let finalLastName = lastName ?? pendingLastName
+
         do {
             // Create account
             let user = try await authService.createAccount(
                 phoneNumber: currentPhoneNumber,
-                firstName: firstName,
-                lastName: lastName,
+                firstName: finalFirstName,
+                lastName: finalLastName,
                 referralCode: currentReferralCode
             )
             print("✅ [AuthViewModel] Account created: \(user.id)")
@@ -333,6 +339,8 @@ final class AuthenticationViewModel {
         authState = .unauthenticated
         currentPhoneNumber = ""
         currentReferralCode = nil
+        pendingFirstName = nil
+        pendingLastName = nil
         error = nil
         showError = false
     }

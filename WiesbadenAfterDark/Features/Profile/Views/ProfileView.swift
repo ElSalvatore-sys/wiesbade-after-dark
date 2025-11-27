@@ -2,16 +2,20 @@
 //  ProfileView.swift
 //  WiesbadenAfterDark
 //
-//  Ultra-minimal profile with only 4 essential sections
+//  Profile view with user info, actions, and recent activity
 //
 
 import SwiftUI
+import SwiftData
 
-/// Main profile view - Drastically simplified to 4 sections
+/// Main profile view with user info and recent activity
 struct ProfileView: View {
     @Environment(AuthenticationViewModel.self) private var authViewModel
+    @Environment(\.modelContext) private var modelContext
 
     @State private var showingSignOutAlert = false
+    @State private var recentTransactions: [PointTransaction] = []
+    @State private var isLoadingTransactions = false
 
     private var user: User? {
         authViewModel.authState.user
@@ -42,14 +46,22 @@ struct ProfileView: View {
 
                         VStack(spacing: 4) {
                             if let user = user {
-                                Text(user.formattedPhoneNumber)
+                                // Display name (or phone number as fallback)
+                                Text(user.displayName)
                                     .font(.title3)
                                     .fontWeight(.semibold)
                                     .foregroundColor(.textPrimary)
 
+                                // Show phone number below name if name exists
+                                if user.fullName != nil {
+                                    Text(user.formattedPhoneNumber)
+                                        .font(Typography.bodySmall)
+                                        .foregroundColor(.textSecondary)
+                                }
+
                                 Text("Member since \(memberSince)")
                                     .font(.caption)
-                                    .foregroundColor(.textSecondary)
+                                    .foregroundColor(.textTertiary)
                             }
                         }
                     }
@@ -116,7 +128,13 @@ struct ProfileView: View {
                     .cornerRadius(Theme.CornerRadius.lg)
                     .padding(.horizontal, Theme.Spacing.lg)
 
-                    // SECTION 4: SIGN OUT
+                    // SECTION 4: RECENT ACTIVITY
+                    if !recentTransactions.isEmpty {
+                        RecentActivitySection(transactions: recentTransactions)
+                            .padding(.horizontal, Theme.Spacing.lg)
+                    }
+
+                    // SECTION 5: SIGN OUT
                     Button {
                         showingSignOutAlert = true
                     } label: {
@@ -144,13 +162,47 @@ struct ProfileView: View {
             } message: {
                 Text("Are you sure you want to sign out?")
             }
+            .task {
+                await loadRecentTransactions()
+            }
         }
+    }
+
+    // MARK: - Data Loading
+
+    private func loadRecentTransactions() async {
+        guard let user = user else { return }
+
+        isLoadingTransactions = true
+
+        // Load transactions from mock data
+        // In production, this would fetch from the backend via a service
+        recentTransactions = PointTransaction.mockHistory(
+            userId: user.id,
+            venueId: UUID(), // Mock venue ID
+            venueName: "Das Wohnzimmer",
+            count: 8
+        )
+
+        isLoadingTransactions = false
     }
 
     // MARK: - Computed Properties
 
     private var userInitials: String {
         guard let user = user else { return "?" }
+
+        // Use name initials if available
+        if let firstName = user.firstName, !firstName.isEmpty {
+            let firstInitial = String(firstName.prefix(1)).uppercased()
+            if let lastName = user.lastName, !lastName.isEmpty {
+                let lastInitial = String(lastName.prefix(1)).uppercased()
+                return "\(firstInitial)\(lastInitial)"
+            }
+            return firstInitial
+        }
+
+        // Fallback to last 2 digits of phone number
         let digits = user.phoneNumber.filter { $0.isNumber }
         if digits.count >= 2 {
             return String(digits.suffix(2))
@@ -293,8 +345,94 @@ private struct ProfileActionButton: View {
     }
 }
 
+// MARK: - Recent Activity Section
+private struct RecentActivitySection: View {
+    let transactions: [PointTransaction]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            Text("Recent Activity")
+                .font(.headline)
+                .foregroundStyle(Color.textPrimary)
+
+            if transactions.isEmpty {
+                // Empty state
+                VStack(spacing: Theme.Spacing.cardGap) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 32))
+                        .foregroundStyle(Color.textTertiary)
+
+                    Text("No transactions yet")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Theme.Spacing.lg)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(transactions.prefix(5).enumerated()), id: \.element.id) { index, transaction in
+                        HStack(spacing: Theme.Spacing.cardGap) {
+                            // Icon
+                            Image(systemName: transaction.source.icon)
+                                .font(.system(size: 20))
+                                .foregroundStyle(transactionColor(for: transaction))
+                                .frame(width: 40, height: 40)
+                                .background(transactionColor(for: transaction).opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.sm))
+
+                            // Description and date
+                            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                                Text(transaction.shortDescription)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.textPrimary)
+                                    .lineLimit(1)
+
+                                Text(transaction.timeAgo)
+                                    .font(.caption)
+                                    .foregroundStyle(Color.textSecondary)
+                            }
+
+                            Spacer()
+
+                            // Amount
+                            Text(transaction.formattedAmount)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(transaction.amount > 0 ? Color.success : Color.error)
+                        }
+                        .padding(.vertical, Theme.Spacing.cardGap)
+
+                        // Divider (except for last item)
+                        if index < min(4, transactions.count - 1) {
+                            Divider()
+                        }
+                    }
+                }
+            }
+        }
+        .padding(Theme.Spacing.cardPadding)
+        .background(Color.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+        .shadow(
+            color: Theme.Shadow.md.color,
+            radius: Theme.Shadow.md.radius,
+            x: Theme.Shadow.md.x,
+            y: Theme.Shadow.md.y
+        )
+    }
+
+    private func transactionColor(for transaction: PointTransaction) -> Color {
+        switch transaction.type {
+        case .earn: return .blue
+        case .redeem: return .red
+        case .bonus: return .green
+        case .refund: return .orange
+        }
+    }
+}
+
 // MARK: - Preview
-#Preview("Profile View - Minimal") {
+#Preview("Profile View") {
     ProfileView()
         .environment(AuthenticationViewModel())
 }

@@ -70,5 +70,6 @@ enum OnboardingRoute: Hashable {
     case welcome
     case phoneInput
     case verification(phoneNumber: String)
+    case nameInput
     case referralCode
 }

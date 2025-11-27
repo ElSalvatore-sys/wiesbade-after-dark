@@ -39,17 +39,17 @@ struct InventoryOfferCard: View {
     // MARK: - Body
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: Theme.Spacing.md) {
             // Product Icon (Professional SF Symbol)
             productIconView
 
             // Content Section
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 // Header: Product Name + Bonus Badge
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .top, spacing: Theme.Spacing.sm) {
                     Text(product.name)
                         .font(Typography.headlineSmall)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.orange)
                         .lineLimit(1)
 
                     Spacer()
@@ -62,14 +62,14 @@ struct InventoryOfferCard: View {
 
                 // Venue Location
                 if let venue = venue {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Theme.Spacing.xs) {
                         Image(systemName: "mappin.circle.fill")
                             .font(.system(size: 11))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.textTertiary)
 
                         Text(venue.name)
                             .font(Typography.bodySmall)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.textSecondary)
                             .lineLimit(1)
                     }
                 }
@@ -80,7 +80,7 @@ struct InventoryOfferCard: View {
                 HStack(alignment: .bottom) {
                     Text(product.formattedPrice)
                         .font(Typography.headlineMedium)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.gold)
 
                     Spacer()
 
@@ -92,19 +92,19 @@ struct InventoryOfferCard: View {
             }
             .frame(maxHeight: .infinity)
         }
-        .padding(16)
+        .padding(Theme.Spacing.md)
         .frame(height: 110)
-        .background(Color(uiColor: .systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(Color.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.sm))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.sm)
+                .stroke(Color.cardBorder, lineWidth: 1)
         )
         .shadow(
-            color: Color.black.opacity(0.04),
-            radius: 8,
-            x: 0,
-            y: 2
+            color: Theme.Shadow.md.color,
+            radius: Theme.Shadow.md.radius,
+            x: Theme.Shadow.md.x,
+            y: Theme.Shadow.md.y
         )
     }
 
@@ -113,12 +113,12 @@ struct InventoryOfferCard: View {
     /// Professional product icon with SF Symbol
     private var productIconView: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.08))
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.sm)
+                .fill(Color.cardBorder)
 
             Image(systemName: categoryIcon)
                 .font(.system(size: 28))
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
         }
         .frame(width: 70, height: 70)
     }
@@ -157,12 +157,12 @@ struct InventoryOfferCard: View {
                 // 1.5x MINIMAL: Very understated
                 Text("\(String(format: "%.1f", multiplierValue))×")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textSecondary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
                     .background(
                         RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.gray.opacity(0.08))
+                            .fill(Color.cardBorder)
                     )
             }
         }
@@ -170,19 +170,19 @@ struct InventoryOfferCard: View {
 
     /// Refined expiry countdown indicator
     private func expiryIndicator(timeText: String) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Theme.Spacing.xs) {
             Image(systemName: "clock")
                 .font(.system(size: 11))
 
             Text(timeText.replacingOccurrences(of: "Expires in ", with: ""))
                 .font(.system(size: 12, weight: .medium))
         }
-        .foregroundColor(isExpiringSoon ? Color(hex: "#F59E0B") : .secondary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .foregroundColor(isExpiringSoon ? Color.orange : .textSecondary)
+        .padding(.horizontal, Theme.Spacing.sm)
+        .padding(.vertical, Theme.Spacing.xs)
         .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(isExpiringSoon ? Color.orange.opacity(0.1) : Color.gray.opacity(0.08))
+            RoundedRectangle(cornerRadius: Theme.Spacing.xs)
+                .fill(isExpiringSoon ? Color.orange.opacity(0.15) : Color.cardBorder)
         )
     }
 
@@ -232,7 +232,7 @@ struct InventoryOfferCard: View {
     let bonusProducts = products.filter { $0.bonusPointsActive }
 
     ScrollView {
-        VStack(spacing: 12) {
+        VStack(spacing: Theme.Spacing.cardGap) {
             // High value bonus (3x+)
             if let product = bonusProducts.first {
                 InventoryOfferCard(
@@ -265,5 +265,5 @@ struct InventoryOfferCard: View {
         }
         .padding()
     }
-    .background(Color.gray.opacity(0.05))
+    .background(Color.appBackground)
 }

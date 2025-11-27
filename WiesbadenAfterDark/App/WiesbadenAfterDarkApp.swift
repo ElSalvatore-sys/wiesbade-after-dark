@@ -151,15 +151,20 @@ struct OnboardingFlow: View {
 
                 case .verification(let phoneNumber):
                     VerificationCodeView(phoneNumber: phoneNumber) {
-                        // Check auth state - only navigate to referral if NOT authenticated
+                        // Check auth state - only navigate to name input if NOT authenticated
                         // If user is authenticated (existing user), root navigation will handle it
                         if case .authenticated = viewModel.authState {
                             print("🏠 [Navigation] User authenticated - let root navigation handle (go to home)")
                             // Don't navigate - authenticated users go straight to MainTabView
                         } else {
-                            print("📝 [Navigation] New user - proceeding to referral code input")
-                            navigationPath.append(OnboardingRoute.referralCode)
+                            print("📝 [Navigation] New user - proceeding to name input")
+                            navigationPath.append(OnboardingRoute.nameInput)
                         }
+                    }
+
+                case .nameInput:
+                    NameInputView {
+                        navigationPath.append(OnboardingRoute.referralCode)
                     }
 
                 case .referralCode:

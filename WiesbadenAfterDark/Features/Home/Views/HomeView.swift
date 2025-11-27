@@ -50,12 +50,6 @@ struct HomeView: View {
                         quickActionsSection
                             .padding(.horizontal)
 
-                        // Recent Transactions
-                        if !homeViewModel.recentTransactions.isEmpty {
-                            RecentTransactionsView(transactions: homeViewModel.recentTransactions)
-                                .padding(.horizontal)
-                        }
-
                         // Event Highlights Section
                         eventHighlightsSection
 
