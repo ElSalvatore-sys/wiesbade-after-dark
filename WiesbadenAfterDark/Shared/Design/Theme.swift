@@ -19,6 +19,11 @@ enum Theme {
         static let lg: CGFloat = 24
         static let xl: CGFloat = 32
         static let xxl: CGFloat = 48
+
+        // Card-specific spacing
+        static let cardPadding: CGFloat = 20    // Internal card padding
+        static let cardGap: CGFloat = 12        // Gap between cards in lists
+        static let sectionGap: CGFloat = 32     // Gap between major sections
     }
 
     // MARK: - Corner Radius (2025 Modern - Softer Rounded Corners)

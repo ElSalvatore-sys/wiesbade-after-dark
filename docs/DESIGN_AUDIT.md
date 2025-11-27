@@ -95,10 +95,10 @@ struct Spacing {
 - [x] Create this document
 
 ### Day 2 (Nov 28) - DESIGN SYSTEM
-- [ ] Update Color+Theme.swift with new colors
-- [ ] Update Typography.swift with bolder weights
-- [ ] Update Theme.swift with new spacing tokens
-- [ ] Add tier colors to design system
+- [x] Update Color+Theme.swift with new colors (appBackground, cardBackground, cardBorder, primary, gold)
+- [x] Update Typography.swift with bolder weights (already had .bold)
+- [x] Update Theme.swift with new spacing tokens (cardPadding, cardGap, sectionGap)
+- [x] Add tier colors to design system (done Day 1)
 
 ### Day 3 (Nov 29) - HOME + DISCOVER
 - [ ] HomeView - apply new design system

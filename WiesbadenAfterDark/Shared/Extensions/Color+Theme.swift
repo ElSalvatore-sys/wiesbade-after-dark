@@ -16,16 +16,19 @@ extension Color {
     /// End color for primary gradient (#EC4899 - Pink)
     static let primaryGradientEnd = Color(hex: "#EC4899")
 
-    /// Solid primary color (purple)
-    static let primary = Color(hex: "#8B5CF6")
+    /// Solid primary color (#7C3AED - Deep Purple)
+    static let primary = Color(hex: "#7C3AED")
 
     // MARK: - Background Colors
 
-    /// Main app background (#0F172A - Dark Navy Blue)
-    static let appBackground = Color(hex: "#0F172A")
+    /// Main app background (#09090B - OLED Black)
+    static let appBackground = Color(hex: "#09090B")
 
-    /// Card and surface background (#1E293B - Lighter Dark)
-    static let cardBackground = Color(hex: "#1E293B")
+    /// Card and surface background (#18181B - Clean Dark)
+    static let cardBackground = Color(hex: "#18181B")
+
+    /// Card border color for subtle separation (#27272A)
+    static let cardBorder = Color(hex: "#27272A")
 
     /// Input field background (#334155 - Even Lighter Dark)
     static let inputBackground = Color(hex: "#334155")
@@ -60,8 +63,8 @@ extension Color {
 
     // MARK: - Accent Colors
 
-    /// Gold color for premium features (#FCD34D)
-    static let gold = Color(hex: "#FCD34D")
+    /// Gold color for premium features (#D4AF37 - Realistic Gold)
+    static let gold = Color(hex: "#D4AF37")
 
     /// Silver color (#E5E7EB)
     static let silver = Color(hex: "#E5E7EB")
