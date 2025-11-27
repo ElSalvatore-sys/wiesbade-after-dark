@@ -45,7 +45,7 @@ struct MyBookingsView: View {
                         emptyStateView
                     } else {
                         ScrollView {
-                            LazyVStack(spacing: 16) {
+                            LazyVStack(spacing: Theme.Spacing.md) {
                                 ForEach(displayedBookings) { booking in
                                     BookingCard(
                                         booking: booking,
@@ -57,7 +57,7 @@ struct MyBookingsView: View {
                                     )
                                 }
                             }
-                            .padding()
+                            .padding(Theme.Spacing.md)
                         }
                     }
                 } else {
@@ -65,7 +65,7 @@ struct MyBookingsView: View {
                         emptyStateView
                     } else {
                         ScrollView {
-                            LazyVStack(spacing: 16) {
+                            LazyVStack(spacing: Theme.Spacing.md) {
                                 ForEach(displayedBookings) { booking in
                                     BookingCard(
                                         booking: booking,
@@ -77,7 +77,7 @@ struct MyBookingsView: View {
                                     )
                                 }
                             }
-                            .padding()
+                            .padding(Theme.Spacing.md)
                         }
                     }
                 }
@@ -108,12 +108,12 @@ struct MyBookingsView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: Theme.Spacing.cardPadding) {
             Image(systemName: selectedTab == .upcoming ? "calendar.badge.plus" : "clock.badge.checkmark")
                 .font(.system(size: 60))
                 .foregroundStyle(Color.textSecondary.opacity(0.5))
 
-            VStack(spacing: 8) {
+            VStack(spacing: Theme.Spacing.sm) {
                 Text(selectedTab == .upcoming ? "No Upcoming Bookings" : "No Past Bookings")
                     .font(.headline)
                     .foregroundStyle(Color.textPrimary)
@@ -125,7 +125,7 @@ struct MyBookingsView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(60)
+        .padding(Theme.Spacing.xxl)
     }
 
     // MARK: - Computed Properties

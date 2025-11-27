@@ -101,14 +101,14 @@ struct Spacing {
 - [x] Add tier colors to design system (done Day 1)
 
 ### Day 3 (Nov 29) - HOME + DISCOVER
-- [ ] HomeView - apply new design system
-- [ ] DiscoverView - apply new design system
-- [ ] Fix all hardcoded values in these files
+- [x] HomeView - 28 hardcoded values fixed
+- [x] DiscoverView - 8 hardcoded values fixed
+- [x] EventsView - already compliant (0 changes needed)
 
 ### Day 4 (Nov 30) - EVENTS + BOOKINGS
-- [ ] EventsView - apply new design system
-- [ ] MyBookingsView - remove debug UI, apply design system
-- [ ] BookingDetailView - apply design system
+- [x] EventsView - already compliant (checked)
+- [x] MyBookingsView - 7 hardcoded values fixed (debug UI removed Day 1)
+- [x] BookingDetailView - 15 hardcoded values fixed
 
 ### Day 5 (Dec 1) - POLISH
 - [ ] Fix remaining hardcoded values (use find/replace)

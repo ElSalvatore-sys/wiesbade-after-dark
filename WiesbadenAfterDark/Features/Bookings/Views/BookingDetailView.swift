@@ -23,7 +23,7 @@ struct BookingDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: Theme.Spacing.lg) {
                 // Booking Card
                 BookingCard(
                     booking: booking,
@@ -52,7 +52,7 @@ struct BookingDetailView: View {
                     actionButtons
                 }
             }
-            .padding()
+            .padding(Theme.Spacing.md)
         }
         .background(Color.appBackground)
         .navigationTitle("Booking Details")
@@ -70,7 +70,7 @@ struct BookingDetailView: View {
     // MARK: - Sections
 
     private func confirmationCodeSection(code: String) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Theme.Spacing.cardGap) {
             Text("Confirmation Code")
                 .font(.headline)
                 .foregroundStyle(Color.textPrimary)
@@ -78,22 +78,22 @@ struct BookingDetailView: View {
             Text(code)
                 .font(.system(size: 32, weight: .bold, design: .monospaced))
                 .foregroundStyle(Color.primary)
-                .padding()
+                .padding(Theme.Spacing.md)
                 .frame(maxWidth: .infinity)
                 .background(Color.primary.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.sm))
 
             Text("Show this code at the venue")
                 .font(.caption)
                 .foregroundStyle(Color.textSecondary)
         }
-        .padding(20)
+        .padding(Theme.Spacing.cardPadding)
         .background(Color.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
     }
 
     private func specialRequestsSection(requests: String) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.cardGap) {
             Text("Special Requests")
                 .font(.headline)
                 .foregroundStyle(Color.textPrimary)
@@ -103,15 +103,15 @@ struct BookingDetailView: View {
                 .foregroundStyle(Color.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
+        .padding(Theme.Spacing.cardPadding)
         .background(Color.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
     }
 
     // MARK: - Action Buttons
 
     private var actionButtons: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Theme.Spacing.cardGap) {
             // Contact Venue
             Button(action: {
                 // TODO: Contact venue
@@ -123,9 +123,9 @@ struct BookingDetailView: View {
                 .font(.headline)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .padding()
+                .padding(Theme.Spacing.md)
                 .background(Color.primaryGradient)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
             }
 
             // Cancel Booking
@@ -139,9 +139,9 @@ struct BookingDetailView: View {
                 .font(.headline)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(.red)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(Theme.Spacing.md)
+                .background(Color.error)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
             }
             .disabled(isCancelling)
         }
