@@ -12,7 +12,14 @@ import SwiftUI
 /// Supports: Check-ins, status, photos, achievements
 struct PostCard: View {
     let post: Post
+    var onReaction: ((ReactionType) -> Void)? = nil
+    var onRemoveReaction: (() -> Void)? = nil
+    var onCommentTap: (() -> Void)? = nil
+    var onUsernameTap: ((String) -> Void)? = nil
     @State private var showComments = false
+    @State private var showReactionPicker = false
+    @State private var selectedReactionScale: [ReactionType: CGFloat] = [:]
+    @State private var reactionButtonScale: CGFloat = 1.0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -22,9 +29,24 @@ struct PostCard: View {
             // Post content
             postContent
 
-            // Post image (if exists)
-            if let imageURL = post.imageURL {
+            // Post image (if exists) - supports any post type with an image
+            if let imageURL = post.imageURL, !imageURL.isEmpty {
                 postImage(url: imageURL)
+                    .onTapGesture(count: 2) {
+                        // Double-tap to love (Instagram-style)
+                        if !post.hasUserReacted {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                                reactionButtonScale = 1.5
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                                    reactionButtonScale = 1.0
+                                }
+                            }
+                            onReaction?(.love)
+                            HapticManager.shared.medium()
+                        }
+                    }
             }
 
             // Venue tag (for check-ins)
@@ -34,6 +56,11 @@ struct PostCard: View {
 
             // Interaction bar (likes, comments)
             interactionBar
+
+            // Comments preview section
+            if post.commentCount > 0 || !post.previewComments.isEmpty {
+                commentsPreviewSection
+            }
 
             Divider()
         }
@@ -120,19 +147,67 @@ struct PostCard: View {
             .foregroundColor(.primary)
     }
 
-    /// Post image
+    /// Post image with improved loading state
+    /// Supports http/https URLs and adapts to different image sizes
     private func postImage(url: String) -> some View {
-        AsyncImage(url: URL(string: url)) { image in
-            image
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-        } placeholder: {
-            Rectangle()
-                .fill(Color.gray.opacity(0.2))
+        // Ensure URL is valid (supports both http and https)
+        let validURL = url.hasPrefix("http") ? URL(string: url) : URL(string: "https://\(url)")
+
+        return AsyncImage(url: validURL) { phase in
+            switch phase {
+            case .empty:
+                // Loading placeholder
+                ZStack {
+                    Rectangle()
+                        .fill(Color.cardBackground)
+
+                    VStack(spacing: 8) {
+                        Image(systemName: "photo")
+                            .font(.system(size: 32))
+                            .foregroundColor(.textTertiary)
+
+                        ProgressView()
+                            .tint(.textTertiary)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 200)
+
+            case .success(let image):
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 200)
+                    .clipped()
+
+            case .failure:
+                // Error state - could be network issue or invalid URL
+                ZStack {
+                    Rectangle()
+                        .fill(Color.cardBackground)
+
+                    VStack(spacing: 8) {
+                        Image(systemName: "wifi.exclamationmark")
+                            .font(.system(size: 28))
+                            .foregroundColor(.textTertiary)
+
+                        Text("Couldn't load image")
+                            .font(.caption)
+                            .foregroundColor(.textSecondary)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 120)
+
+            @unknown default:
+                Rectangle()
+                    .fill(Color.cardBackground)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 200)
+            }
         }
-        .frame(height: 250)
-        .clipped()
-        .cornerRadius(12)
+        .cornerRadius(Theme.CornerRadius.md)
     }
 
     /// Venue location tag
@@ -151,22 +226,18 @@ struct PostCard: View {
         .cornerRadius(8)
     }
 
-    /// Likes and comments bar
+    /// Reactions and comments bar
     private var interactionBar: some View {
-        HStack(spacing: 24) {
-            // Like button
-            Button {
-                // TODO: Toggle like
-                HapticManager.shared.light()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: post.isLikedByCurrentUser ? "heart.fill" : "heart")
-                        .foregroundColor(post.isLikedByCurrentUser ? .red : .gray)
-                    Text("\(post.likeCount)")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
+        HStack(spacing: 16) {
+            // Reaction button with long-press picker
+            reactionButton
+
+            // Reaction counts display
+            if post.totalReactionCount > 0 {
+                reactionCountsView
             }
+
+            Spacer()
 
             // Comment button
             Button {
@@ -182,7 +253,200 @@ struct PostCard: View {
                 }
             }
 
-            Spacer()
+            // Share button
+            ShareLink(item: shareText) {
+                Image(systemName: "square.and.arrow.up")
+                    .foregroundColor(.gray)
+            }
+        }
+        .overlay(alignment: .bottomLeading) {
+            if showReactionPicker {
+                reactionPickerOverlay
+                    .transition(.scale(scale: 0.8, anchor: .bottomLeading).combined(with: .opacity))
+            }
+        }
+    }
+
+    /// Text to share when user taps share button
+    private var shareText: String {
+        var text = "\(post.userName) on WiesbadenAfterDark: \(post.content)"
+
+        if let imageURL = post.imageURL, !imageURL.isEmpty {
+            text += "\n\n\(imageURL)"
+        }
+
+        text += "\n\nCheck it out on WiesbadenAfterDark!"
+
+        return text
+    }
+
+    // MARK: - Reaction Button
+
+    private var reactionButton: some View {
+        Button {
+            // Quick tap: toggle love reaction
+            if post.hasUserReacted {
+                onRemoveReaction?()
+            } else {
+                onReaction?(.love)
+            }
+            HapticManager.shared.light()
+        } label: {
+            HStack(spacing: 6) {
+                if let userReaction = post.userReactionType {
+                    Text(userReaction.emoji)
+                        .font(.title3)
+                        .scaleEffect(reactionButtonScale)
+                } else {
+                    Image(systemName: "heart")
+                        .foregroundColor(.gray)
+                        .scaleEffect(reactionButtonScale)
+                }
+            }
+        }
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.3)
+                .onEnded { _ in
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        showReactionPicker = true
+                    }
+                    HapticManager.shared.medium()
+                }
+        )
+    }
+
+    // MARK: - Reaction Picker Overlay
+
+    private var reactionPickerOverlay: some View {
+        HStack(spacing: 8) {
+            ForEach(ReactionType.allCases, id: \.self) { reaction in
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        showReactionPicker = false
+                    }
+                    onReaction?(reaction)
+                    HapticManager.shared.medium()
+                } label: {
+                    Text(reaction.emoji)
+                        .font(.title)
+                        .scaleEffect(selectedReactionScale[reaction] ?? 1.0)
+                        .padding(6)
+                }
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
+                                selectedReactionScale[reaction] = 1.4
+                            }
+                        }
+                        .onEnded { _ in
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
+                                selectedReactionScale[reaction] = 1.0
+                            }
+                        }
+                )
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        )
+        .offset(y: -50)
+        .onTapGesture {} // Prevent dismiss on picker tap
+        .background(
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        showReactionPicker = false
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea()
+        )
+    }
+
+    // MARK: - Reaction Counts View
+
+    private var reactionCountsView: some View {
+        HStack(spacing: 4) {
+            // Show top 3 reactions with counts
+            ForEach(topReactions, id: \.type) { reaction in
+                HStack(spacing: 2) {
+                    Text(reaction.type.emoji)
+                        .font(.caption)
+                    Text("\(reaction.count)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+    }
+
+    /// Get top 3 reactions sorted by count
+    private var topReactions: [(type: ReactionType, count: Int)] {
+        post.reactionCounts
+            .compactMap { key, count -> (type: ReactionType, count: Int)? in
+                guard let type = ReactionType(rawValue: key), count > 0 else { return nil }
+                return (type, count)
+            }
+            .sorted { $0.count > $1.count }
+            .prefix(3)
+            .map { $0 }
+    }
+
+    // MARK: - Comments Preview Section
+
+    private var commentsPreviewSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // "View all X comments" link (if more than 2 comments)
+            if post.commentCount > 2 {
+                Button {
+                    if let onCommentTap = onCommentTap {
+                        onCommentTap()
+                    } else {
+                        showComments = true
+                    }
+                    HapticManager.shared.light()
+                } label: {
+                    Text("View all \(post.commentCount) comments")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            // Preview comments (1-2 most recent)
+            ForEach(post.previewComments.prefix(2)) { comment in
+                commentPreviewRow(comment)
+            }
+        }
+    }
+
+    /// Single comment preview row
+    private func commentPreviewRow(_ comment: PreviewComment) -> some View {
+        HStack(alignment: .top, spacing: 4) {
+            // Tappable username
+            Button {
+                onUsernameTap?(comment.userName)
+                HapticManager.shared.light()
+            } label: {
+                Text(comment.userName)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.textPrimary)
+            }
+
+            // Comment text (truncated)
+            Text(comment.content)
+                .font(.subheadline)
+                .foregroundStyle(Color.textSecondary)
+                .lineLimit(2)
+                .truncationMode(.tail)
+
+            Spacer(minLength: 0)
         }
     }
 }

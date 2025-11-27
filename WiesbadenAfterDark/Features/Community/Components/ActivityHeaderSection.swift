@@ -17,18 +17,38 @@ struct ActivityHeaderSection: View {
         ("Park Café", 5)
     ]
 
+    /// Callback when a venue bubble is tapped
+    var onVenueTap: ((String) -> Void)? = nil
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Live Activity")
-                .font(.headline)
-                .foregroundStyle(Color.textPrimary)
+            HStack {
+                Text("Live Activity")
+                    .font(.headline)
+                    .foregroundStyle(Color.textPrimary)
+
+                Spacer()
+
+                // Pulsing indicator
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 8, height: 8)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.green.opacity(0.5), lineWidth: 2)
+                            .scaleEffect(1.5)
+                    )
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(activeVenues, id: \.name) { venue in
                         ActivityBubble(
                             venueName: venue.name,
-                            peopleCount: venue.count
+                            peopleCount: venue.count,
+                            onTap: {
+                                onVenueTap?(venue.name)
+                            }
                         )
                     }
                 }
@@ -41,32 +61,55 @@ struct ActivityHeaderSection: View {
 struct ActivityBubble: View {
     let venueName: String
     let peopleCount: Int
+    var onTap: (() -> Void)? = nil
+
+    @State private var isPressed = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "figure.2.circle.fill")
-                .foregroundColor(.green)
+        Button {
+            onTap?()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "figure.2.circle.fill")
+                    .foregroundColor(.green)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(venueName)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.textPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(venueName)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.textPrimary)
 
-                Text("\(peopleCount) here now")
+                    Text("\(peopleCount) here now")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+
+                Image(systemName: "chevron.right")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textTertiary)
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.green.opacity(0.1))
+            .cornerRadius(20)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color.green.opacity(0.3), lineWidth: 1)
+            )
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color.green.opacity(0.1))
-        .cornerRadius(20)
+        .buttonStyle(.plain)
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
+        .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {})
     }
 }
 
 #Preview {
-    ActivityHeaderSection()
-        .padding()
-        .background(Color.appBackground)
+    ActivityHeaderSection(onVenueTap: { venue in
+        print("Tapped: \(venue)")
+    })
+    .padding()
+    .background(Color.appBackground)
 }
