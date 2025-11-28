@@ -1,123 +1,135 @@
-# WiesbadenAfterDark - iOS Nightlife & Loyalty App
+# WiesbadenAfterDark - Project Documentation
 
-## Project Overview
-Native iOS app (SwiftUI) + FastAPI backend for Wiesbaden nightlife venues.
-Features: venue discovery, QR check-ins, points/loyalty system, event bookings, Apple Wallet passes.
+## Project Status: Ready for App Store Submission
 
-## Tech Stack
+**Last Updated:** November 28, 2025
+**Target Launch:** December 6, 2025 (Das Wohnzimmer)
+
+---
+
+## Apps Overview
+
+### 1. iOS User App (WiesbadenAfterDark)
+**Location:** `~/Desktop/Projects-2025/WiesbadenAfterDark/WiesbadenAfterDark.xcodeproj`
+**Status:** Complete - Ready for testing
+
+**Tech Stack:**
+- SwiftUI + Swift 6
+- SwiftData for persistence
+- Supabase backend
+- Railway deployment
+
+**Features:**
+- Phone authentication with name input
+- Venue discovery with dark theme cards
+- Events with filter chips (All, This Week, This Weekend)
+- Bookings management
+- Community feed (photos, reactions, comments, share)
+- Points/rewards system
+- Profile with Recent Activity
+- Check-in with NFC
+
+**Design System:**
+- Background: #09090B (OLED black)
+- Cards: #18181B with #27272A border
+- Primary: #7C3AED (deep purple)
+- Gradient: #8B5CF6 to #EC4899
+- Gold: #D4AF37
+
+---
+
+### 2. Owner PWA
+**Location:** `~/Desktop/Projects-2025/WiesbadenAfterDark/owner-pwa/`
+**Live URL:** https://owner-6xdb541ae-l3lim3d-2348s-projects.vercel.app
+**Status:** Deployed
+
+**Tech Stack:**
+- Vite + React 19 + TypeScript
+- Tailwind CSS v3
+- html5-qrcode for barcode scanning
+
+**Features:**
+- Dashboard with stats
+- Events management (CRUD, image upload, AI placeholder)
+- Bookings with split calendar view
+- Inventory with barcode scanner
+- Push notifications
+- PWA installable
+
+**Login:** owner@example.com / password
+
+---
+
+## Recent Changes (Nov 28, 2025)
+
+### iOS App Improvements:
+1. Dark theme cards (venues, deals)
+2. Name input in onboarding
+3. Recent Activity moved to Profile
+4. Events filter chips
+5. Loading speed 12s to 1.1s
+6. Community: photos, reactions, comments, share
+7. Tab bar consistent iOS 17/18
+8. App icon added (1024x1024)
+
+### Owner PWA:
+- Full dashboard
+- Events + Bookings + Inventory
+- Barcode scanner
+- Push notifications
+- Deployed to Vercel
+
+---
+
+## TODOs for Later
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| AI Image API Keys | Medium | DALL-E/Midjourney for event images |
+| Auto-Ordering System | High | Automatic stock reordering for owners |
+| Splash Screen | Low | Loading animation with logo |
+| App Store Screenshots | High | Device mockups for submission |
+| Social Sharing Images | Low | Open Graph for marketing |
+| Real Supabase Data | High | Replace mock data with production |
+| Stripe Integration | High | Payment processing |
+
+---
+
+## Commands
 
 ### iOS App
-- **Language**: Swift (SwiftUI)
-- **Target**: iOS 17+
-- **Architecture**: Feature-based modules in `/Features/`
-- **No external dependencies** (pure SwiftUI)
-
-### Backend
-- **Framework**: FastAPI 0.104.1
-- **Database**: Supabase PostgreSQL (14 tables)
-- **ORM**: SQLAlchemy 2.0.23 + Alembic migrations
-- **Auth**: python-jose (JWT) + passlib (bcrypt)
-- **SMS**: Twilio (phone verification)
-
-### Deployment
-- **Backend**: Railway (https://wiesbade-after-dark-production.up.railway.app)
-- **Database**: Supabase
-- **iOS**: TestFlight → App Store
-
-## Database Models (Key Tables)
-- `users` - accounts, points, referral_code
-- `venues` - bars/clubs with ratings, margins
-- `venue_memberships` - user-venue tier/points
-- `check_ins` - visit records, points earned
-- `point_transactions` - points ledger with expiry
-- `referral_chains` - multi-level referral tracking
-- `events` / `event_rsvps` - event system
-- `wallet_passes` - Apple Wallet integration
-
-## Project Structure
-```
-WiesbadenAfterDark/
-├── backend/
-│   ├── app/api/          # Route handlers
-│   ├── app/models/       # SQLAlchemy (22 models)
-│   ├── app/schemas/      # Pydantic validation
-│   ├── app/services/     # Business logic
-│   └── alembic/          # DB migrations
-├── WiesbadenAfterDark/   # iOS App
-│   ├── Features/         # 12 feature modules
-│   ├── Core/             # Networking, config
-│   └── Shared/           # Reusable components
-```
-
-## iOS Feature Modules
-1. **Onboarding** - Phone verification, registration
-2. **Home** - Dashboard, nearby venues
-3. **Discover** - Venue browsing
-4. **VenueDetail** - Individual venue pages
-5. **CheckIn** - QR/location-based check-ins
-6. **Points** - Balance, transactions
-7. **Events** - Listings, RSVPs
-8. **Bookings** - Table reservations
-9. **Payments** - Payment processing
-10. **Profile** - User settings
-11. **Community** - Social features
-12. **VenueManagement** - Owner dashboard
-
-## Development Workflows
-
-### iOS Development
 ```bash
-# Open in Xcode
-open WiesbadenAfterDark.xcodeproj
-
-# Build: Cmd+B
-# Run: Cmd+R (iPhone 17 Simulator)
+open ~/Desktop/Projects-2025/WiesbadenAfterDark/WiesbadenAfterDark.xcodeproj
+# Select iPhone, Cmd+R to build & run
 ```
 
-### Backend Development
+### Owner PWA
 ```bash
-cd backend
-source venv/bin/activate
-uvicorn app.main:app --reload --port 8000
-
-# Run migrations
-alembic upgrade head
-
-# Create new migration
-alembic revision --autogenerate -m "description"
+cd ~/Desktop/Projects-2025/WiesbadenAfterDark/owner-pwa
+npm run dev    # Development
+npm run build  # Production
+vercel --prod  # Deploy
 ```
 
-### Testing
-```bash
-# Backend tests
-cd backend && pytest
+---
 
-# iOS tests
-# Cmd+U in Xcode
-```
+## Git Info
 
-## API Documentation
-- Local: http://localhost:8000/api/docs
-- Production: https://wiesbade-after-dark-production.up.railway.app/api/docs
+**Branch:** `claude/production-polish-demo-prep-016GJZ4x9y5pcyRkGe7bojqE`
+**Repo:** https://github.com/ElSalvatore-sys/wiesbade-after-dark
 
-## Current Status
-- Backend: 🟢 Live on Railway
-- iOS: 🟡 Ready for TestFlight
-- Build: ✅ 0 errors, 27 warnings
+---
 
-## Tool Priorities
+## Backend
 
-### High Priority
-- **Xcode**: iOS development, debugging
-- **Prisma/SQLAlchemy**: Database operations
-- **Playwright**: Test API endpoints
+**Railway:** https://wiesbaden-after-dark-production.up.railway.app
+**Supabase:** Check .env for credentials
 
-### When to Use Skills
-- **web-asset-generator**: PWA icons, social sharing images for marketing
-- **docx**: Booking confirmations, venue contracts, invoices
+---
 
-## Debugging Notes
-<!-- Add solved issues here so Claude remembers -->
+## First Client
 
-## Current Sprint
-<!-- Update via Archon tasks -->
+**Das Wohnzimmer** - Wiesbaden
+- Bar/Restaurant/Club
+- Internal testing: Dec 6-10
+- Public launch: Dec 13-15
