@@ -25,47 +25,52 @@ struct ProfileView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // SECTION 1: USER HEADER
-                    VStack(spacing: 16) {
-                        // Avatar with gradient
+                    // SECTION 1: USER HEADER (Compact)
+                    VStack(spacing: 12) {
+                        // Avatar with gradient - smaller size
                         Circle()
                             .fill(
                                 LinearGradient(
-                                    colors: [.blue, .purple],
+                                    colors: [Color(hex: "#8B5CF6"), Color(hex: "#EC4899")],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .frame(width: 100, height: 100)
-                            .shadow(color: Color.blue.opacity(0.3), radius: 12, x: 0, y: 4)
+                            .frame(width: 80, height: 80)
+                            .shadow(color: Color(hex: "#8B5CF6").opacity(0.3), radius: 10, x: 0, y: 4)
                             .overlay(
                                 Text(userInitials)
-                                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                                    .font(.system(size: 28, weight: .bold, design: .rounded))
                                     .foregroundColor(.white)
                             )
 
-                        VStack(spacing: 4) {
+                        VStack(spacing: 2) {
                             if let user = user {
-                                // Display name (or phone number as fallback)
-                                Text(user.displayName)
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.textPrimary)
+                                // Check if user has a name
+                                if let fullName = user.fullName, !fullName.isEmpty {
+                                    // Has name: Show name as title, phone smaller
+                                    Text(fullName)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(.textPrimary)
 
-                                // Show phone number below name if name exists
-                                if user.fullName != nil {
                                     Text(user.formattedPhoneNumber)
-                                        .font(Typography.bodySmall)
+                                        .font(.system(size: 13))
                                         .foregroundColor(.textSecondary)
+                                } else {
+                                    // No name: Show phone number medium-sized
+                                    Text(user.formattedPhoneNumber)
+                                        .font(.system(size: 17, weight: .medium))
+                                        .foregroundColor(.textPrimary)
                                 }
 
                                 Text("Member since \(memberSince)")
-                                    .font(.caption)
+                                    .font(.system(size: 12))
                                     .foregroundColor(.textTertiary)
+                                    .padding(.top, 2)
                             }
                         }
                     }
-                    .padding(.top, 20)
+                    .padding(.top, 16)
 
                     // SECTION 2: REFERRAL CARD (Compact)
                     if let user = user {

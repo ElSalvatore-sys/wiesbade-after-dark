@@ -69,27 +69,33 @@ struct WiesbadenAfterDarkApp: App {
     private func configureTabBarAppearance() {
         let appearance = UITabBarAppearance()
 
-        // Use opaque background with dark blur effect
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(Color.cardBackground)
+        // Use transparent background with glossy blur effect for iOS 17/18
+        appearance.configureWithTransparentBackground()
 
-        // Add subtle blur effect
-        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+        // Set semi-transparent background color
+        appearance.backgroundColor = UIColor(red: 0.035, green: 0.035, blue: 0.043, alpha: 0.85)
+
+        // Add glossy blur effect - systemChromeMaterialDark gives the best iOS 17+ look
+        appearance.backgroundEffect = UIBlurEffect(style: .systemChromeMaterialDark)
+
+        // Add subtle shadow for depth
+        appearance.shadowColor = UIColor.black.withAlphaComponent(0.3)
 
         // Configure item appearance
         let itemAppearance = UITabBarItemAppearance()
 
         // Normal state - muted gray
-        itemAppearance.normal.iconColor = UIColor(Color.textTertiary)
+        itemAppearance.normal.iconColor = UIColor(white: 0.5, alpha: 1.0)
         itemAppearance.normal.titleTextAttributes = [
-            .foregroundColor: UIColor(Color.textTertiary),
+            .foregroundColor: UIColor(white: 0.5, alpha: 1.0),
             .font: UIFont.systemFont(ofSize: 10, weight: .medium)
         ]
 
         // Selected state - gold accent
-        itemAppearance.selected.iconColor = UIColor(Color.gold)
+        let goldColor = UIColor(red: 0.831, green: 0.686, blue: 0.216, alpha: 1.0)
+        itemAppearance.selected.iconColor = goldColor
         itemAppearance.selected.titleTextAttributes = [
-            .foregroundColor: UIColor(Color.gold),
+            .foregroundColor: goldColor,
             .font: UIFont.systemFont(ofSize: 10, weight: .semibold)
         ]
 
@@ -97,9 +103,12 @@ struct WiesbadenAfterDarkApp: App {
         appearance.inlineLayoutAppearance = itemAppearance
         appearance.compactInlineLayoutAppearance = itemAppearance
 
-        // Apply to all tab bars
+        // Apply to all tab bars - both standard and scroll edge must match
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
+
+        // Ensure bar is not translucent (we handle blur ourselves)
+        UITabBar.appearance().isTranslucent = true
     }
 
     // MARK: - Body
