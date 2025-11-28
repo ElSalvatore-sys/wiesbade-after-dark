@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 @main
 struct WiesbadenAfterDarkApp: App {
@@ -59,6 +60,46 @@ struct WiesbadenAfterDarkApp: App {
         Task { @MainActor in
             PointsExpirationService.shared.registerBackgroundTask()
         }
+
+        // Configure UITabBar appearance for consistent look across iOS versions
+        configureTabBarAppearance()
+    }
+
+    /// Configures the global tab bar appearance for iOS 17+ compatibility
+    private func configureTabBarAppearance() {
+        let appearance = UITabBarAppearance()
+
+        // Use opaque background with dark blur effect
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(Color.cardBackground)
+
+        // Add subtle blur effect
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+
+        // Configure item appearance
+        let itemAppearance = UITabBarItemAppearance()
+
+        // Normal state - muted gray
+        itemAppearance.normal.iconColor = UIColor(Color.textTertiary)
+        itemAppearance.normal.titleTextAttributes = [
+            .foregroundColor: UIColor(Color.textTertiary),
+            .font: UIFont.systemFont(ofSize: 10, weight: .medium)
+        ]
+
+        // Selected state - gold accent
+        itemAppearance.selected.iconColor = UIColor(Color.gold)
+        itemAppearance.selected.titleTextAttributes = [
+            .foregroundColor: UIColor(Color.gold),
+            .font: UIFont.systemFont(ofSize: 10, weight: .semibold)
+        ]
+
+        appearance.stackedLayoutAppearance = itemAppearance
+        appearance.inlineLayoutAppearance = itemAppearance
+        appearance.compactInlineLayoutAppearance = itemAppearance
+
+        // Apply to all tab bars
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
     }
 
     // MARK: - Body
