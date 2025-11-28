@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   WiesbadenAfterDark Owner PWA - Premium Dark Theme
+   Matching iOS Color+Theme.swift, Typography.swift, Theme.swift
+   ============================================ */
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html {
+    @apply antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-screen;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border-light rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-foreground-dim;
+  }
+
+  /* Focus styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-background;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-primary-500/30 text-white;
+  }
+}
+
+@layer components {
+  /* Premium glassmorphism card */
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-card;
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-primary bg-clip-text text-transparent;
+  }
+
+  /* Premium button with glow */
+  .btn-primary {
+    @apply relative px-6 py-3 rounded-xl font-semibold text-white;
+    @apply bg-gradient-primary shadow-glow;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:shadow-[0_0_30px_rgba(139,92,246,0.6)] hover:scale-[1.02];
+    @apply active:scale-[0.98];
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-glow;
+  }
+
+  /* Secondary button */
+  .btn-secondary {
+    @apply px-6 py-3 rounded-xl font-semibold;
+    @apply bg-card border border-border text-foreground;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:bg-card-hover hover:border-border-light;
+    @apply active:scale-[0.98];
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply px-4 py-2 rounded-lg font-medium;
+    @apply text-foreground-secondary;
+    @apply transition-all duration-200;
+    @apply hover:bg-white/5 hover:text-foreground;
+  }
+
+  /* Premium input */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl;
+    @apply bg-input border border-transparent text-foreground;
+    @apply placeholder:text-foreground-dim;
+    @apply transition-all duration-200;
+    @apply focus:bg-input-focus focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply relative overflow-hidden p-5 rounded-xl;
+    @apply bg-card border border-border;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:border-border-light hover:shadow-card-hover hover:-translate-y-0.5;
+  }
+
+  /* Navigation item */
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl;
+    @apply text-foreground-secondary font-medium;
+    @apply transition-all duration-200;
+    @apply hover:bg-white/5 hover:text-foreground;
+  }
+
+  .nav-item-active {
+    @apply bg-gradient-primary text-white shadow-glow;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-purple {
+    @apply bg-primary-500/20 text-primary-400;
+  }
+
+  .badge-success {
+    @apply bg-success/20 text-success;
+  }
+
+  .badge-warning {
+    @apply bg-warning/20 text-warning;
+  }
+
+  .badge-error {
+    @apply bg-error/20 text-error;
+  }
+}
+
+@layer utilities {
+  /* Safe area for mobile */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Hide scrollbar */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
