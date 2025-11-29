@@ -27,6 +27,8 @@ export default defineConfig({
   },
   // PWA-related settings
   server: {
+    port: 5199,
+    host: true,
     // Enable HTTPS for testing push notifications locally (optional)
     // https: true,
   },

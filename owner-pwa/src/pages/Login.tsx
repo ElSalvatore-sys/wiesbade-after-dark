@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { cn } from '../lib/utils';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
+import api from '../services/api';
 
 interface LoginProps {
-  onLogin: (email: string, password: string) => void;
+  onLogin: () => void;
 }
 
 export function Login({ onLogin }: LoginProps) {
@@ -18,15 +19,33 @@ export function Login({ onLogin }: LoginProps) {
     setError('');
     setIsLoading(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
+    // Demo mode - allow test credentials
     if (email === 'owner@example.com' && password === 'password') {
-      onLogin(email, password);
-    } else {
-      setError('Invalid credentials. Try: owner@example.com / password');
+      api.setToken('demo_token');
+      api.setVenueId('demo_venue');
+      setIsLoading(false);
+      onLogin();
+      return;
+    }
+
+    // Real API login
+    const result = await api.login(email, password);
+
+    if (result.error) {
+      setError(result.error);
+      setIsLoading(false);
+      return;
+    }
+
+    // Get user's venue (assuming owner has one venue)
+    const venuesResult = await api.getVenues();
+    if (venuesResult.data && Array.isArray(venuesResult.data) && venuesResult.data.length > 0) {
+      const venue = venuesResult.data[0] as { id: string };
+      api.setVenueId(venue.id);
     }
 
     setIsLoading(false);
+    onLogin();
   };
 
   return (

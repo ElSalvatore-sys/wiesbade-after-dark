@@ -19,7 +19,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
 
-  const handleLogin = (_email: string, _password: string) => {
+  const handleLogin = () => {
     setIsAuthenticated(true);
   };
 

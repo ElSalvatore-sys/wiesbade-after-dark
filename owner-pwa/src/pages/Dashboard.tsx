@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
 import {
   Calendar,
@@ -10,14 +11,17 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import type { DashboardStats } from '../types';
+import api from '../services/api';
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
 }
 
-const mockStats: DashboardStats = {
+const defaultStats: DashboardStats = {
   todaysBookings: 12,
   activeEvents: 3,
   lowStockItems: 5,
@@ -128,8 +132,49 @@ function QuickAction({ title, description, icon, onClick }: QuickActionProps) {
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
+  const [stats, setStats] = useState<DashboardStats>(defaultStats);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchDashboard = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+
+    const result = await api.getDashboard();
+
+    if (result.data && typeof result.data === 'object') {
+      const data = result.data as Record<string, unknown>;
+      setStats({
+        todaysBookings: (data.todaysBookings as number) ?? defaultStats.todaysBookings,
+        activeEvents: (data.activeEvents as number) ?? defaultStats.activeEvents,
+        lowStockItems: (data.lowStockItems as number) ?? defaultStats.lowStockItems,
+        todaysRevenue: (data.todaysRevenue as number) ?? defaultStats.todaysRevenue,
+        weeklyRevenue: (data.weeklyRevenue as number) ?? defaultStats.weeklyRevenue,
+        monthlyRevenue: (data.monthlyRevenue as number) ?? defaultStats.monthlyRevenue,
+        totalCustomers: (data.totalCustomers as number) ?? defaultStats.totalCustomers,
+        averageRating: (data.averageRating as number) ?? defaultStats.averageRating,
+      });
+    }
+    // If API fails, keep using default/current stats (demo mode)
+
+    setLoading(false);
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 text-accent-purple animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -144,8 +189,18 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             Here's what's happening at your venue today
           </p>
         </div>
-        <div className="hidden sm:block">
-          <span className="badge badge-purple">Live</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => fetchDashboard(true)}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-xl hover:border-primary-500/30 transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          <div className="hidden sm:block">
+            <span className="badge badge-purple">Live</span>
+          </div>
         </div>
       </div>
 
@@ -153,7 +208,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Today's Bookings"
-          value={mockStats.todaysBookings}
+          value={stats.todaysBookings}
           icon={<BookOpen size={24} />}
           trend={{ value: 12, isPositive: true }}
           gradient="purple"
@@ -161,21 +216,21 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         />
         <StatCard
           title="Active Events"
-          value={mockStats.activeEvents}
+          value={stats.activeEvents}
           icon={<Calendar size={24} />}
           gradient="pink"
           delay={50}
         />
         <StatCard
           title="Low Stock Items"
-          value={mockStats.lowStockItems}
+          value={stats.lowStockItems}
           icon={<Package size={24} />}
           gradient="orange"
           delay={100}
         />
         <StatCard
           title="Today's Revenue"
-          value={formatCurrency(mockStats.todaysRevenue)}
+          value={formatCurrency(stats.todaysRevenue)}
           icon={<TrendingUp size={24} />}
           trend={{ value: 8, isPositive: true }}
           gradient="green"
@@ -215,9 +270,9 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           <h3 className="text-lg font-semibold text-foreground mb-4">Revenue Overview</h3>
           <div className="space-y-4">
             {[
-              { label: 'Weekly Revenue', value: formatCurrency(mockStats.weeklyRevenue) },
-              { label: 'Monthly Revenue', value: formatCurrency(mockStats.monthlyRevenue) },
-              { label: 'Average Rating', value: mockStats.averageRating, suffix: '★' },
+              { label: 'Weekly Revenue', value: formatCurrency(stats.weeklyRevenue) },
+              { label: 'Monthly Revenue', value: formatCurrency(stats.monthlyRevenue) },
+              { label: 'Average Rating', value: stats.averageRating, suffix: '★' },
             ].map((item, i) => (
               <div key={i} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
                 <span className="text-foreground-secondary">{item.label}</span>
