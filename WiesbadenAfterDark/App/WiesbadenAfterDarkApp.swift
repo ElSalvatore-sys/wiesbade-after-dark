@@ -260,11 +260,8 @@ struct MainTabView: View {
                 Color.clear.frame(height: 70)
             }
 
-            // Custom glossy tab bar at bottom
-            VStack(spacing: 0) {
-                Spacer()
-                GlossyTabBar(selectedTab: $selectedTab, tabs: tabs)
-            }
+            // Custom glossy tab bar at bottom (ZStack alignment: .bottom handles positioning)
+            GlossyTabBar(selectedTab: $selectedTab, tabs: tabs)
         }
         .ignoresSafeArea(.keyboard)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
