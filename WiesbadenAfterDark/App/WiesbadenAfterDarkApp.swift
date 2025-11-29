@@ -229,49 +229,37 @@ struct OnboardingFlow: View {
 
 // MARK: - Main Tab View
 
-/// Main tab bar navigation with 5 tabs
+/// Main tab bar navigation with 5 tabs and custom glossy tab bar
 struct MainTabView: View {
     @State private var selectedTab = 0
 
+    private let tabs: [(icon: String, label: String)] = [
+        ("house.fill", "Home"),
+        ("map.fill", "Discover"),
+        ("calendar", "Events"),
+        ("person.2.fill", "Community"),
+        ("person.crop.circle.fill", "Profile")
+    ]
+
     var body: some View {
-        TabView(selection: $selectedTab) {
-            // Home tab
-            HomeView()
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
+        ZStack(alignment: .bottom) {
+            // Content based on selected tab
+            Group {
+                switch selectedTab {
+                case 0: HomeView()
+                case 1: DiscoverView()
+                case 2: EventsView()
+                case 3: CommunityView()
+                case 4: ProfileView()
+                default: HomeView()
                 }
-                .tag(0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // Discover tab
-            DiscoverView()
-                .tabItem {
-                    Label("Discover", systemImage: "map.fill")
-                }
-                .tag(1)
-
-            // Events tab
-            EventsView()
-                .tabItem {
-                    Label("Events", systemImage: "calendar")
-                }
-                .tag(2)
-
-            // Community tab
-            CommunityView()
-                .tabItem {
-                    Label("Community", systemImage: "person.2.fill")
-                }
-                .tag(3)
-
-            // Profile tab
-            ProfileView()
-                .tabItem {
-                    Label("Profile", systemImage: "person.crop.circle.fill")
-                }
-                .tag(4)
+            // Custom glossy tab bar
+            GlossyTabBar(selectedTab: $selectedTab, tabs: tabs)
         }
-        .tint(Color.gold)  // Use gold color for tab bar tint
-        .toolbarBackground(.ultraThinMaterial, for: .tabBar)
+        .ignoresSafeArea(.keyboard)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
             // CRITICAL FIX: Handle memory warnings by clearing caches
             print("⚠️ [Memory] Received memory warning - clearing caches")
@@ -279,6 +267,89 @@ struct MainTabView: View {
             URLCache.shared.diskCapacity = 0
             URLCache.shared.memoryCapacity = 0
         }
+    }
+}
+
+// MARK: - Glossy Tab Bar
+
+/// Custom tab bar with glassmorphism effect
+private struct GlossyTabBar: View {
+    @Binding var selectedTab: Int
+    let tabs: [(icon: String, label: String)]
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedTab = index
+                    }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 22))
+                            .symbolRenderingMode(.hierarchical)
+
+                        Text(tab.label)
+                            .font(.system(size: 10, weight: selectedTab == index ? .semibold : .medium))
+                    }
+                    .foregroundColor(selectedTab == index ? Color.gold : Color(white: 0.5))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 8)
+        .padding(.bottom, 28) // Account for home indicator
+        .background(
+            ZStack {
+                // Blur effect layer
+                VisualEffectBlur(blurStyle: .systemChromeMaterialDark)
+
+                // Gradient overlay for extra depth
+                LinearGradient(
+                    colors: [
+                        Color(white: 0.15, opacity: 0.3),
+                        Color(white: 0.05, opacity: 0.5)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                // Top border highlight
+                VStack {
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.15), Color.white.opacity(0.05)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(height: 0.5)
+                    Spacer()
+                }
+            }
+        )
+    }
+}
+
+// MARK: - Visual Effect Blur (UIKit Bridge)
+
+/// UIViewRepresentable for UIVisualEffectView blur
+private struct VisualEffectBlur: UIViewRepresentable {
+    let blurStyle: UIBlurEffect.Style
+
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        let blurEffect = UIBlurEffect(style: blurStyle)
+        let view = UIVisualEffectView(effect: blurEffect)
+        return view
+    }
+
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
+        uiView.effect = UIBlurEffect(style: blurStyle)
     }
 }
 
