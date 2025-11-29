@@ -242,30 +242,39 @@ struct MainTabView: View {
     ]
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Content based on selected tab
-            Group {
-                switch selectedTab {
-                case 0: HomeView()
-                case 1: DiscoverView()
-                case 2: EventsView()
-                case 3: CommunityView()
-                case 4: ProfileView()
-                default: HomeView()
+        GeometryReader { geometry in
+            ZStack {
+                // Content based on selected tab
+                Group {
+                    switch selectedTab {
+                    case 0: HomeView()
+                    case 1: DiscoverView()
+                    case 2: EventsView()
+                    case 3: CommunityView()
+                    case 4: ProfileView()
+                    default: HomeView()
+                    }
                 }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                // Reserve space for custom tab bar (50pt bar + 20pt safe area)
-                Color.clear.frame(height: 70)
-            }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    // Reserve space for custom tab bar
+                    Color.clear.frame(height: 70)
+                }
 
-            // Custom glossy tab bar at bottom (ZStack alignment: .bottom handles positioning)
-            GlossyTabBar(selectedTab: $selectedTab, tabs: tabs)
+                // Custom glossy tab bar - positioned at actual screen bottom
+                VStack {
+                    Spacer()
+                    GlossyTabBar(
+                        selectedTab: $selectedTab,
+                        tabs: tabs,
+                        bottomSafeArea: geometry.safeAreaInsets.bottom
+                    )
+                }
+                .ignoresSafeArea(.all, edges: .bottom)
+            }
         }
         .ignoresSafeArea(.keyboard)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
-            // CRITICAL FIX: Handle memory warnings by clearing caches
             print("⚠️ [Memory] Received memory warning - clearing caches")
             URLCache.shared.removeAllCachedResponses()
             URLCache.shared.diskCapacity = 0
@@ -280,6 +289,7 @@ struct MainTabView: View {
 private struct GlossyTabBar: View {
     @Binding var selectedTab: Int
     let tabs: [(icon: String, iconFilled: String, label: String)]
+    let bottomSafeArea: CGFloat
 
     var body: some View {
         HStack(spacing: 0) {
@@ -305,7 +315,7 @@ private struct GlossyTabBar: View {
             }
         }
         .frame(height: 50)
-        .padding(.bottom, 20) // Safe area for home indicator
+        .padding(.bottom, max(bottomSafeArea, 20)) // Use actual safe area or minimum 20
         .background(
             ZStack {
                 // Solid dark base
@@ -329,7 +339,6 @@ private struct GlossyTabBar: View {
                 .frame(height: 0.5),
             alignment: .top
         )
-        .ignoresSafeArea(.all, edges: .bottom)
     }
 }
 
