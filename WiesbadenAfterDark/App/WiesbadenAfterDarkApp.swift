@@ -270,7 +270,8 @@ struct MainTabView: View {
                 }
                 .tag(4)
         }
-        .tint(Color.gold)  // Use gold color for tab bar tint instead of .primary
+        .tint(Color.gold)  // Use gold color for tab bar tint
+        .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
             // CRITICAL FIX: Handle memory warnings by clearing caches
             print("⚠️ [Memory] Received memory warning - clearing caches")
