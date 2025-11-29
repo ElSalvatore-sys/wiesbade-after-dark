@@ -6,457 +6,440 @@ import {
   ScanLine,
   Package,
   AlertTriangle,
+  ArrowRightLeft,
+  Warehouse,
+  Wine,
+  TrendingDown,
+  History,
+  BarChart3,
   MoreVertical,
   Edit,
   Trash2,
-  TrendingDown,
 } from 'lucide-react';
-import { BarcodeScanner } from '../components/BarcodeScanner';
 import { InventoryModal } from '../components/InventoryModal';
+import { BarcodeScanner } from '../components/BarcodeScanner';
 import { StockUpdateModal } from '../components/StockUpdateModal';
-import type { InventoryItem, InventoryCategory } from '../types';
+import { TransferModal } from '../components/TransferModal';
+import { VarianceModal } from '../components/VarianceModal';
+import type { InventoryItem as LegacyInventoryItem, InventoryCategory } from '../types';
 
-// Mock inventory data
+interface InventoryItem {
+  id: string;
+  name: string;
+  barcode: string;
+  category: string;
+  storageCount: number;
+  barCount: number;
+  minStock: number;
+  price: number;
+  costPrice: number;
+  imageUrl?: string;
+  lastMovement?: string;
+}
+
+const CATEGORIES = ['All', 'Spirits', 'Beer', 'Wine', 'Mixers', 'Soft Drinks', 'Food', 'Supplies'];
+
+// Mock inventory data with dual locations
 const mockInventory: InventoryItem[] = [
-  {
-    id: '1',
-    venueId: '1',
-    name: 'Grey Goose Vodka 1L',
-    category: 'spirits',
-    sku: '5010677850209',
-    quantity: 8,
-    unit: 'bottles',
-    minStock: 5,
-    costPrice: 28.50,
-    sellPrice: 45.00,
-    supplier: 'Metro',
-    isLowStock: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    venueId: '1',
-    name: 'Hendricks Gin 700ml',
-    category: 'spirits',
-    sku: '5010327705118',
-    quantity: 3,
-    unit: 'bottles',
-    minStock: 5,
-    costPrice: 26.00,
-    sellPrice: 42.00,
-    supplier: 'Metro',
-    isLowStock: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    venueId: '1',
-    name: 'Corona Extra',
-    category: 'beer',
-    sku: '7501064199493',
-    quantity: 48,
-    unit: 'bottles',
-    minStock: 24,
-    costPrice: 1.20,
-    sellPrice: 4.50,
-    supplier: 'Getränke Hoffmann',
-    isLowStock: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    venueId: '1',
-    name: 'Red Bull 250ml',
-    category: 'mixers',
-    sku: '9002490100070',
-    quantity: 12,
-    unit: 'cans',
-    minStock: 24,
-    costPrice: 1.10,
-    sellPrice: 4.00,
-    supplier: 'Metro',
-    isLowStock: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    venueId: '1',
-    name: 'Prosecco DOC',
-    category: 'wine',
-    sku: '8003625002512',
-    quantity: 15,
-    unit: 'bottles',
-    minStock: 10,
-    costPrice: 6.50,
-    sellPrice: 24.00,
-    supplier: 'Weinhandel Schmidt',
-    isLowStock: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '6',
-    venueId: '1',
-    name: 'Lime Juice 1L',
-    category: 'mixers',
-    sku: '5060429860012',
-    quantity: 2,
-    unit: 'bottles',
-    minStock: 4,
-    costPrice: 3.50,
-    sellPrice: 0,
-    supplier: 'Metro',
-    isLowStock: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
+  { id: '1', name: 'Corona Extra', barcode: '7501064191091', category: 'Beer', storageCount: 48, barCount: 12, minStock: 24, price: 4.50, costPrice: 1.80, lastMovement: '2 hours ago' },
+  { id: '2', name: 'Hendricks Gin', barcode: '5010327755014', category: 'Spirits', storageCount: 6, barCount: 2, minStock: 4, price: 12.00, costPrice: 28.00, lastMovement: '1 hour ago' },
+  { id: '3', name: 'Grey Goose Vodka', barcode: '3700103831402', category: 'Spirits', storageCount: 8, barCount: 3, minStock: 4, price: 14.00, costPrice: 32.00, lastMovement: '3 hours ago' },
+  { id: '4', name: 'Coca Cola', barcode: '5449000000996', category: 'Soft Drinks', storageCount: 120, barCount: 24, minStock: 48, price: 3.50, costPrice: 0.80, lastMovement: '30 min ago' },
+  { id: '5', name: 'Red Bull', barcode: '9002490100070', category: 'Mixers', storageCount: 36, barCount: 18, minStock: 24, price: 4.00, costPrice: 1.50, lastMovement: '1 hour ago' },
+  { id: '6', name: 'Prosecco DOC', barcode: '8002270018527', category: 'Wine', storageCount: 12, barCount: 4, minStock: 8, price: 8.00, costPrice: 6.50, lastMovement: '4 hours ago' },
+  { id: '7', name: 'Jack Daniels', barcode: '5099873089798', category: 'Spirits', storageCount: 3, barCount: 1, minStock: 4, price: 10.00, costPrice: 22.00, lastMovement: '5 hours ago' },
+  { id: '8', name: 'Tonic Water', barcode: '5000196004528', category: 'Mixers', storageCount: 60, barCount: 20, minStock: 30, price: 3.00, costPrice: 0.60, lastMovement: '2 hours ago' },
 ];
-
-type FilterCategory = 'all' | InventoryCategory;
-
-const categoryConfig: Record<InventoryCategory, { label: string; color: string; bg: string }> = {
-  spirits: { label: 'Spirits', color: 'text-accent-purple', bg: 'bg-accent-purple/15' },
-  beer: { label: 'Beer', color: 'text-warning', bg: 'bg-warning/15' },
-  wine: { label: 'Wine', color: 'text-error', bg: 'bg-error/15' },
-  mixers: { label: 'Mixers', color: 'text-accent-cyan', bg: 'bg-accent-cyan/15' },
-  food: { label: 'Food', color: 'text-success', bg: 'bg-success/15' },
-  supplies: { label: 'Supplies', color: 'text-primary-400', bg: 'bg-primary-400/15' },
-  other: { label: 'Other', color: 'text-foreground-muted', bg: 'bg-foreground-dim/15' },
-};
 
 export function Inventory() {
   const [inventory, setInventory] = useState<InventoryItem[]>(mockInventory);
-  const [filter, setFilter] = useState<FilterCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showLowStockOnly, setShowLowStockOnly] = useState(false);
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [viewMode, setViewMode] = useState<'all' | 'storage' | 'bar' | 'low'>('all');
+  const [showScanner, setShowScanner] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showVarianceModal, setShowVarianceModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [scannedBarcode, setScannedBarcode] = useState<string | null>(null);
+  const [showStockUpdate, setShowStockUpdate] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
 
-  const filteredInventory = inventory.filter((item) => {
-    const matchesFilter = filter === 'all' || item.category === filter;
+  // Filter inventory
+  const filteredInventory = inventory.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sku?.includes(searchQuery);
-    const matchesLowStock = !showLowStockOnly || item.quantity <= item.minStock;
-    return matchesFilter && matchesSearch && matchesLowStock;
+                         item.barcode.includes(searchQuery);
+    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+
+    let matchesView = true;
+    if (viewMode === 'low') {
+      matchesView = (item.storageCount + item.barCount) < item.minStock;
+    }
+
+    return matchesSearch && matchesCategory && matchesView;
   });
 
-  const lowStockCount = inventory.filter((i) => i.quantity <= i.minStock).length;
+  // Stats
+  const totalItems = inventory.length;
+  const lowStockItems = inventory.filter(i => (i.storageCount + i.barCount) < i.minStock).length;
+  const storageValue = inventory.reduce((sum, i) => sum + (i.storageCount * i.costPrice), 0);
+  const barValue = inventory.reduce((sum, i) => sum + (i.barCount * i.costPrice), 0);
 
-  const handleBarcodeScan = (barcode: string) => {
-    setScannedBarcode(barcode);
-    const existingItem = inventory.find((i) => i.sku === barcode);
-
-    if (existingItem) {
-      setSelectedItem(existingItem);
-      setIsStockModalOpen(true);
+  const handleScan = (barcode: string) => {
+    const item = inventory.find(i => i.barcode === barcode);
+    if (item) {
+      setSelectedItem(item);
+      setShowStockUpdate(true);
     } else {
-      setSelectedItem(null);
-      setIsItemModalOpen(true);
+      // New item - open add modal with barcode pre-filled
+      setShowAddModal(true);
     }
+    setShowScanner(false);
   };
 
-  const handleAddItem = () => {
-    setSelectedItem(null);
-    setScannedBarcode(null);
-    setIsItemModalOpen(true);
-  };
-
-  const handleEditItem = (item: InventoryItem) => {
+  const handleQuickTransfer = (item: InventoryItem) => {
     setSelectedItem(item);
-    setScannedBarcode(null);
-    setIsItemModalOpen(true);
-    setMenuOpen(null);
+    setShowTransferModal(true);
   };
 
-  const handleQuickStock = (item: InventoryItem) => {
-    setSelectedItem(item);
-    setIsStockModalOpen(true);
-  };
+  // Convert to legacy format for existing modals
+  const toLegacyItem = (item: InventoryItem): LegacyInventoryItem => ({
+    id: item.id,
+    venueId: '1',
+    name: item.name,
+    category: item.category.toLowerCase() as InventoryCategory,
+    sku: item.barcode,
+    quantity: item.storageCount + item.barCount,
+    unit: 'units',
+    minStock: item.minStock,
+    costPrice: item.costPrice,
+    sellPrice: item.price,
+    isLowStock: (item.storageCount + item.barCount) < item.minStock,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
 
-  const handleSaveItem = (itemData: Partial<InventoryItem>) => {
-    if (selectedItem) {
-      setInventory(inventory.map((i) =>
-        i.id === selectedItem.id ? { ...i, ...itemData } : i
-      ));
-    } else {
-      const newItem: InventoryItem = {
-        id: Date.now().toString(),
-        venueId: '1',
-        name: itemData.name || '',
-        category: itemData.category || 'other',
-        sku: itemData.sku,
-        quantity: itemData.quantity || 0,
-        unit: itemData.unit || 'units',
-        minStock: itemData.minStock || 5,
-        costPrice: itemData.costPrice,
-        sellPrice: itemData.sellPrice,
-        supplier: itemData.supplier,
-        isLowStock: (itemData.quantity || 0) <= (itemData.minStock || 5),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setInventory([...inventory, newItem]);
-    }
+  const handleSaveItem = (itemData: Partial<LegacyInventoryItem>) => {
+    const newItem: InventoryItem = {
+      id: Date.now().toString(),
+      name: itemData.name || '',
+      barcode: itemData.sku || '',
+      category: itemData.category || 'Supplies',
+      storageCount: itemData.quantity || 0,
+      barCount: 0,
+      minStock: itemData.minStock || 5,
+      price: itemData.sellPrice || 0,
+      costPrice: itemData.costPrice || 0,
+    };
+    setInventory([...inventory, newItem]);
   };
 
   const handleStockUpdate = (itemId: string, newQuantity: number, _reason: string) => {
-    setInventory(inventory.map((i) =>
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+
+    const currentTotal = item.storageCount + item.barCount;
+    const diff = newQuantity - currentTotal;
+
+    setInventory(inventory.map(i =>
       i.id === itemId
-        ? { ...i, quantity: newQuantity, isLowStock: newQuantity <= i.minStock }
+        ? { ...i, storageCount: i.storageCount + diff, lastMovement: 'Just now' }
         : i
     ));
   };
 
-  const formatCurrency = (amount?: number) => {
-    if (amount === undefined || amount === 0) return '-';
+  const handleTransfer = (itemId: string, quantity: number, from: 'storage' | 'bar', _to: 'storage' | 'bar') => {
+    setInventory(inventory.map(i => {
+      if (i.id === itemId) {
+        return {
+          ...i,
+          storageCount: from === 'storage' ? i.storageCount - quantity : i.storageCount + quantity,
+          barCount: from === 'bar' ? i.barCount - quantity : i.barCount + quantity,
+          lastMovement: 'Just now',
+        };
+      }
+      return i;
+    }));
+    setShowTransferModal(false);
+    setSelectedItem(null);
+  };
+
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header Section */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Inventory</h1>
-          <p className="text-foreground-secondary mt-1">
-            Track and manage your stock levels
-          </p>
+          <p className="text-foreground-secondary">Track stock across storage and bar</p>
         </div>
-
-        {/* Action Buttons - Grouped */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-2">
+          {/* PROMINENT SCAN BUTTON */}
           <button
-            onClick={() => setIsScannerOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-foreground-secondary hover:text-foreground hover:border-border-light transition-colors"
+            onClick={() => setShowScanner(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-primary text-white rounded-xl font-semibold hover:opacity-90 transition-all shadow-glow animate-pulse-slow"
           >
-            <ScanLine size={18} />
-            <span className="hidden sm:inline">Scan</span>
+            <ScanLine size={20} />
+            <span>Quick Scan</span>
           </button>
           <button
-            onClick={handleAddItem}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-primary text-white font-medium shadow-glow-sm hover:shadow-glow transition-all"
+            onClick={() => {
+              setSelectedItem(null);
+              setShowTransferModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-3 bg-card text-foreground rounded-xl hover:bg-card/80 transition-all border border-border"
+          >
+            <ArrowRightLeft size={18} />
+            <span className="hidden sm:inline">Transfer</span>
+          </button>
+          <button
+            onClick={() => setShowVarianceModal(true)}
+            className="flex items-center gap-2 px-4 py-3 bg-card text-foreground rounded-xl hover:bg-card/80 transition-all border border-border"
+          >
+            <BarChart3 size={18} />
+            <span className="hidden sm:inline">Variance</span>
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-3 bg-card text-foreground rounded-xl hover:bg-card/80 transition-all border border-border"
           >
             <Plus size={18} />
-            <span>Add Item</span>
+            <span className="hidden sm:inline">Add Item</span>
           </button>
         </div>
       </div>
 
-      {/* Low Stock Alert Banner */}
-      {lowStockCount > 0 && (
-        <button
-          onClick={() => setShowLowStockOnly(!showLowStockOnly)}
-          className={cn(
-            'w-full p-4 rounded-xl flex items-center gap-4 transition-all',
-            showLowStockOnly
-              ? 'bg-error/15 border border-error/30 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
-              : 'bg-warning/10 border border-warning/20 hover:bg-warning/15'
-          )}
-        >
-          <div className={cn(
-            'p-2 rounded-lg',
-            showLowStockOnly ? 'bg-error/20' : 'bg-warning/20'
-          )}>
-            <AlertTriangle size={20} className={showLowStockOnly ? 'text-error' : 'text-warning'} />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="glass-card p-4 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-foreground-muted text-sm">Total Items</p>
+              <p className="text-2xl font-bold text-foreground">{totalItems}</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-primary-500/20 flex items-center justify-center">
+              <Package size={20} className="text-primary-400" />
+            </div>
           </div>
-          <div className="flex-1 text-left">
-            <p className="font-medium text-foreground">
-              {lowStockCount} item{lowStockCount !== 1 ? 's' : ''} below minimum stock
-            </p>
-            <p className="text-sm text-foreground-muted">
-              {showLowStockOnly ? 'Showing low stock items only' : 'Click to filter'}
-            </p>
+        </div>
+        <div className="glass-card p-4 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-foreground-muted text-sm">Low Stock</p>
+              <p className="text-2xl font-bold text-error">{lowStockItems}</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-error/20 flex items-center justify-center">
+              <AlertTriangle size={20} className="text-error" />
+            </div>
           </div>
-          <span className={cn(
-            'px-3 py-1 rounded-lg text-sm font-medium',
-            showLowStockOnly
-              ? 'bg-error/20 text-error'
-              : 'bg-warning/20 text-warning'
-          )}>
-            {showLowStockOnly ? 'Clear' : 'Filter'}
-          </span>
-        </button>
-      )}
-
-      {/* Search Bar */}
-      <div className="relative">
-        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-dim" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by name or barcode..."
-          className="w-full pl-12 pr-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-foreground-dim focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
-        />
+        </div>
+        <div className="glass-card p-4 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-foreground-muted text-sm">Storage Value</p>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(storageValue)}</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-accent-cyan/20 flex items-center justify-center">
+              <Warehouse size={20} className="text-accent-cyan" />
+            </div>
+          </div>
+        </div>
+        <div className="glass-card p-4 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-foreground-muted text-sm">Bar Value</p>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(barValue)}</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-accent-purple/20 flex items-center justify-center">
+              <Wine size={20} className="text-accent-purple" />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Category Filter Chips */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-        <button
-          onClick={() => setFilter('all')}
-          className={cn(
-            'px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0',
-            filter === 'all'
-              ? 'bg-gradient-primary text-white shadow-glow-sm'
-              : 'bg-card border border-border text-foreground-secondary hover:border-border-light hover:text-foreground'
-          )}
-        >
-          All Items
-        </button>
-        {(Object.keys(categoryConfig) as InventoryCategory[]).map((cat) => (
+      {/* Location Tabs */}
+      <div className="flex gap-2 p-1 bg-card rounded-xl w-fit border border-border">
+        {[
+          { id: 'all', label: 'All', icon: Package },
+          { id: 'storage', label: 'Storage', icon: Warehouse },
+          { id: 'bar', label: 'Bar', icon: Wine },
+          { id: 'low', label: 'Low Stock', icon: AlertTriangle },
+        ].map((tab) => (
           <button
-            key={cat}
-            onClick={() => setFilter(cat)}
+            key={tab.id}
+            onClick={() => setViewMode(tab.id as typeof viewMode)}
             className={cn(
-              'px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0',
-              filter === cat
+              'flex items-center gap-2 px-4 py-2 rounded-lg transition-all',
+              viewMode === tab.id
                 ? 'bg-gradient-primary text-white shadow-glow-sm'
-                : 'bg-card border border-border text-foreground-secondary hover:border-border-light hover:text-foreground'
+                : 'text-foreground-muted hover:text-foreground'
             )}
           >
-            {categoryConfig[cat].label}
+            <tab.icon size={16} />
+            <span>{tab.label}</span>
+            {tab.id === 'low' && lowStockItems > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-error rounded-full text-white">{lowStockItems}</span>
+            )}
           </button>
         ))}
       </div>
 
+      {/* Search & Filter */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-dim" size={18} />
+          <input
+            type="text"
+            placeholder="Search by name or barcode..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder-foreground-dim focus:outline-none focus:border-primary-500 transition-colors"
+          />
+        </div>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={cn(
+                'px-4 py-2 rounded-lg whitespace-nowrap transition-all',
+                selectedCategory === cat
+                  ? 'bg-gradient-primary text-white shadow-glow-sm'
+                  : 'bg-card text-foreground-muted hover:text-foreground border border-border'
+              )}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Inventory Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredInventory.map((item) => {
-          const isLow = item.quantity <= item.minStock;
-          const stockPercent = item.minStock > 0
-            ? Math.min((item.quantity / item.minStock) * 100, 100)
-            : 100;
+          const totalStock = item.storageCount + item.barCount;
+          const isLowStock = totalStock < item.minStock;
+          const stockPercent = Math.min((totalStock / item.minStock) * 100, 100);
 
           return (
             <div
               key={item.id}
               className={cn(
-                'glass-card p-5 flex flex-col hover:shadow-card-hover transition-all duration-300',
-                isLow && 'ring-1 ring-error/30'
+                'glass-card p-4 rounded-xl transition-all hover:border-primary-500/50',
+                isLowStock && 'border-error/50 ring-1 ring-error/20'
               )}
             >
-              {/* Card Header */}
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={cn(
-                    'p-2.5 rounded-xl shrink-0',
-                    categoryConfig[item.category].bg
-                  )}>
-                    <Package size={18} className={categoryConfig[item.category].color} />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground truncate leading-tight">
-                      {item.name}
-                    </h3>
-                    <span className={cn(
-                      'inline-block text-xs font-medium mt-1 px-2 py-0.5 rounded-md',
-                      categoryConfig[item.category].bg,
-                      categoryConfig[item.category].color
-                    )}>
-                      {categoryConfig[item.category].label}
-                    </span>
-                  </div>
+              {/* Header */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground truncate">{item.name}</h3>
+                  <p className="text-xs text-foreground-dim">{item.barcode}</p>
                 </div>
-
-                {/* Menu */}
-                <div className="relative shrink-0">
-                  <button
-                    onClick={() => setMenuOpen(menuOpen === item.id ? null : item.id)}
-                    className="p-1.5 rounded-lg text-foreground-dim hover:text-foreground hover:bg-white/5 transition-colors"
-                  >
-                    <MoreVertical size={16} />
-                  </button>
-                  {menuOpen === item.id && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setMenuOpen(null)}
-                      />
-                      <div className="absolute right-0 top-full mt-1 w-32 glass-card py-1 z-20 animate-fade-in">
-                        <button
-                          onClick={() => handleEditItem(item)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground-secondary hover:text-foreground hover:bg-white/5 transition-colors"
-                        >
-                          <Edit size={14} />
-                          Edit
-                        </button>
-                        <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/10 transition-colors">
-                          <Trash2 size={14} />
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 text-xs rounded-lg bg-white/10 text-foreground-muted">
+                    {item.category}
+                  </span>
+                  <div className="relative">
+                    <button
+                      onClick={() => setMenuOpen(menuOpen === item.id ? null : item.id)}
+                      className="p-1.5 rounded-lg text-foreground-dim hover:text-foreground hover:bg-white/5 transition-colors"
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+                    {menuOpen === item.id && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
+                        <div className="absolute right-0 top-full mt-1 w-32 glass-card py-1 z-20 animate-fade-in">
+                          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground-secondary hover:text-foreground hover:bg-white/5">
+                            <Edit size={14} />
+                            Edit
+                          </button>
+                          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/10">
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Stock Level */}
-              <div className="mb-4">
-                <div className="flex items-baseline justify-between mb-2">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className={cn(
-                      'text-2xl font-bold tabular-nums',
-                      isLow ? 'text-error' : 'text-foreground'
-                    )}>
-                      {item.quantity}
-                    </span>
-                    <span className="text-sm text-foreground-muted">{item.unit}</span>
+              {/* Stock Levels */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="p-2.5 rounded-lg bg-accent-cyan/10 border border-accent-cyan/20">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Warehouse size={14} className="text-accent-cyan" />
+                    <span className="text-xs text-accent-cyan">Storage</span>
                   </div>
-                  {isLow && (
-                    <span className="flex items-center gap-1 text-xs font-medium text-error bg-error/10 px-2 py-1 rounded-md">
-                      <TrendingDown size={12} />
-                      Low Stock
-                    </span>
-                  )}
+                  <p className="text-xl font-bold text-foreground">{item.storageCount}</p>
                 </div>
+                <div className="p-2.5 rounded-lg bg-accent-purple/10 border border-accent-purple/20">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Wine size={14} className="text-accent-purple" />
+                    <span className="text-xs text-accent-purple">Bar</span>
+                  </div>
+                  <p className="text-xl font-bold text-foreground">{item.barCount}</p>
+                </div>
+              </div>
 
-                {/* Stock Bar - Fixed Width */}
-                <div className="h-2 bg-card rounded-full overflow-hidden">
+              {/* Stock Bar */}
+              <div className="mb-3">
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-foreground-muted">Total: {totalStock}</span>
+                  <span className={isLowStock ? 'text-error' : 'text-foreground-muted'}>
+                    Min: {item.minStock}
+                  </span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                   <div
                     className={cn(
-                      'h-full rounded-full transition-all duration-500',
-                      stockPercent <= 50 ? 'bg-error' :
-                      stockPercent <= 100 ? 'bg-warning' : 'bg-success'
+                      'h-full rounded-full transition-all',
+                      stockPercent < 50 ? 'bg-error' : stockPercent < 75 ? 'bg-warning' : 'bg-success'
                     )}
                     style={{ width: `${stockPercent}%` }}
                   />
                 </div>
-                <p className="text-xs text-foreground-dim mt-1.5">
-                  Min. stock: {item.minStock} {item.unit}
+              </div>
+
+              {/* Low Stock Warning */}
+              {isLowStock && (
+                <div className="flex items-center gap-1 text-xs text-error mb-3">
+                  <TrendingDown size={12} />
+                  <span>Below minimum stock level</span>
+                </div>
+              )}
+
+              {/* Last Movement */}
+              {item.lastMovement && (
+                <p className="text-xs text-foreground-dim mb-3 flex items-center gap-1">
+                  <History size={12} />
+                  Last movement: {item.lastMovement}
                 </p>
-              </div>
+              )}
 
-              {/* Price Row */}
-              <div className="flex items-center justify-between py-3 border-t border-white/5">
-                <div>
-                  <p className="text-xs text-foreground-dim">Sell Price</p>
-                  <p className="text-sm font-semibold text-foreground">
-                    {formatCurrency(item.sellPrice)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-foreground-dim">Cost</p>
-                  <p className="text-sm text-foreground-muted">
-                    {formatCurrency(item.costPrice)}
-                  </p>
-                </div>
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleQuickTransfer(item)}
+                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 bg-primary-500/20 text-primary-400 rounded-xl hover:bg-primary-500/30 transition-all text-sm font-medium"
+                >
+                  <ArrowRightLeft size={14} />
+                  Transfer
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedItem(item);
+                    setShowStockUpdate(true);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all text-sm font-medium"
+                >
+                  <ScanLine size={14} />
+                  Update
+                </button>
               </div>
-
-              {/* Update Button */}
-              <button
-                onClick={() => handleQuickStock(item)}
-                className="w-full mt-3 py-2.5 rounded-xl text-sm font-medium bg-card border border-border text-foreground-secondary hover:border-primary-500/50 hover:text-foreground hover:bg-primary-500/5 transition-all"
-              >
-                Update Stock
-              </button>
             </div>
           );
         })}
@@ -469,16 +452,12 @@ export function Inventory() {
             <Package size={32} className="text-foreground-dim" />
           </div>
           <h3 className="text-lg font-semibold text-foreground">No items found</h3>
-          <p className="text-foreground-muted mt-1 max-w-sm mx-auto">
-            {searchQuery
-              ? 'Try a different search term'
-              : showLowStockOnly
-              ? 'No items are currently low on stock'
-              : 'Add your first inventory item to get started'}
+          <p className="text-foreground-muted mt-1">
+            {searchQuery ? 'Try a different search term' : 'Add your first inventory item'}
           </p>
-          {!searchQuery && !showLowStockOnly && (
+          {!searchQuery && (
             <button
-              onClick={handleAddItem}
+              onClick={() => setShowAddModal(true)}
               className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-primary text-white font-medium"
             >
               <Plus size={18} />
@@ -489,33 +468,58 @@ export function Inventory() {
       )}
 
       {/* Modals */}
-      <BarcodeScanner
-        isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onScan={handleBarcodeScan}
-      />
+      {showScanner && (
+        <BarcodeScanner
+          isOpen={showScanner}
+          onClose={() => setShowScanner(false)}
+          onScan={handleScan}
+        />
+      )}
 
-      <InventoryModal
-        isOpen={isItemModalOpen}
-        onClose={() => {
-          setIsItemModalOpen(false);
-          setScannedBarcode(null);
-        }}
-        onSave={handleSaveItem}
-        onOpenScanner={() => {
-          setIsItemModalOpen(false);
-          setIsScannerOpen(true);
-        }}
-        item={selectedItem}
-        scannedBarcode={scannedBarcode}
-      />
+      {showAddModal && (
+        <InventoryModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSave={handleSaveItem}
+          onOpenScanner={() => {
+            setShowAddModal(false);
+            setShowScanner(true);
+          }}
+          item={null}
+          scannedBarcode={null}
+        />
+      )}
 
-      <StockUpdateModal
-        isOpen={isStockModalOpen}
-        onClose={() => setIsStockModalOpen(false)}
-        onSave={handleStockUpdate}
-        item={selectedItem}
-      />
+      {showStockUpdate && selectedItem && (
+        <StockUpdateModal
+          isOpen={showStockUpdate}
+          onClose={() => {
+            setShowStockUpdate(false);
+            setSelectedItem(null);
+          }}
+          onSave={handleStockUpdate}
+          item={toLegacyItem(selectedItem)}
+        />
+      )}
+
+      {showTransferModal && (
+        <TransferModal
+          inventory={inventory}
+          selectedItem={selectedItem}
+          onClose={() => {
+            setShowTransferModal(false);
+            setSelectedItem(null);
+          }}
+          onTransfer={handleTransfer}
+        />
+      )}
+
+      {showVarianceModal && (
+        <VarianceModal
+          inventory={inventory}
+          onClose={() => setShowVarianceModal(false)}
+        />
+      )}
     </div>
   );
 }

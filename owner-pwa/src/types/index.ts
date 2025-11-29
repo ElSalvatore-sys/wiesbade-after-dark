@@ -132,3 +132,6 @@ export interface Notification {
 // Employee & Task types
 export * from './employees';
 export * from './tasks';
+
+// Advanced inventory types (storage/bar tracking)
+export * from './inventory';
