@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Login, Dashboard, Events, Bookings, Inventory } from './pages';
+import { Login, Dashboard, Events, Bookings, Inventory, Employees, Tasks } from './pages';
 import { DashboardLayout } from './components/layout';
 
 // Mock user data
@@ -13,7 +13,7 @@ const mockVenue = {
   name: 'Club Noir',
 };
 
-type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'settings';
+type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 'tasks' | 'settings';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -46,6 +46,10 @@ function App() {
         return <Bookings />;
       case 'inventory':
         return <Inventory />;
+      case 'employees':
+        return <Employees />;
+      case 'tasks':
+        return <Tasks />;
       case 'settings':
         return (
           <PlaceholderPage

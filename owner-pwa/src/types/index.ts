@@ -128,3 +128,7 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
 }
+
+// Employee & Task types
+export * from './employees';
+export * from './tasks';

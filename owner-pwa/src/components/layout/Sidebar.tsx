@@ -4,6 +4,8 @@ import {
   Calendar,
   BookOpen,
   Package,
+  Users,
+  ClipboardList,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -29,6 +31,8 @@ const navItems: NavItem[] = [
   { id: 'events', label: 'Events', icon: <Calendar size={20} /> },
   { id: 'bookings', label: 'Bookings', icon: <BookOpen size={20} /> },
   { id: 'inventory', label: 'Inventory', icon: <Package size={20} /> },
+  { id: 'employees', label: 'Employees', icon: <Users size={20} /> },
+  { id: 'tasks', label: 'Tasks', icon: <ClipboardList size={20} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
 ];
 
