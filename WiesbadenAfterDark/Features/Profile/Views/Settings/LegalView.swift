@@ -321,6 +321,9 @@ struct LegalView: View {
         .background(Color.appBackground)
         .navigationTitle("Legal")
         .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(Color.appBackground, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 

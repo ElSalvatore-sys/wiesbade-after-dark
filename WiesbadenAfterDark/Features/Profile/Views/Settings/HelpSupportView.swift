@@ -150,6 +150,9 @@ struct HelpSupportView: View {
         }
         .navigationTitle("Help & Support")
         .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(Color.appBackground, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .alert("Email Unavailable", isPresented: $showEmailError) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -223,6 +226,9 @@ struct FAQView: View {
         }
         .navigationTitle("FAQ")
         .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(Color.appBackground, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 
@@ -315,6 +321,9 @@ struct PointsGuideView: View {
         .background(Color.appBackground)
         .navigationTitle("Points Guide")
         .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(Color.appBackground, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 
@@ -381,6 +390,9 @@ struct VenueGuidelinesView: View {
         .background(Color.appBackground)
         .navigationTitle("Guidelines")
         .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(Color.appBackground, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 

@@ -128,6 +128,30 @@ struct ProfileView: View {
                             )
                         }
                         .buttonStyle(.plain)
+
+                        Divider().padding(.leading, 60)
+
+                        NavigationLink(destination: PrivacySecurityView()) {
+                            ProfileActionButton(
+                                icon: "lock.shield.fill",
+                                title: "Privacy & Security",
+                                subtitle: "Manage your data",
+                                color: .cyan
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        Divider().padding(.leading, 60)
+
+                        NavigationLink(destination: LegalView()) {
+                            ProfileActionButton(
+                                icon: "doc.text.fill",
+                                title: "Legal",
+                                subtitle: "Terms & Privacy Policy",
+                                color: .gray
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                     .background(Color.cardBackground)
                     .cornerRadius(Theme.CornerRadius.lg)
