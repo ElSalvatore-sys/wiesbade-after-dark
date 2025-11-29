@@ -233,12 +233,12 @@ struct OnboardingFlow: View {
 struct MainTabView: View {
     @State private var selectedTab = 0
 
-    private let tabs: [(icon: String, label: String)] = [
-        ("house.fill", "Home"),
-        ("map.fill", "Discover"),
-        ("calendar", "Events"),
-        ("person.2.fill", "Community"),
-        ("person.crop.circle.fill", "Profile")
+    private let tabs: [(icon: String, iconFilled: String, label: String)] = [
+        ("house", "house.fill", "Home"),
+        ("map", "map.fill", "Discover"),
+        ("calendar", "calendar", "Events"),
+        ("person.2", "person.2.fill", "Community"),
+        ("person.crop.circle", "person.crop.circle.fill", "Profile")
     ]
 
     var body: some View {
@@ -272,28 +272,30 @@ struct MainTabView: View {
 
 // MARK: - Glossy Tab Bar
 
-/// Custom tab bar with glassmorphism effect
+/// Custom tab bar with glassmorphism effect using native SwiftUI materials
 private struct GlossyTabBar: View {
     @Binding var selectedTab: Int
-    let tabs: [(icon: String, label: String)]
+    let tabs: [(icon: String, iconFilled: String, label: String)]
 
     var body: some View {
         HStack(spacing: 0) {
             ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
+                let isSelected = selectedTab == index
+
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         selectedTab = index
                     }
                 } label: {
                     VStack(spacing: 4) {
-                        Image(systemName: tab.icon)
-                            .font(.system(size: 22))
-                            .symbolRenderingMode(.hierarchical)
+                        Image(systemName: isSelected ? tab.iconFilled : tab.icon)
+                            .font(.system(size: 22, weight: isSelected ? .semibold : .regular))
+                            .scaleEffect(isSelected ? 1.1 : 1.0)
 
                         Text(tab.label)
-                            .font(.system(size: 10, weight: selectedTab == index ? .semibold : .medium))
+                            .font(.system(size: 10, weight: isSelected ? .semibold : .regular))
                     }
-                    .foregroundColor(selectedTab == index ? Color.gold : Color(white: 0.5))
+                    .foregroundColor(isSelected ? Color.gold : Color.textTertiary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                 }
@@ -301,55 +303,32 @@ private struct GlossyTabBar: View {
             }
         }
         .padding(.horizontal, 8)
-        .padding(.top, 8)
+        .padding(.top, 12)
         .padding(.bottom, 28) // Account for home indicator
         .background(
-            ZStack {
-                // Blur effect layer
-                VisualEffectBlur(blurStyle: .systemChromeMaterialDark)
-
-                // Gradient overlay for extra depth
-                LinearGradient(
-                    colors: [
-                        Color(white: 0.15, opacity: 0.3),
-                        Color(white: 0.05, opacity: 0.5)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .environment(\.colorScheme, .dark) // Force dark material
+                .overlay(
+                    // Subtle gradient overlay for depth
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.08),
+                            Color.clear
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
                 )
-
-                // Top border highlight
-                VStack {
+                .overlay(
+                    // Top border highlight
                     Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.15), Color.white.opacity(0.05)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(height: 0.5)
-                    Spacer()
-                }
-            }
+                        .fill(Color.white.opacity(0.08))
+                        .frame(height: 0.5),
+                    alignment: .top
+                )
         )
-    }
-}
-
-// MARK: - Visual Effect Blur (UIKit Bridge)
-
-/// UIViewRepresentable for UIVisualEffectView blur
-private struct VisualEffectBlur: UIViewRepresentable {
-    let blurStyle: UIBlurEffect.Style
-
-    func makeUIView(context: Context) -> UIVisualEffectView {
-        let blurEffect = UIBlurEffect(style: blurStyle)
-        let view = UIVisualEffectView(effect: blurEffect)
-        return view
-    }
-
-    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
-        uiView.effect = UIBlurEffect(style: blurStyle)
+        .ignoresSafeArea(.all, edges: .bottom)
     }
 }
 
