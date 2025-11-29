@@ -255,9 +255,16 @@ struct MainTabView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                // Reserve space for custom tab bar (50pt bar + 20pt safe area)
+                Color.clear.frame(height: 70)
+            }
 
-            // Custom glossy tab bar
-            GlossyTabBar(selectedTab: $selectedTab, tabs: tabs)
+            // Custom glossy tab bar at bottom
+            VStack(spacing: 0) {
+                Spacer()
+                GlossyTabBar(selectedTab: $selectedTab, tabs: tabs)
+            }
         }
         .ignoresSafeArea(.keyboard)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
@@ -272,7 +279,7 @@ struct MainTabView: View {
 
 // MARK: - Glossy Tab Bar
 
-/// Custom tab bar with glassmorphism effect using native SwiftUI materials
+/// Custom tab bar with glassmorphism effect - compact design
 private struct GlossyTabBar: View {
     @Binding var selectedTab: Int
     let tabs: [(icon: String, iconFilled: String, label: String)]
@@ -287,46 +294,43 @@ private struct GlossyTabBar: View {
                         selectedTab = index
                     }
                 } label: {
-                    VStack(spacing: 4) {
+                    VStack(spacing: 2) {
                         Image(systemName: isSelected ? tab.iconFilled : tab.icon)
-                            .font(.system(size: 22, weight: isSelected ? .semibold : .regular))
-                            .scaleEffect(isSelected ? 1.1 : 1.0)
+                            .font(.system(size: 18))
 
                         Text(tab.label)
-                            .font(.system(size: 10, weight: isSelected ? .semibold : .regular))
+                            .font(.system(size: 9, weight: isSelected ? .semibold : .regular))
                     }
-                    .foregroundColor(isSelected ? Color.gold : Color.textTertiary)
+                    .foregroundColor(isSelected ? Color.gold : Color.gray)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.top, 12)
-        .padding(.bottom, 28) // Account for home indicator
+        .frame(height: 50)
+        .padding(.bottom, 20) // Safe area for home indicator
         .background(
+            ZStack {
+                // Solid dark base
+                Color(red: 0.08, green: 0.08, blue: 0.08)
+
+                // Glossy gradient overlay
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.12),
+                        Color.white.opacity(0.04),
+                        Color.clear
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
+        .overlay(
             Rectangle()
-                .fill(.ultraThinMaterial)
-                .environment(\.colorScheme, .dark) // Force dark material
-                .overlay(
-                    // Subtle gradient overlay for depth
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.08),
-                            Color.clear
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .overlay(
-                    // Top border highlight
-                    Rectangle()
-                        .fill(Color.white.opacity(0.08))
-                        .frame(height: 0.5),
-                    alignment: .top
-                )
+                .fill(Color.white.opacity(0.15))
+                .frame(height: 0.5),
+            alignment: .top
         )
         .ignoresSafeArea(.all, edges: .bottom)
     }

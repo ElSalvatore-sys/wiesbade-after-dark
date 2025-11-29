@@ -61,6 +61,9 @@ struct HomeView: View {
                 .background(Color.appBackground.ignoresSafeArea())
                 .navigationTitle("Home")
                 .navigationBarTitleDisplayMode(.large)
+                .toolbarBackground(Color.appBackground, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbarColorScheme(.dark, for: .navigationBar)
                 .refreshable {
                     if let user = authViewModel.authState.user {
                         await homeViewModel.refresh(userId: user.id)

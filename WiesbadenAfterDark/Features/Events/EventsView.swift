@@ -105,6 +105,9 @@ struct EventsView: View {
                 }
             }
             .navigationTitle("Events")
+            .toolbarBackground(Color.appBackground, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .task {
                 await loadEvents()
             }
