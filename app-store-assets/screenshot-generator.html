@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Store Screenshot Generator - WiesbadenAfterDark</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 20px; }
+    .instructions { background: #333; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+    .instructions h2 { font-size: 16px; margin-bottom: 10px; }
+    .instructions ol { margin-left: 20px; }
+    .instructions li { margin-bottom: 5px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .screenshot { background: #222; border-radius: 15px; overflow: hidden; }
+    .screenshot-header { padding: 10px; background: #333; font-size: 14px; }
+    .screenshot-frame { position: relative; }
+    
+    /* iPhone frame sizes */
+    .size-67 .frame { width: 320px; height: 693px; }
+    .size-65 .frame { width: 320px; 693px; }
+    .size-55 .frame { width: 320px; height: 569px; }
+    
+    .frame {
+      margin: 20px auto;
+      background: linear-gradient(135deg, var(--grad1), var(--grad2));
+      border-radius: 30px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    
+    .marketing-text {
+      text-align: center;
+      padding: 30px 20px 20px;
+    }
+    .marketing-text h2 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .marketing-text p {
+      font-size: 16px;
+      opacity: 0.9;
+    }
+    
+    .phone-mockup {
+      width: 240px;
+      height: 500px;
+      background: #000;
+      border-radius: 35px;
+      padding: 10px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: #09090B;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+      font-size: 12px;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .phone-notch {
+      position: absolute;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 25px;
+      background: #000;
+      border-radius: 15px;
+    }
+    
+    /* Color themes */
+    .theme-home { --grad1: #8B5CF6; --grad2: #EC4899; }
+    .theme-discover { --grad1: #3B82F6; --grad2: #8B5CF6; }
+    .theme-events { --grad1: #EC4899; --grad2: #F59E0B; }
+    .theme-community { --grad1: #10B981; --grad2: #3B82F6; }
+    .theme-profile { --grad1: #F59E0B; --grad2: #EF4444; }
+    
+    button {
+      background: #8B5CF6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    button:hover { background: #7C3AED; }
+  </style>
+</head>
+<body>
+  <h1>WiesbadenAfterDark - App Store Screenshots</h1>
+  
+  <div class="instructions">
+    <h2>How to create App Store screenshots:</h2>
+    <ol>
+      <li>Run your iOS app in Xcode Simulator (iPhone 15 Pro Max)</li>
+      <li>Take screenshots of each screen (Cmd+S)</li>
+      <li>Open each screenshot template below</li>
+      <li>Replace the placeholder with your actual screenshot</li>
+      <li>Use browser developer tools to resize to exact dimensions</li>
+      <li>Save as PNG (right-click > Save as image)</li>
+    </ol>
+  </div>
+  
+  <div class="grid">
+    <!-- Home Screen -->
+    <div class="screenshot">
+      <div class="screenshot-header">1. Home - Earn Points (1290x2796 for 6.7")</div>
+      <div class="screenshot-frame">
+        <div class="frame theme-home">
+          <div class="marketing-text">
+            <h2>Earn Points</h2>
+            <p>Get rewarded at your favorite venues</p>
+          </div>
+          <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              HOME SCREEN<br><br>
+              Paste your screenshot here
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Discover Screen -->
+    <div class="screenshot">
+      <div class="screenshot-header">2. Discover - Find Venues</div>
+      <div class="screenshot-frame">
+        <div class="frame theme-discover">
+          <div class="marketing-text">
+            <h2>Discover Venues</h2>
+            <p>Find the best nightlife in Wiesbaden</p>
+          </div>
+          <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              DISCOVER SCREEN<br><br>
+              Paste your screenshot here
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Events Screen -->
+    <div class="screenshot">
+      <div class="screenshot-header">3. Events - Never Miss a Party</div>
+      <div class="screenshot-frame">
+        <div class="frame theme-events">
+          <div class="marketing-text">
+            <h2>Exclusive Events</h2>
+            <p>Never miss a party</p>
+          </div>
+          <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              EVENTS SCREEN<br><br>
+              Paste your screenshot here
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Community Screen -->
+    <div class="screenshot">
+      <div class="screenshot-header">4. Community - Connect</div>
+      <div class="screenshot-frame">
+        <div class="frame theme-community">
+          <div class="marketing-text">
+            <h2>Join the Community</h2>
+            <p>Connect with night owls</p>
+          </div>
+          <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              COMMUNITY SCREEN<br><br>
+              Paste your screenshot here
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Profile Screen -->
+    <div class="screenshot">
+      <div class="screenshot-header">5. Profile - Track Progress</div>
+      <div class="screenshot-frame">
+        <div class="frame theme-profile">
+          <div class="marketing-text">
+            <h2>Track Progress</h2>
+            <p>Level up your nightlife</p>
+          </div>
+          <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              PROFILE SCREEN<br><br>
+              Paste your screenshot here
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div style="margin-top: 40px; text-align: center; color: #888;">
+    <h3>App Store Screenshot Requirements:</h3>
+    <p>6.7" Display (iPhone 15 Pro Max): 1290 x 2796 pixels</p>
+    <p>6.5" Display (iPhone 14 Plus): 1284 x 2778 pixels</p>
+    <p>5.5" Display (iPhone 8 Plus): 1242 x 2208 pixels</p>
+  </div>
+</body>
+</html>

@@ -13,6 +13,8 @@ interface DashboardLayoutProps {
   venueName: string;
   userName: string;
   userAvatar?: string;
+  userRole?: string;
+  hasPermission?: (permission: string) => boolean;
 }
 
 // Mock notifications with more variety
@@ -67,6 +69,8 @@ export function DashboardLayout({
   venueName,
   userName,
   userAvatar,
+  userRole,
+  hasPermission,
 }: DashboardLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -113,6 +117,8 @@ export function DashboardLayout({
           onLogout={onLogout}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          userRole={userRole}
+          hasPermission={hasPermission}
         />
       </div>
 
@@ -133,6 +139,8 @@ export function DashboardLayout({
               onLogout={onLogout}
               isCollapsed={false}
               onToggleCollapse={() => setIsMobileSidebarOpen(false)}
+              userRole={userRole}
+              hasPermission={hasPermission}
             />
           </div>
 

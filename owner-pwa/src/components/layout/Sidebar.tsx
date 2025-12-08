@@ -18,6 +18,8 @@ interface SidebarProps {
   onLogout: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  userRole?: string;
+  hasPermission?: (permission: string) => boolean;
 }
 
 interface NavItem {
@@ -42,7 +44,13 @@ export function Sidebar({
   onLogout,
   isCollapsed,
   onToggleCollapse,
+  userRole,
+  hasPermission,
 }: SidebarProps) {
+  // Filter navigation items based on permissions
+  const visibleNavItems = hasPermission
+    ? navItems.filter((item) => hasPermission(item.id))
+    : navItems;
   return (
     <aside
       className={cn(
@@ -73,9 +81,25 @@ export function Sidebar({
         </div>
       </div>
 
+      {/* Role Badge */}
+      {userRole && !isCollapsed && (
+        <div className="px-4 py-2">
+          <div className={cn(
+            'px-3 py-1.5 rounded-lg text-xs font-medium text-center',
+            userRole === 'owner' && 'bg-purple-500/20 text-purple-400',
+            userRole === 'manager' && 'bg-blue-500/20 text-blue-400',
+            userRole === 'bartender' && 'bg-green-500/20 text-green-400',
+            userRole === 'inventory' && 'bg-orange-500/20 text-orange-400',
+            userRole === 'cleaning' && 'bg-gray-500/20 text-gray-400'
+          )}>
+            {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto no-scrollbar">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive = currentPage === item.id;
           return (
             <button

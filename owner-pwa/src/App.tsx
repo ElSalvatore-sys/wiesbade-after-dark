@@ -1,30 +1,20 @@
 import { useState } from 'react';
-import { Login, Dashboard, Events, Bookings, Inventory, Employees, Tasks } from './pages';
+import { Login, Dashboard, Events, Bookings, Inventory, Employees, Tasks, Settings } from './pages';
 import { DashboardLayout } from './components/layout';
-
-// Mock user data
-const mockUser = {
-  name: 'Max Mustermann',
-  email: 'owner@example.com',
-  avatar: undefined,
-};
-
-const mockVenue = {
-  name: 'Club Noir',
-};
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 'tasks' | 'settings';
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+function AppContent() {
+  const { user, isAuthenticated, logout, hasPermission } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
 
   const handleLogin = () => {
-    setIsAuthenticated(true);
+    // Auth state is managed by context
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
+    logout();
     setCurrentPage('dashboard');
   };
 
@@ -51,52 +41,40 @@ function App() {
       case 'tasks':
         return <Tasks />;
       case 'settings':
-        return (
-          <PlaceholderPage
-            title="Settings"
-            description="Configure your venue and account settings"
-          />
-        );
+        return <Settings />;
       default:
         return <Dashboard onNavigate={handleNavigate} />;
+    }
+  };
+
+  // Filter navigation based on permissions
+  const handleNavigateWithPermission = (page: string) => {
+    if (hasPermission(page)) {
+      setCurrentPage(page as Page);
     }
   };
 
   return (
     <DashboardLayout
       currentPage={currentPage}
-      onNavigate={handleNavigate}
+      onNavigate={handleNavigateWithPermission}
       onLogout={handleLogout}
-      venueName={mockVenue.name}
-      userName={mockUser.name}
-      userAvatar={mockUser.avatar}
+      venueName={user?.venueName || 'Das Wohnzimmer'}
+      userName={user?.name || 'User'}
+      userAvatar={undefined}
+      userRole={user?.role}
+      hasPermission={hasPermission}
     >
       {renderPage()}
     </DashboardLayout>
   );
 }
 
-function PlaceholderPage({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
+function App() {
   return (
-    <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-      <p className="text-foreground-secondary mt-1">{description}</p>
-      <div className="mt-8 glass-card p-12 text-center">
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-primary/20 flex items-center justify-center mb-4">
-          <span className="text-3xl">🚧</span>
-        </div>
-        <h3 className="text-lg font-semibold text-foreground">Coming Soon</h3>
-        <p className="text-foreground-muted mt-2">
-          This feature is under development
-        </p>
-      </div>
-    </div>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
