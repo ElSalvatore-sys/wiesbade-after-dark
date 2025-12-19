@@ -133,3 +133,98 @@ vercel --prod  # Deploy
 - Bar/Restaurant/Club
 - Internal testing: Dec 6-10
 - Public launch: Dec 13-15
+
+---
+
+## 🎯 KNOWLEDGE BASE REFERENCE
+
+### CRITICAL: Search Before Implementing!
+
+Before implementing ANY new feature, search the competitive research:
+
+### Archon RAG Queries
+```bash
+archon:rag_search_knowledge_base("booking reservation flow")
+archon:rag_search_knowledge_base("loyalty points rewards")
+archon:rag_search_knowledge_base("German gastronomy payment")
+archon:rag_search_knowledge_base("nightlife club booking")
+archon:rag_search_knowledge_base("venue dashboard analytics")
+```
+
+### Research Files: ~/knowledge-base-research/companies/
+- 01-booking-systems: OpenTable, Resy, SevenRooms, TheFork
+- 02-nightlife: Resident Advisor, Discotech, Dice, Xceed, Fever
+- 04-loyalty-programs: Punchh, Fivestars
+- 06-german-specific: Quandoo, Gastrofix, Orderbird, Eventim, Lieferando
+- 10-emerging: Partiful, Posh, Yelp, Foursquare
+
+### Key Best Practices
+| Feature | Best Practice | Source |
+|---------|---------------|--------|
+| No-show reduction | YUMS points | TheFork |
+| Anti-scalping | Waitlist system | Dice |
+| German compliance | GoBD, TSE | Gastrofix |
+| Social virality | Invite-first | Partiful |
+| Loyalty | 1000pts=€15 | Quandoo |
+
+### Full Report: ~/knowledge-base-research/WiesbadenAfterDark_Competitive_Research_Summary.docx
+
+---
+
+## 🎯 KNOWLEDGE BASE - SEARCH BEFORE IMPLEMENTING!
+
+### Archon Project
+- **Project ID:** `c027b69c-949e-41fe-a3c2-efc659af668d`
+- **View:** http://localhost:3737
+
+### RAG Search Commands
+```bash
+# German market (payments, compliance, POS)
+archon:rag_search_knowledge_base("german-market payment compliance")
+
+# Booking flow UX patterns
+archon:rag_search_knowledge_base("booking flow UX conversion")
+
+# Loyalty & rewards systems
+archon:rag_search_knowledge_base("loyalty points tier gamification")
+
+# Nightlife/club features
+archon:rag_search_knowledge_base("nightlife club table vip booking")
+
+# Venue owner dashboard
+archon:rag_search_knowledge_base("venue dashboard analytics reporting")
+
+# No-show prevention
+archon:rag_search_knowledge_base("no-show reduction YUMS points")
+
+# Mobile app features
+archon:rag_search_knowledge_base("mobile app push notifications checkin")
+```
+
+### Document IDs (Direct Access)
+| Category | Doc ID |
+|----------|--------|
+| German Market | `cdf2b15c-0358-4de8-b382-34445b9626bc` |
+| Nightlife | `c24c10a2-d4ab-42ae-8210-360aa2ea2179` |
+| Booking Systems | `95b8dcf2-0019-4ae1-bf6e-7a216a8a75ef` |
+| Loyalty Programs | `44f65a12-3776-4e99-b113-fbadda301d07` |
+| Social/Emerging | `0e9d8956-8fe9-4f91-b8ad-6498d904e97a` |
+| **MASTER** | `40edd5b3-fa71-4e44-b539-64763d375be1` |
+| Booking Flow UX | `b136ff2b-668c-4a49-aaeb-6e3f34f721fc` |
+| Venue Dashboard | `b990cfa8-a69a-4bd1-9268-4099f0bbc168` |
+| German Compliance | `e3833cb3-7e2f-401b-b221-8dda1cc114b9` |
+| Mobile App | `def418b2-8f4f-41d6-96fc-1ca4353eedac` |
+
+### Quick Best Practices
+| Feature | Best Practice | Source |
+|---------|---------------|--------|
+| No-shows | YUMS loyalty points | TheFork |
+| Anti-scalping | EVENTIM Pass + phone verify | Eventim |
+| Lowest fees | 3% commission | Xceed |
+| VIP tables | Interactive map + deposits | Discotech |
+| Viral growth | Invite-first model | Partiful |
+| German compliance | GoBD, DATEV, TSE | Gastrofix |
+| Loyalty cashback | 1000pts = €15 | Quandoo |
+
+### Local Research Files
+`~/knowledge-base-research/companies/` (20 files, 13,482 lines)

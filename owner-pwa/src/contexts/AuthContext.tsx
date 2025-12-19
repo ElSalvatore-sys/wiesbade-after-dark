@@ -23,11 +23,11 @@ interface AuthContextType {
 }
 
 const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  owner: ['dashboard', 'events', 'bookings', 'inventory', 'employees', 'tasks', 'reports', 'settings'],
-  manager: ['dashboard', 'events', 'bookings', 'inventory', 'tasks', 'reports'],
-  bartender: ['dashboard', 'tasks'],
-  inventory: ['dashboard', 'inventory', 'tasks', 'reports'],
-  cleaning: ['dashboard', 'tasks'],
+  owner: ['dashboard', 'events', 'bookings', 'inventory', 'employees', 'shifts', 'tasks', 'reports', 'settings'],
+  manager: ['dashboard', 'events', 'bookings', 'inventory', 'shifts', 'tasks', 'reports'],
+  bartender: ['dashboard', 'shifts', 'tasks'],
+  inventory: ['dashboard', 'inventory', 'shifts', 'tasks', 'reports'],
+  cleaning: ['dashboard', 'shifts', 'tasks'],
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

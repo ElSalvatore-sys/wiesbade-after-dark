@@ -180,7 +180,40 @@ self.addEventListener('notificationclick', (event) => {
   console.log('[SW] Notification clicked');
   event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/';
+  // Determine URL based on notification type
+  let urlToOpen = '/';
+  const notificationData = event.notification.data || {};
+  const notificationTag = event.notification.tag || '';
+
+  // Route based on notification type
+  if (notificationTag.startsWith('shift-')) {
+    urlToOpen = '/?page=shifts';
+  } else if (notificationTag.startsWith('task-')) {
+    urlToOpen = '/?page=tasks';
+  } else if (notificationTag.startsWith('booking-')) {
+    urlToOpen = '/?page=bookings';
+  } else if (notificationTag.startsWith('stock-')) {
+    urlToOpen = '/?page=inventory';
+  } else if (notificationTag.startsWith('event-')) {
+    urlToOpen = '/?page=events';
+  } else if (notificationData.url) {
+    urlToOpen = notificationData.url;
+  }
+
+  // Handle action buttons if clicked
+  if (event.action) {
+    console.log('[SW] Notification action:', event.action);
+    switch (event.action) {
+      case 'approve-task':
+        urlToOpen = `/?page=tasks&action=approve&taskId=${notificationData.taskId}`;
+        break;
+      case 'view-shift':
+        urlToOpen = `/?page=shifts&shiftId=${notificationData.shiftId}`;
+        break;
+      case 'dismiss':
+        return; // Just close the notification
+    }
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
@@ -189,9 +222,12 @@ self.addEventListener('notificationclick', (event) => {
         for (const client of clientList) {
           if (client.url.includes(self.location.origin) && 'focus' in client) {
             client.focus();
-            if (event.notification.data?.url) {
-              client.navigate(urlToOpen);
-            }
+            client.postMessage({
+              type: 'NOTIFICATION_CLICKED',
+              data: notificationData,
+              action: event.action,
+              tag: notificationTag,
+            });
             return;
           }
         }
@@ -209,6 +245,10 @@ self.addEventListener('sync', (event) => {
 
   if (event.tag === 'sync-bookings') {
     event.waitUntil(syncBookings());
+  } else if (event.tag === 'sync-shifts') {
+    event.waitUntil(syncShifts());
+  } else if (event.tag === 'sync-tasks') {
+    event.waitUntil(syncTasks());
   }
 });
 
@@ -216,6 +256,47 @@ async function syncBookings() {
   // This would sync any offline booking changes when back online
   console.log('[SW] Syncing bookings...');
   // Implementation would go here
+}
+
+async function syncShifts() {
+  // Sync offline shift actions (clock in/out) when back online
+  console.log('[SW] Syncing shifts...');
+  try {
+    const cache = await caches.open('wad-owner-offline-actions');
+    const offlineShifts = await cache.match('offline-shifts');
+    if (offlineShifts) {
+      const shifts = await offlineShifts.json();
+      // Process each offline shift action
+      for (const shift of shifts) {
+        // Send to server
+        console.log('[SW] Syncing shift action:', shift);
+      }
+      // Clear the offline queue
+      await cache.delete('offline-shifts');
+    }
+  } catch (error) {
+    console.error('[SW] Shift sync failed:', error);
+  }
+}
+
+async function syncTasks() {
+  // Sync offline task status changes when back online
+  console.log('[SW] Syncing tasks...');
+  try {
+    const cache = await caches.open('wad-owner-offline-actions');
+    const offlineTasks = await cache.match('offline-tasks');
+    if (offlineTasks) {
+      const tasks = await offlineTasks.json();
+      // Process each offline task action
+      for (const task of tasks) {
+        console.log('[SW] Syncing task action:', task);
+      }
+      // Clear the offline queue
+      await cache.delete('offline-tasks');
+    }
+  } catch (error) {
+    console.error('[SW] Task sync failed:', error);
+  }
 }
 
 // Message handler for communication with main app

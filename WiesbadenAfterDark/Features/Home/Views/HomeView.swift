@@ -478,14 +478,18 @@ struct NearbyVenueCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Venue Image
-            AsyncImage(url: URL(string: venue.coverImageURL ?? "")) { image in
+            // Venue Image - using cached loading
+            CachedAsyncImage(
+                url: URL(string: venue.coverImageURL ?? ""),
+                targetSize: CGSize(width: 300, height: 140)
+            ) { image in
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             } placeholder: {
                 Rectangle()
                     .fill(Color.inputBackground)
+                    .shimmer()
             }
             .frame(height: 140)
             .clipped()

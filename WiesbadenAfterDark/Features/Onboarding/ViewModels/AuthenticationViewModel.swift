@@ -35,15 +35,22 @@ final class AuthenticationViewModel {
     // MARK: - Initialization
 
     init(
-        authService: AuthServiceProtocol = RealAuthService.shared,
+        authService: AuthServiceProtocol? = nil,
         keychainService: KeychainServiceProtocol = KeychainService.shared,
         modelContext: ModelContext? = nil
     ) {
-        self.authService = authService
+        // Use MockAuthService for development/testing (bypasses Twilio SMS verification)
+        // Any 6-digit code will work with MockAuthService
+        #if DEBUG
+        self.authService = authService ?? MockAuthService.shared
+        print("🔐 [AuthViewModel] Initialized with MockAuthService (any 6-digit code works)")
+        #else
+        self.authService = authService ?? RealAuthService.shared
+        print("🔐 [AuthViewModel] Initialized with RealAuthService")
+        #endif
+
         self.keychainService = keychainService
         self.modelContext = modelContext
-
-        print("🔐 [AuthViewModel] Initialized")
     }
 
     // MARK: - Authentication Flow Methods

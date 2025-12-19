@@ -19,18 +19,19 @@ struct EventHighlightCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Event Image (if available)
+            // Event Image (if available) - using cached loading
             if let imageURL = event.imageURL {
-                AsyncImage(url: URL(string: imageURL)) { image in
+                CachedAsyncImage(
+                    url: URL(string: imageURL),
+                    targetSize: CGSize(width: 400, height: 160)
+                ) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                 } placeholder: {
                     Rectangle()
                         .fill(Color.inputBackground)
-                        .overlay {
-                            ProgressView()
-                        }
+                        .shimmer()
                 }
                 .frame(height: 160)
                 .clipped()

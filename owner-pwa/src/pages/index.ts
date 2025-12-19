@@ -4,5 +4,6 @@ export { Events } from './Events';
 export { Bookings } from './Bookings';
 export { Inventory } from './Inventory';
 export { Employees } from './Employees';
+export { Shifts } from './Shifts';
 export { Tasks } from './Tasks';
 export { Settings } from './Settings';

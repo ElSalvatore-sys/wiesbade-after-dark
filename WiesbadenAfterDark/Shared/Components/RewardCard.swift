@@ -19,34 +19,22 @@ struct RewardCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            // Reward image (if available)
+            // Reward image (if available) - using cached loading
             if let imageURL = reward.imageURL {
-                AsyncImage(url: URL(string: imageURL)) { phase in
-                    switch phase {
-                    case .empty:
-                        Rectangle()
-                            .fill(Color.inputBackground)
-                            .frame(height: 120)
-                            .overlay {
-                                ProgressView()
-                            }
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(height: 120)
-                            .clipped()
-                    case .failure:
-                        Rectangle()
-                            .fill(Color.inputBackground)
-                            .frame(height: 120)
-                            .overlay {
-                                Image(systemName: "gift")
-                                    .foregroundColor(.textTertiary)
-                            }
-                    @unknown default:
-                        EmptyView()
-                    }
+                CachedAsyncImage(
+                    url: URL(string: imageURL),
+                    targetSize: CGSize(width: 300, height: 120)
+                ) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 120)
+                        .clipped()
+                } placeholder: {
+                    Rectangle()
+                        .fill(Color.inputBackground)
+                        .frame(height: 120)
+                        .shimmer()
                 }
                 .cornerRadius(Theme.CornerRadius.md)
             }

@@ -153,6 +153,175 @@ class ApiService {
     const query = limit ? `?limit=${limit}` : '';
     return this.request<unknown[]>(`/api/transactions${query}`);
   }
+
+  // ============ SHIFTS ============
+  async getEmployeePins() {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown[]>(`/api/venues/${this.venueId}/pins`);
+  }
+
+  async createEmployeePin(data: { employee_id: string; employee_name: string; pin: string }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/pins`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async clockIn(data: { employee_id: string; pin: string; expected_hours?: number }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/shifts/clock-in`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async clockOut(shiftId: string, data?: { notes?: string }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/shifts/${shiftId}/clock-out`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+  }
+
+  async startBreak(shiftId: string) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/shifts/${shiftId}/break/start`, {
+      method: 'POST',
+    });
+  }
+
+  async endBreak(shiftId: string) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/shifts/${shiftId}/break/end`, {
+      method: 'POST',
+    });
+  }
+
+  async getActiveShifts() {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown[]>(`/api/venues/${this.venueId}/shifts/active`);
+  }
+
+  async getShiftsSummary() {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/shifts/summary`);
+  }
+
+  async getShiftsHistory(params?: { start_date?: string; end_date?: string; employee_id?: string }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    const queryParams = new URLSearchParams();
+    if (params?.start_date) queryParams.append('start_date', params.start_date);
+    if (params?.end_date) queryParams.append('end_date', params.end_date);
+    if (params?.employee_id) queryParams.append('employee_id', params.employee_id);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request<unknown[]>(`/api/venues/${this.venueId}/shifts/history${query}`);
+  }
+
+  // ============ TASKS ============
+  async getTasks(params?: { status?: string; category?: string; assigned_to?: string; shift_id?: string }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.category) queryParams.append('category', params.category);
+    if (params?.assigned_to) queryParams.append('assigned_to', params.assigned_to);
+    if (params?.shift_id) queryParams.append('shift_id', params.shift_id);
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request<unknown[]>(`/api/venues/${this.venueId}/tasks${query}`);
+  }
+
+  async getTask(taskId: string) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/tasks/${taskId}`);
+  }
+
+  async createTask(data: {
+    title: string;
+    description?: string;
+    category: string;
+    priority: string;
+    assigned_to?: string;
+    assigned_to_name?: string;
+    due_date?: string;
+    due_time?: string;
+    shift_id?: string;
+  }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateTask(taskId: string, data: Partial<{
+    title: string;
+    description: string;
+    category: string;
+    priority: string;
+    status: string;
+    assigned_to: string;
+    assigned_to_name: string;
+    due_date: string;
+    due_time: string;
+    shift_id: string;
+  }>) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/tasks/${taskId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteTask(taskId: string) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<void>(`/api/venues/${this.venueId}/tasks/${taskId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async startTask(taskId: string) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/tasks/${taskId}/start`, {
+      method: 'POST',
+    });
+  }
+
+  async completeTask(taskId: string, data?: { completed_photo?: string }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/tasks/${taskId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+  }
+
+  async approveTask(taskId: string) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/tasks/${taskId}/approve`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectTask(taskId: string, data: { rejection_reason: string }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/tasks/${taskId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Task Templates
+  async getTaskTemplates() {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown[]>(`/api/venues/${this.venueId}/task-templates`);
+  }
+
+  async createTaskFromTemplate(templateId: string, data?: { assigned_to?: string; assigned_to_name?: string; due_date?: string; due_time?: string; shift_id?: string }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/venues/${this.venueId}/task-templates/${templateId}/create-task`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+  }
 }
 
 export const api = new ApiService();

@@ -5,6 +5,7 @@ import {
   BookOpen,
   Package,
   Users,
+  Clock,
   ClipboardList,
   Settings,
   ChevronLeft,
@@ -34,6 +35,7 @@ const navItems: NavItem[] = [
   { id: 'bookings', label: 'Bookings', icon: <BookOpen size={20} /> },
   { id: 'inventory', label: 'Inventory', icon: <Package size={20} /> },
   { id: 'employees', label: 'Employees', icon: <Users size={20} /> },
+  { id: 'shifts', label: 'Shifts', icon: <Clock size={20} /> },
   { id: 'tasks', label: 'Tasks', icon: <ClipboardList size={20} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
 ];

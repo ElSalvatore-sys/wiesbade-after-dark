@@ -15,30 +15,22 @@ struct EventCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            // Event image (if available)
+            // Event image (if available) - using cached loading
             if let imageURL = event.imageURL {
-                AsyncImage(url: URL(string: imageURL)) { phase in
-                    switch phase {
-                    case .empty:
-                        Rectangle()
-                            .fill(Color.inputBackground)
-                            .frame(height: 150)
-                            .overlay {
-                                ProgressView()
-                            }
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(height: 150)
-                            .clipped()
-                    case .failure:
-                        Rectangle()
-                            .fill(Color.inputBackground)
-                            .frame(height: 150)
-                    @unknown default:
-                        EmptyView()
-                    }
+                CachedAsyncImage(
+                    url: URL(string: imageURL),
+                    targetSize: CGSize(width: 400, height: 150)
+                ) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 150)
+                        .clipped()
+                } placeholder: {
+                    Rectangle()
+                        .fill(Color.inputBackground)
+                        .frame(height: 150)
+                        .shimmer()
                 }
                 .cornerRadius(Theme.CornerRadius.md)
             }

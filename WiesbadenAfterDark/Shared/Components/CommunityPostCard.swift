@@ -62,27 +62,24 @@ struct CommunityPostCard: View {
                 .foregroundColor(.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Post image (if available)
+            // Post image (if available) - using cached loading
             if let imageURL = post.imageURL {
-                AsyncImage(url: URL(string: imageURL)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(maxHeight: 200)
-                            .clipped()
-                            .cornerRadius(Theme.CornerRadius.md)
-                    case .empty:
-                        Rectangle()
-                            .fill(Color.inputBackground)
-                            .frame(height: 200)
-                            .cornerRadius(Theme.CornerRadius.md)
-                    case .failure:
-                        EmptyView()
-                    @unknown default:
-                        EmptyView()
-                    }
+                CachedAsyncImage(
+                    url: URL(string: imageURL),
+                    targetSize: CGSize(width: 400, height: 200)
+                ) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(maxHeight: 200)
+                        .clipped()
+                        .cornerRadius(Theme.CornerRadius.md)
+                } placeholder: {
+                    Rectangle()
+                        .fill(Color.inputBackground)
+                        .frame(height: 200)
+                        .cornerRadius(Theme.CornerRadius.md)
+                        .shimmer()
                 }
             }
 

@@ -78,15 +78,19 @@ struct PostCard: View {
     /// User profile header
     private var userHeader: some View {
         HStack(spacing: 12) {
-            // Profile photo
+            // Profile photo - using cached loading
             if let photoURL = post.userPhotoURL {
-                AsyncImage(url: URL(string: photoURL)) { image in
+                CachedAsyncImage(
+                    url: URL(string: photoURL),
+                    targetSize: CGSize(width: 88, height: 88)
+                ) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                 } placeholder: {
                     Circle()
                         .fill(Color.blue.opacity(0.3))
+                        .shimmer()
                 }
                 .frame(width: 44, height: 44)
                 .clipShape(Circle())
@@ -147,65 +151,36 @@ struct PostCard: View {
             .foregroundColor(.primary)
     }
 
-    /// Post image with improved loading state
+    /// Post image with improved loading state - using cached loading
     /// Supports http/https URLs and adapts to different image sizes
     private func postImage(url: String) -> some View {
         // Ensure URL is valid (supports both http and https)
         let validURL = url.hasPrefix("http") ? URL(string: url) : URL(string: "https://\(url)")
 
-        return AsyncImage(url: validURL) { phase in
-            switch phase {
-            case .empty:
-                // Loading placeholder
-                ZStack {
-                    Rectangle()
-                        .fill(Color.cardBackground)
-
-                    VStack(spacing: 8) {
-                        Image(systemName: "photo")
-                            .font(.system(size: 32))
-                            .foregroundColor(.textTertiary)
-
-                        ProgressView()
-                            .tint(.textTertiary)
-                    }
-                }
+        return CachedAsyncImage(
+            url: validURL,
+            targetSize: CGSize(width: 400, height: 200)
+        ) { image in
+            image
+                .resizable()
+                .aspectRatio(contentMode: .fill)
                 .frame(maxWidth: .infinity)
                 .frame(height: 200)
-
-            case .success(let image):
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 200)
-                    .clipped()
-
-            case .failure:
-                // Error state - could be network issue or invalid URL
-                ZStack {
-                    Rectangle()
-                        .fill(Color.cardBackground)
-
-                    VStack(spacing: 8) {
-                        Image(systemName: "wifi.exclamationmark")
-                            .font(.system(size: 28))
-                            .foregroundColor(.textTertiary)
-
-                        Text("Couldn't load image")
-                            .font(.caption)
-                            .foregroundColor(.textSecondary)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 120)
-
-            @unknown default:
+                .clipped()
+        } placeholder: {
+            ZStack {
                 Rectangle()
                     .fill(Color.cardBackground)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 200)
+
+                VStack(spacing: 8) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 32))
+                        .foregroundColor(.textTertiary)
+                }
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: 200)
+            .shimmer()
         }
         .cornerRadius(Theme.CornerRadius.md)
     }

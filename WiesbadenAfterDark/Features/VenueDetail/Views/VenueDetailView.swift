@@ -69,23 +69,19 @@ private struct VenueHeader: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            // Cover image
+            // Cover image - using cached loading
             if let imageURL = venue.coverImageURL {
-                AsyncImage(url: URL(string: imageURL)) { phase in
-                    switch phase {
-                    case .empty:
-                        Rectangle()
-                            .fill(Color.cardBackground)
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    case .failure:
-                        Rectangle()
-                            .fill(Color.cardBackground)
-                    @unknown default:
-                        EmptyView()
-                    }
+                CachedAsyncImage(
+                    url: URL(string: imageURL),
+                    targetSize: CGSize(width: 500, height: 250)
+                ) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Rectangle()
+                        .fill(Color.cardBackground)
+                        .shimmer()
                 }
                 .frame(height: 250)
                 .clipped()

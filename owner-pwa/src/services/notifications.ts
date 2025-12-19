@@ -1,6 +1,6 @@
 // Push Notification Service
 
-export type NotificationType = 'booking' | 'low_stock' | 'event' | 'system';
+export type NotificationType = 'booking' | 'low_stock' | 'event' | 'system' | 'shift' | 'task';
 
 export interface NotificationOptions {
   type?: NotificationType;
@@ -158,6 +158,104 @@ export const NotificationTemplates = {
     options: {
       type: 'event' as NotificationType,
       tag: 'event-soldout',
+    },
+  }),
+
+  // ============ SHIFT NOTIFICATIONS ============
+
+  shiftClockIn: (employeeName: string, time: string) => ({
+    title: 'Employee Clocked In',
+    body: `${employeeName} started their shift at ${time}`,
+    options: {
+      type: 'shift' as NotificationType,
+      tag: 'shift-clockin',
+    },
+  }),
+
+  shiftClockOut: (employeeName: string, hoursWorked: string) => ({
+    title: 'Employee Clocked Out',
+    body: `${employeeName} finished their shift (${hoursWorked} hours)`,
+    options: {
+      type: 'shift' as NotificationType,
+      tag: 'shift-clockout',
+    },
+  }),
+
+  shiftOvertimeWarning: (employeeName: string, minutesOver: number) => ({
+    title: '⚠️ Overtime Alert',
+    body: `${employeeName} is ${minutesOver} minutes over their scheduled shift`,
+    options: {
+      type: 'shift' as NotificationType,
+      tag: 'shift-overtime',
+      requireInteraction: true,
+    },
+  }),
+
+  shiftBreakReminder: (employeeName: string, hoursWithoutBreak: number) => ({
+    title: 'Break Reminder',
+    body: `${employeeName} has been working for ${hoursWithoutBreak}h without a break`,
+    options: {
+      type: 'shift' as NotificationType,
+      tag: 'shift-break',
+    },
+  }),
+
+  // ============ TASK NOTIFICATIONS ============
+
+  taskAssigned: (taskTitle: string, employeeName: string) => ({
+    title: 'New Task Assigned',
+    body: `"${taskTitle}" has been assigned to ${employeeName}`,
+    options: {
+      type: 'task' as NotificationType,
+      tag: 'task-assigned',
+    },
+  }),
+
+  taskStarted: (taskTitle: string, employeeName: string) => ({
+    title: 'Task Started',
+    body: `${employeeName} started working on "${taskTitle}"`,
+    options: {
+      type: 'task' as NotificationType,
+      tag: 'task-started',
+    },
+  }),
+
+  taskCompleted: (taskTitle: string, employeeName: string) => ({
+    title: '✅ Task Completed',
+    body: `${employeeName} completed "${taskTitle}" - awaiting approval`,
+    options: {
+      type: 'task' as NotificationType,
+      tag: 'task-completed',
+      requireInteraction: true,
+    },
+  }),
+
+  taskApproved: (taskTitle: string) => ({
+    title: 'Task Approved',
+    body: `"${taskTitle}" has been approved`,
+    options: {
+      type: 'task' as NotificationType,
+      tag: 'task-approved',
+    },
+  }),
+
+  taskRejected: (taskTitle: string, reason: string) => ({
+    title: '❌ Task Rejected',
+    body: `"${taskTitle}" was rejected: ${reason}`,
+    options: {
+      type: 'task' as NotificationType,
+      tag: 'task-rejected',
+      requireInteraction: true,
+    },
+  }),
+
+  taskOverdue: (taskTitle: string, employeeName: string) => ({
+    title: '⏰ Task Overdue',
+    body: `"${taskTitle}" assigned to ${employeeName} is past due`,
+    options: {
+      type: 'task' as NotificationType,
+      tag: 'task-overdue',
+      requireInteraction: true,
     },
   }),
 };

@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Login, Dashboard, Events, Bookings, Inventory, Employees, Tasks, Settings } from './pages';
+import { Login, Dashboard, Events, Bookings, Inventory, Employees, Shifts, Tasks, Settings } from './pages';
 import { DashboardLayout } from './components/layout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 'tasks' | 'settings';
+type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 'shifts' | 'tasks' | 'settings';
 
 function AppContent() {
   const { user, isAuthenticated, logout, hasPermission } = useAuth();
@@ -38,6 +38,8 @@ function AppContent() {
         return <Inventory />;
       case 'employees':
         return <Employees />;
+      case 'shifts':
+        return <Shifts />;
       case 'tasks':
         return <Tasks />;
       case 'settings':
