@@ -272,7 +272,7 @@ struct EventsView: View {
 
         do {
             // Fetch all events from the venue service
-            let fetchedEvents = try await MockVenueService.shared.fetchAllEvents()
+            let fetchedEvents = try await HybridVenueService.shared.fetchAllEvents()
 
             // Sort by start time (upcoming first)
             events = fetchedEvents.sorted { $0.startTime < $1.startTime }
@@ -290,7 +290,7 @@ struct EventsView: View {
 
     private func handleRSVP(event: Event, status: RSVPStatus) async {
         do {
-            try await MockVenueService.shared.rsvpEvent(eventId: event.id, status: status)
+            try await HybridVenueService.shared.rsvpEvent(eventId: event.id, status: status)
             print("✅ [EventsView] RSVP successful: \(status.rawValue)")
 
             // Reload events to show updated counts

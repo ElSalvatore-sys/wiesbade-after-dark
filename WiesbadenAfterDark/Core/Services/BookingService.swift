@@ -18,10 +18,10 @@ final class BookingService: BookingServiceProtocol {
     // MARK: - Initialization
 
     init(
-        paymentService: PaymentServiceProtocol = MockPaymentService.shared,
+        paymentService: PaymentServiceProtocol? = nil,
         modelContext: ModelContext? = nil
     ) {
-        self.paymentService = paymentService
+        self.paymentService = paymentService ?? MockPaymentService.shared
         self.modelContext = modelContext
     }
 

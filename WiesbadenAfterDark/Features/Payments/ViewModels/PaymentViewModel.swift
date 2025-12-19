@@ -27,14 +27,14 @@ final class PaymentViewModel {
     // MARK: - Initialization
 
     init(
-        paymentService: PaymentServiceProtocol = MockPaymentService.shared,
+        paymentService: PaymentServiceProtocol? = nil,
         bookingService: BookingServiceProtocol? = nil,
         modelContext: ModelContext? = nil
     ) {
-        self.paymentService = paymentService
+        self.paymentService = paymentService ?? MockPaymentService.shared
         self.modelContext = modelContext
         self.bookingService = bookingService ?? BookingService(
-            paymentService: paymentService,
+            paymentService: self.paymentService,
             modelContext: modelContext
         )
 

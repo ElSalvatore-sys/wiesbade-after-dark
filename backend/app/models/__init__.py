@@ -7,6 +7,8 @@ from app.models.product import Product
 from app.models.venue_membership import VenueMembership
 from app.models.transaction import Transaction
 from app.models.special_offer import SpecialOffer
+from app.models.event import Event
+from app.models.event_rsvp import EventRSVP
 
 __all__ = [
     "User",
@@ -15,4 +17,6 @@ __all__ = [
     "VenueMembership",
     "Transaction",
     "SpecialOffer",
+    "Event",
+    "EventRSVP",
 ]

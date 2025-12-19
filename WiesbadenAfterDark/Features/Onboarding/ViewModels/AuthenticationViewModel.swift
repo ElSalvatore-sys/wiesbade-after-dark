@@ -36,9 +36,10 @@ final class AuthenticationViewModel {
 
     init(
         authService: AuthServiceProtocol? = nil,
-        keychainService: KeychainServiceProtocol = KeychainService.shared,
+        keychainService: KeychainServiceProtocol? = nil,
         modelContext: ModelContext? = nil
     ) {
+        self.keychainService = keychainService ?? KeychainService.shared
         // Use MockAuthService for development/testing (bypasses Twilio SMS verification)
         // Any 6-digit code will work with MockAuthService
         #if DEBUG
@@ -49,7 +50,6 @@ final class AuthenticationViewModel {
         print("🔐 [AuthViewModel] Initialized with RealAuthService")
         #endif
 
-        self.keychainService = keychainService
         self.modelContext = modelContext
     }
 

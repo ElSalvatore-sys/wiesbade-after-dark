@@ -16,6 +16,14 @@ from app.schemas.venue import (
     ProductResponse,
     TierConfig
 )
+from app.schemas.event import (
+    EventList,
+    EventResponse,
+    EventCreate,
+    EventUpdate,
+    EventRSVPResponse,
+    MyEventsResponse,
+)
 
 __all__ = [
     "UserResponse",
@@ -29,4 +37,10 @@ __all__ = [
     "ProductList",
     "ProductResponse",
     "TierConfig",
+    "EventList",
+    "EventResponse",
+    "EventCreate",
+    "EventUpdate",
+    "EventRSVPResponse",
+    "MyEventsResponse",
 ]

@@ -225,7 +225,7 @@ struct BadgeConfigurationView: View {
                 )
             }
 
-            if let days = badge.requiredDays, let visits = badge.requiredVisits {
+            if let days = badge.requiredDays, let _ = badge.requiredVisits {
                 requirementRow(
                     icon: "clock.fill",
                     text: "Within \(days) days"

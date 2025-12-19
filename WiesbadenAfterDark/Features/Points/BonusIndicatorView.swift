@@ -156,7 +156,10 @@ final class BonusIndicatorViewModel {
 
     func startTimer() {
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.currentTime = Date()
+            guard let self = self else { return }
+            Task { @MainActor [weak self] in
+                self?.currentTime = Date()
+            }
         }
     }
 }

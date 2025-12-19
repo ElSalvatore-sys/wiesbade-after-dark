@@ -3,7 +3,7 @@ API v1 Router - Combines all endpoint routers
 """
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import users, venues, shifts
+from app.api.v1.endpoints import users, venues, shifts, events
 
 api_router = APIRouter()
 
@@ -24,4 +24,10 @@ api_router.include_router(
     shifts.router,
     prefix="/shifts",
     tags=["shifts"],
+)
+
+api_router.include_router(
+    events.router,
+    prefix="/events",
+    tags=["events"],
 )

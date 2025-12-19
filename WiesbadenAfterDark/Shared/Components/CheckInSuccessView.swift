@@ -376,7 +376,7 @@ struct CheckInSuccessView: View {
         let screenWidth = UIScreen.main.bounds.width
         let screenHeight = UIScreen.main.bounds.height
 
-        for i in 0..<20 {
+        for _ in 0..<20 {
             let particle = CelebrationParticle(
                 id: UUID(),
                 position: CGPoint(

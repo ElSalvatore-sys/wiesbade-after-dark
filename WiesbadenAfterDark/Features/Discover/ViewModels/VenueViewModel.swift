@@ -49,10 +49,10 @@ final class VenueViewModel {
     // MARK: - Initialization
 
     init(
-        venueService: VenueServiceProtocol = MockVenueService.shared,
+        venueService: VenueServiceProtocol? = nil,
         modelContext: ModelContext? = nil
     ) {
-        self.venueService = venueService
+        self.venueService = venueService ?? HybridVenueService.shared
         self.modelContext = modelContext
 
         print("🏢 [VenueViewModel] Initialized")

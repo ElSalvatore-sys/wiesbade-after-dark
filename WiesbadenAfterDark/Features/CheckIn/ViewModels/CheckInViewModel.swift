@@ -70,12 +70,12 @@ final class CheckInViewModel {
     // MARK: - Initialization
 
     init(
-        checkInService: CheckInServiceProtocol = MockCheckInService.shared,
-        walletPassService: WalletPassServiceProtocol = MockWalletPassService.shared,
+        checkInService: CheckInServiceProtocol? = nil,
+        walletPassService: WalletPassServiceProtocol? = nil,
         modelContext: ModelContext? = nil
     ) {
-        self.checkInService = checkInService
-        self.walletPassService = walletPassService
+        self.checkInService = checkInService ?? MockCheckInService.shared
+        self.walletPassService = walletPassService ?? MockWalletPassService.shared
         self.modelContext = modelContext
 
         print("🏃 [CheckInViewModel] Initialized")

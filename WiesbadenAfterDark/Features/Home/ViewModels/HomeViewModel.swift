@@ -48,10 +48,10 @@ final class HomeViewModel {
     // MARK: - Initialization
 
     init(
-        venueService: VenueServiceProtocol = MockVenueService.shared,
+        venueService: VenueServiceProtocol? = nil,
         modelContext: ModelContext? = nil
     ) {
-        self.venueService = venueService
+        self.venueService = venueService ?? HybridVenueService.shared
         self.modelContext = modelContext
 
         print("🏠 [HomeViewModel] Initialized")

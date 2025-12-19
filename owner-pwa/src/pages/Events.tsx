@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { cn } from '../lib/utils';
 import {
   Plus,
@@ -10,73 +10,101 @@ import {
   Edit,
   Trash2,
   Eye,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { EventModal } from '../components/EventModal';
-import type { Event } from '../types';
+import { api } from '../services/api';
+import type { Event, EventCategory } from '../types';
 
-// Mock events data
-const mockEvents: Event[] = [
-  {
-    id: '1',
-    venueId: '1',
-    title: 'DJ Night with Felix Jaehn',
-    description: 'An amazing night with one of the best DJs',
-    imageUrl: undefined,
-    startDate: '2024-12-15T22:00:00',
-    endDate: '2024-12-16T04:00:00',
-    ticketPrice: 25,
-    maxCapacity: 200,
-    currentAttendees: 145,
-    category: 'music',
-    isActive: true,
-    isFeatured: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    venueId: '1',
-    title: 'New Year\'s Eve Party 2025',
-    description: 'The biggest party of the year',
-    imageUrl: undefined,
-    startDate: '2024-12-31T21:00:00',
-    endDate: '2025-01-01T06:00:00',
-    ticketPrice: 50,
-    maxCapacity: 300,
-    currentAttendees: 278,
-    category: 'special',
-    isActive: true,
-    isFeatured: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    venueId: '1',
-    title: 'Ladies Night',
-    description: 'Free entry and drink specials for ladies',
-    imageUrl: undefined,
-    startDate: '2024-12-20T20:00:00',
-    endDate: '2024-12-21T02:00:00',
-    ticketPrice: 0,
-    maxCapacity: 150,
-    currentAttendees: 45,
-    category: 'promotion',
-    isActive: true,
-    isFeatured: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+// Transform backend event to frontend format
+interface BackendEvent {
+  id: string;
+  venue_id: string;
+  venue_name?: string;
+  title: string;
+  description?: string;
+  event_type: string;
+  image_url?: string;
+  start_time: string;
+  end_time: string;
+  max_capacity?: number;
+  current_rsvp_count: number;
+  ticket_price: number;
+  is_free: boolean;
+  attendance_points: number;
+  bonus_points_multiplier: number;
+  status: string;
+  is_featured: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+const mapEventTypeToCategory = (eventType: string): EventCategory => {
+  const typeMap: Record<string, EventCategory> = {
+    'concert': 'music',
+    'music': 'music',
+    'dj': 'music',
+    'party': 'party',
+    'special_offer': 'promotion',
+    'promotion': 'promotion',
+    'special': 'special',
+    'private': 'private',
+  };
+  return typeMap[eventType.toLowerCase()] || 'party';
+};
+
+const transformEvent = (backendEvent: BackendEvent): Event => ({
+  id: backendEvent.id,
+  venueId: backendEvent.venue_id,
+  title: backendEvent.title,
+  description: backendEvent.description || '',
+  imageUrl: backendEvent.image_url,
+  startDate: backendEvent.start_time,
+  endDate: backendEvent.end_time,
+  ticketPrice: backendEvent.ticket_price,
+  maxCapacity: backendEvent.max_capacity,
+  currentAttendees: backendEvent.current_rsvp_count,
+  category: mapEventTypeToCategory(backendEvent.event_type),
+  isActive: backendEvent.status !== 'cancelled',
+  isFeatured: backendEvent.is_featured,
+  createdAt: backendEvent.created_at,
+  updatedAt: backendEvent.updated_at || backendEvent.created_at,
+});
 
 type EventStatus = 'all' | 'upcoming' | 'live' | 'past';
 
 export function Events() {
-  const [events] = useState<Event[]>(mockEvents);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<EventStatus>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+
+  // Fetch events from API
+  const fetchEvents = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    const result = await api.getVenueEvents({ include_past: true, limit: 100 });
+
+    if (result.error) {
+      setError(result.error);
+      setEvents([]);
+    } else if (result.data) {
+      const transformedEvents = (result.data.events as BackendEvent[]).map(transformEvent);
+      setEvents(transformedEvents);
+    }
+
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const getEventStatus = (event: Event): 'upcoming' | 'live' | 'past' => {
     const now = new Date();
@@ -119,9 +147,74 @@ export function Events() {
     setMenuOpen(null);
   };
 
-  const handleSaveEvent = (eventData: Partial<Event>) => {
-    console.log('Saving event:', eventData);
-    // In production, this would call the API
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!confirm('Are you sure you want to delete this event?')) return;
+
+    const result = await api.deleteEvent(eventId);
+    if (result.error) {
+      alert(`Failed to delete event: ${result.error}`);
+    } else {
+      // Refresh events list
+      fetchEvents();
+    }
+    setMenuOpen(null);
+  };
+
+  const mapCategoryToEventType = (category: string): string => {
+    const categoryMap: Record<string, string> = {
+      'music': 'concert',
+      'party': 'party',
+      'special': 'special',
+      'private': 'private',
+      'promotion': 'special_offer',
+    };
+    return categoryMap[category] || 'party';
+  };
+
+  const handleSaveEvent = async (eventData: Partial<Event>) => {
+    if (selectedEvent) {
+      // Update existing event
+      const result = await api.updateEvent(selectedEvent.id, {
+        title: eventData.title,
+        description: eventData.description,
+        event_type: eventData.category ? mapCategoryToEventType(eventData.category) : undefined,
+        image_url: eventData.imageUrl,
+        start_time: eventData.startDate,
+        end_time: eventData.endDate,
+        max_capacity: eventData.maxCapacity,
+        ticket_price: eventData.ticketPrice,
+        is_free: eventData.ticketPrice === 0 || eventData.ticketPrice === undefined,
+        is_featured: eventData.isFeatured,
+      });
+
+      if (result.error) {
+        alert(`Failed to update event: ${result.error}`);
+        return;
+      }
+    } else {
+      // Create new event
+      const result = await api.createEvent({
+        title: eventData.title || 'Untitled Event',
+        description: eventData.description,
+        event_type: eventData.category ? mapCategoryToEventType(eventData.category) : 'party',
+        image_url: eventData.imageUrl,
+        start_time: eventData.startDate || new Date().toISOString(),
+        end_time: eventData.endDate || new Date().toISOString(),
+        max_capacity: eventData.maxCapacity,
+        ticket_price: eventData.ticketPrice || 0,
+        is_free: !eventData.ticketPrice || eventData.ticketPrice === 0,
+        is_featured: eventData.isFeatured || false,
+      });
+
+      if (result.error) {
+        alert(`Failed to create event: ${result.error}`);
+        return;
+      }
+    }
+
+    // Refresh events list and close modal
+    setIsModalOpen(false);
+    fetchEvents();
   };
 
   const statusColors = {
@@ -177,7 +270,31 @@ export function Events() {
         ))}
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-accent-purple" />
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="glass-card p-6 text-center">
+          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-error" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">Failed to load events</h3>
+          <p className="text-foreground-muted mb-4">{error}</p>
+          <button
+            onClick={fetchEvents}
+            className="btn-primary inline-flex items-center gap-2"
+          >
+            <RefreshCw size={16} />
+            Try Again
+          </button>
+        </div>
+      )}
+
       {/* Events Grid */}
+      {!loading && !error && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredEvents.map((event) => {
           const status = getEventStatus(event);
@@ -296,7 +413,10 @@ export function Events() {
                             <Edit size={14} />
                             Edit
                           </button>
-                          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/10">
+                          <button
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/10"
+                          >
                             <Trash2 size={14} />
                             Delete
                           </button>
@@ -310,8 +430,9 @@ export function Events() {
           );
         })}
       </div>
+      )}
 
-      {filteredEvents.length === 0 && (
+      {!loading && !error && filteredEvents.length === 0 && (
         <div className="text-center py-12">
           <Calendar size={48} className="mx-auto text-foreground-dim mb-4" />
           <h3 className="text-lg font-semibold text-foreground">No events found</h3>

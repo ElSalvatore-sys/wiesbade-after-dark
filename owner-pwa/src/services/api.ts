@@ -322,6 +322,97 @@ class ApiService {
       body: JSON.stringify(data || {}),
     });
   }
+
+  // ============ EVENTS ============
+  async getEvents(params?: { status?: string; is_featured?: boolean; limit?: number; offset?: number }) {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.is_featured !== undefined) queryParams.append('is_featured', String(params.is_featured));
+    if (params?.limit) queryParams.append('limit', String(params.limit));
+    if (params?.offset) queryParams.append('offset', String(params.offset));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request<{ events: unknown[]; total: number }>(`/api/v1/events${query}`);
+  }
+
+  async getVenueEvents(params?: { include_past?: boolean; limit?: number; offset?: number }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    const queryParams = new URLSearchParams();
+    if (params?.include_past) queryParams.append('include_past', 'true');
+    if (params?.limit) queryParams.append('limit', String(params.limit));
+    if (params?.offset) queryParams.append('offset', String(params.offset));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request<{ events: unknown[]; total: number }>(`/api/v1/events/venue/${this.venueId}${query}`);
+  }
+
+  async getEvent(eventId: string) {
+    return this.request<unknown>(`/api/v1/events/${eventId}`);
+  }
+
+  async createEvent(data: {
+    title: string;
+    description?: string;
+    event_type: string;
+    image_url?: string;
+    start_time: string;
+    end_time: string;
+    max_capacity?: number;
+    ticket_price?: number;
+    is_free?: boolean;
+    attendance_points?: number;
+    bonus_points_multiplier?: number;
+    is_featured?: boolean;
+  }) {
+    if (!this.venueId) return { error: 'No venue selected' };
+    return this.request<unknown>(`/api/v1/events/venue/${this.venueId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateEvent(eventId: string, data: Partial<{
+    title: string;
+    description: string;
+    event_type: string;
+    image_url: string;
+    start_time: string;
+    end_time: string;
+    max_capacity: number;
+    ticket_price: number;
+    is_free: boolean;
+    attendance_points: number;
+    bonus_points_multiplier: number;
+    is_featured: boolean;
+    status: string;
+  }>) {
+    return this.request<unknown>(`/api/v1/events/${eventId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteEvent(eventId: string) {
+    return this.request<void>(`/api/v1/events/${eventId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getTodayEvents(limit?: number) {
+    const query = limit ? `?limit=${limit}` : '';
+    return this.request<{ events: unknown[]; total: number }>(`/api/v1/events/today${query}`);
+  }
+
+  async getUpcomingEvents(days?: number, limit?: number) {
+    const queryParams = new URLSearchParams();
+    if (days) queryParams.append('days', String(days));
+    if (limit) queryParams.append('limit', String(limit));
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request<{ events: unknown[]; total: number }>(`/api/v1/events/upcoming${query}`);
+  }
+
+  async getFeaturedEvents(limit?: number) {
+    const query = limit ? `?limit=${limit}` : '';
+    return this.request<{ events: unknown[]; total: number }>(`/api/v1/events/featured${query}`);
+  }
 }
 
 export const api = new ApiService();

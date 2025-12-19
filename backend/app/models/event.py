@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
 
-from app.models.base import Base
+from app.core.database import Base
 
 
 class Event(Base):

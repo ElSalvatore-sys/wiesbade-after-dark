@@ -38,7 +38,7 @@ final class RealAuthService: AuthServiceProtocol {
 
         do {
             // Backend expects phone_number in snake_case (handled by encoder)
-            try await apiClient.post(
+            _ = try await apiClient.post(
                 APIConfig.Endpoints.sendVerificationCode,
                 body: Request(phoneNumber: phoneNumber),
                 requiresAuth: false

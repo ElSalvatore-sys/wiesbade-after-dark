@@ -61,6 +61,7 @@ class Venue(Base):
     products = relationship("Product", back_populates="venue", cascade="all, delete-orphan")
     memberships = relationship("VenueMembership", back_populates="venue", cascade="all, delete-orphan")
     special_offers = relationship("SpecialOffer", back_populates="venue", cascade="all, delete-orphan")
+    events = relationship("Event", back_populates="venue", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Venue(id={self.id}, name={self.name}, type={self.type})>"
