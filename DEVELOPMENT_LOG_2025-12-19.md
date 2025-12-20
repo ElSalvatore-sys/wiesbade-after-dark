@@ -178,5 +178,79 @@ WiesbadenAfterDark/
 
 ---
 
+### 7. Supabase Edge Functions Migration
+**Problem:** Railway trial expired, backend returns 404
+**Solution:** Migrated to Supabase Edge Functions
+
+**New Edge Functions Deployed:**
+| Function | URL | Endpoints |
+|----------|-----|-----------|
+| venues | `/functions/v1/venues` | List, Detail, Products, Tier-config |
+| events | `/functions/v1/events` | List, Today, Upcoming, Featured, RSVP |
+
+**Files Updated:**
+- `supabase/functions/venues/index.ts` - New venue endpoints
+- `supabase/functions/events/index.ts` - New event endpoints
+- `APIConfig.swift` - Updated baseURL to Supabase
+
+**Supabase Edge Functions URL:**
+`https://exjowhbyrdjnhmkmkvmf.supabase.co/functions/v1`
+
+**Test Result:**
+```bash
+curl "https://exjowhbyrdjnhmkmkvmf.supabase.co/functions/v1/venues"
+# Returns: {"venues":[],"total":0,"limit":20,"offset":0}
+```
+
+---
+
+### 8. Database Schema & Seed Data
+**Problem:** Edge Functions returning empty arrays
+**Solution:** Created proper database schema and seeded test data
+
+**New Tables Created:**
+| Table | Description |
+|-------|-------------|
+| venues | Venue profiles with full details |
+| venue_owners | Ownership mapping for permissions |
+| products | Venue menu items with bonus points |
+| tier_configs | Loyalty tier configurations |
+| wad_events | Events separate from legacy events table |
+| event_rsvps | User RSVP tracking |
+
+**Seed Data:**
+- 5 Wiesbaden venues (Das Wohnzimmer, Club Galerie, Hemingways, etc.)
+- 8 upcoming events (Jazz Night, Techno Freitag, Cocktail Masterclass, etc.)
+- 12 products (cocktails, beer, food items)
+
+**RLS Policies:** Configured for public read access with authenticated write
+
+---
+
+### 9. Project Configuration Fix
+**Problem:** CLI linked to wrong Supabase project
+**Solution:** Re-linked to correct project `yyplbhrqtaeyzmcxpfli`
+
+**Correct Supabase Configuration:**
+- **Project Ref:** `yyplbhrqtaeyzmcxpfli`
+- **Edge Functions URL:** `https://yyplbhrqtaeyzmcxpfli.supabase.co/functions/v1`
+- **APIConfig.swift:** Updated with correct URL and anon key
+
+**Test Results:**
+```bash
+# Venues endpoint - 5 venues returned
+curl "https://yyplbhrqtaeyzmcxpfli.supabase.co/functions/v1/venues"
+# → Das Wohnzimmer, Club Galerie, Hemingways, Schwarzer Bock, Biergarten
+
+# Events endpoint - 7 upcoming events
+curl "https://yyplbhrqtaeyzmcxpfli.supabase.co/functions/v1/events/upcoming"
+# → Live Jazz Night, Techno Freitag, Cocktail Masterclass, etc.
+```
+
+---
+
 **Session End:** December 19, 2025
-**Next Steps:** Das Wohnzimmer on-site testing preparation
+**Next Steps:**
+1. Deploy remaining Edge Functions (auth, users, bookings, check-ins)
+2. Test iOS app with real backend data
+3. Das Wohnzimmer on-site testing preparation

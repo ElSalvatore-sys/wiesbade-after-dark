@@ -10,73 +10,83 @@ import Foundation
 enum APIConfig {
     // MARK: - Base URL
 
-    /// Production backend URL (Railway deployment)
-    static let baseURL = "https://wiesbade-after-dark-production.up.railway.app"
+    /// Production backend URL (Supabase Edge Functions)
+    static let baseURL = "https://yyplbhrqtaeyzmcxpfli.supabase.co/functions/v1"
+
+    /// Supabase anon key for API access
+    static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5cGxiaHJxdGFleXptY3hwZmxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NTMzMjcsImV4cCI6MjA4MDQyOTMyN30.qY10_JBCACxptGnrqS_ILhWsNsmMKgEitaXEtViBRQc"
+
+    /// Legacy Railway URL (no longer active - trial expired)
+    static let legacyRailwayURL = "https://wiesbade-after-dark-production.up.railway.app"
 
     // MARK: - Endpoints
 
     enum Endpoints {
-        // Authentication
-        static let sendVerificationCode = "/api/v1/auth/send-code"
-        static let verifyCode = "/api/v1/auth/verify-code"
-        static let register = "/api/v1/auth/register"
-        static let login = "/api/v1/auth/login"
-        static let refreshToken = "/api/v1/auth/refresh"
+        // Authentication (via Supabase Auth Edge Function)
+        static let sendVerificationCode = "/auth/send-code"
+        static let verifyCode = "/auth/verify-code"
+        static let register = "/auth/register"
+        static let login = "/auth/login"
+        static let refreshToken = "/auth/refresh"
 
-        // Users
-        static let userProfile = "/api/v1/users/me"
-        static let updateProfile = "/api/v1/users/me"
-        static let validateReferralCode = "/api/v1/users/validate-referral"
+        // Users (via users Edge Function)
+        static let userProfile = "/users/me"
+        static let updateProfile = "/users/me"
+        static let validateReferralCode = "/users/validate-referral"
 
-        // Venues
-        static let venues = "/api/v1/venues"
-        static func venueDetail(id: String) -> String { "/api/v1/venues/\(id)" }
-        static func venueEvents(id: String) -> String { "/api/v1/venues/\(id)/events" }
-        static func venueRewards(id: String) -> String { "/api/v1/venues/\(id)/rewards" }
-        static func venueCommunity(id: String) -> String { "/api/v1/venues/\(id)/community" }
-        static func joinVenue(id: String) -> String { "/api/v1/venues/\(id)/join" }
+        // Venues (via venues Edge Function)
+        static let venues = "/venues"
+        static func venueDetail(id: String) -> String { "/venues/\(id)" }
+        static func venueEvents(id: String) -> String { "/events/venue/\(id)" }
+        static func venueRewards(id: String) -> String { "/venues/\(id)/rewards" }
+        static func venueCommunity(id: String) -> String { "/venues/\(id)/community" }
+        static func joinVenue(id: String) -> String { "/venues/\(id)/join" }
         static func venueMembership(venueId: String, userId: String) -> String {
-            "/api/v1/venues/\(venueId)/members/\(userId)"
+            "/venues/\(venueId)/members/\(userId)"
         }
 
-        // Events
-        static func rsvpEvent(id: String) -> String { "/api/v1/events/\(id)/rsvp" }
-        static let myEvents = "/api/v1/events/my-events"
+        // Events (via events Edge Function)
+        static func rsvpEvent(id: String) -> String { "/events/\(id)/rsvp" }
+        static let myEvents = "/events/my-events"
+        static let events = "/events"
+        static let todayEvents = "/events/today"
+        static let upcomingEvents = "/events/upcoming"
+        static let featuredEvents = "/events/featured"
 
         // Bookings
-        static let createBooking = "/api/v1/bookings"
-        static let myBookings = "/api/v1/bookings/my-bookings"
-        static func bookingDetail(id: String) -> String { "/api/v1/bookings/\(id)" }
-        static func cancelBooking(id: String) -> String { "/api/v1/bookings/\(id)/cancel" }
+        static let createBooking = "/bookings"
+        static let myBookings = "/bookings/my-bookings"
+        static func bookingDetail(id: String) -> String { "/bookings/\(id)" }
+        static func cancelBooking(id: String) -> String { "/bookings/\(id)/cancel" }
 
         // Check-ins
-        static let checkIn = "/api/v1/check-ins"
-        static func checkInHistory(userId: String) -> String { "/api/v1/check-ins/user/\(userId)" }
-        static func currentStreak(userId: String) -> String { "/api/v1/check-ins/user/\(userId)/streak" }
+        static let checkIn = "/check-ins"
+        static func checkInHistory(userId: String) -> String { "/check-ins/user/\(userId)" }
+        static func currentStreak(userId: String) -> String { "/check-ins/user/\(userId)/streak" }
 
         // Wallet Passes
-        static let walletPasses = "/api/v1/wallet-passes"
-        static func generatePass(bookingId: String) -> String { "/api/v1/wallet-passes/generate/\(bookingId)" }
+        static let walletPasses = "/wallet-passes"
+        static func generatePass(bookingId: String) -> String { "/wallet-passes/generate/\(bookingId)" }
 
         // Payments
-        static let createPaymentIntent = "/api/v1/payments/create-intent"
-        static let confirmPayment = "/api/v1/payments/confirm"
-        static let paymentHistory = "/api/v1/payments/my-payments"
-        static func refundPayment(id: String) -> String { "/api/v1/payments/\(id)/refund" }
+        static let createPaymentIntent = "/payments/create-intent"
+        static let confirmPayment = "/payments/confirm"
+        static let paymentHistory = "/payments/my-payments"
+        static func refundPayment(id: String) -> String { "/payments/\(id)/refund" }
 
         // Rewards
-        static func redeemReward(id: String) -> String { "/api/v1/rewards/\(id)/redeem" }
+        static func redeemReward(id: String) -> String { "/rewards/\(id)/redeem" }
 
         // Referrals
-        static func userReferrals(userId: String) -> String { "/api/v1/users/\(userId)/referrals" }
-        static let processReferralRewards = "/api/v1/referrals/process-rewards"
+        static func userReferrals(userId: String) -> String { "/users/\(userId)/referrals" }
+        static let processReferralRewards = "/referrals/process-rewards"
 
         // Transactions
-        static let createTransaction = "/api/v1/transactions"
-        static func userTransactions(userId: String) -> String { "/api/v1/transactions/user/\(userId)" }
+        static let createTransaction = "/transactions"
+        static func userTransactions(userId: String) -> String { "/transactions/user/\(userId)" }
 
         // Products
-        static func venueProducts(id: String) -> String { "/api/v1/venues/\(id)/products" }
+        static func venueProducts(id: String) -> String { "/venues/\(id)/products" }
     }
 
     // MARK: - Headers
@@ -84,7 +94,8 @@ enum APIConfig {
     static func headers(with token: String? = nil) -> [String: String] {
         var headers = [
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "apikey": supabaseAnonKey  // Required for Supabase Edge Functions
         ]
 
         if let token = token {
