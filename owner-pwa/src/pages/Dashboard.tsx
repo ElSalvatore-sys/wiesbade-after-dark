@@ -12,10 +12,10 @@ import {
   ArrowDownRight,
   Sparkles,
   RefreshCw,
-  Loader2,
 } from 'lucide-react';
 import type { DashboardStats } from '../types';
 import api from '../services/api';
+import { SkeletonStatCard, Skeleton } from '../components/Skeleton';
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
@@ -170,8 +170,30 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 text-accent-purple animate-spin" />
+      <div className="space-y-8">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-24 rounded-xl" />
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+        </div>
+
+        {/* Quick Actions Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Login, Dashboard, Events, Bookings, Inventory, Employees, Shifts, Tasks, Settings } from './pages';
 import { DashboardLayout } from './components/layout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import OfflineBanner from './components/OfflineBanner';
 
 type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 'shifts' | 'tasks' | 'settings';
 
@@ -74,9 +76,12 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <OfflineBanner />
+        <AppContent />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
