@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import api from '../services/api';
 
-export type UserRole = 'owner' | 'manager' | 'bartender' | 'inventory' | 'cleaning';
+export type UserRole = 'owner' | 'manager' | 'bartender' | 'waiter' | 'security' | 'dj' | 'inventory' | 'cleaning';
 
 interface User {
   id: string;
@@ -23,10 +23,13 @@ interface AuthContextType {
 }
 
 const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  owner: ['dashboard', 'events', 'bookings', 'inventory', 'employees', 'shifts', 'tasks', 'reports', 'settings'],
-  manager: ['dashboard', 'events', 'bookings', 'inventory', 'shifts', 'tasks', 'reports'],
-  bartender: ['dashboard', 'shifts', 'tasks'],
-  inventory: ['dashboard', 'inventory', 'shifts', 'tasks', 'reports'],
+  owner: ['dashboard', 'events', 'bookings', 'inventory', 'employees', 'shifts', 'tasks', 'analytics', 'settings'],
+  manager: ['dashboard', 'events', 'bookings', 'inventory', 'shifts', 'tasks', 'analytics'],
+  bartender: ['dashboard', 'shifts', 'tasks', 'inventory'],
+  waiter: ['dashboard', 'shifts', 'tasks'],
+  security: ['dashboard', 'shifts', 'tasks', 'bookings'],
+  dj: ['dashboard', 'shifts', 'events'],
+  inventory: ['dashboard', 'inventory', 'shifts', 'tasks', 'analytics'],
   cleaning: ['dashboard', 'shifts', 'tasks'],
 };
 

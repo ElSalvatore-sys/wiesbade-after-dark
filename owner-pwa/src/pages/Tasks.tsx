@@ -14,7 +14,9 @@ import {
   User,
   Calendar,
   Trash2,
+  Image,
 } from 'lucide-react';
+import { PhotoUpload } from '../components/PhotoUpload';
 import { cn } from '../lib/utils';
 import type { Task, TaskStatus, TaskPriority, TaskCategory } from '../types/tasks';
 import { TASK_CATEGORIES, TASK_PRIORITIES, TASK_STATUSES } from '../types/tasks';
@@ -132,6 +134,8 @@ export function Tasks() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [filterStatus, setFilterStatus] = useState<TaskStatus | 'all'>('all');
   const [filterCategory, setFilterCategory] = useState<TaskCategory | 'all'>('all');
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completionPhoto, setCompletionPhoto] = useState<string>('');
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -161,7 +165,7 @@ export function Tasks() {
     return DEMO_EMPLOYEES.find(e => e.id === id)?.name || 'Unknown';
   };
 
-  const updateTaskStatus = (taskId: string, newStatus: TaskStatus) => {
+  const updateTaskStatus = (taskId: string, newStatus: TaskStatus, photo?: string) => {
     setTasks(tasks.map(t => {
       if (t.id === taskId) {
         const updates: Partial<Task> = { status: newStatus, updatedAt: new Date().toISOString() };
@@ -169,6 +173,9 @@ export function Tasks() {
           // Task started
         } else if (newStatus === 'completed') {
           updates.completedAt = new Date().toISOString();
+          if (photo) {
+            updates.completedPhoto = photo;
+          }
         } else if (newStatus === 'approved') {
           updates.approvedAt = new Date().toISOString();
           updates.approvedBy = user?.id || '1';
@@ -178,6 +185,21 @@ export function Tasks() {
       return t;
     }));
     setSelectedTask(null);
+    setShowCompleteModal(false);
+    setCompletionPhoto('');
+  };
+
+  // Open completion modal with photo upload
+  const openCompleteModal = () => {
+    setCompletionPhoto('');
+    setShowCompleteModal(true);
+  };
+
+  // Complete task with optional photo
+  const completeTaskWithPhoto = () => {
+    if (selectedTask) {
+      updateTaskStatus(selectedTask.id, 'completed', completionPhoto);
+    }
   };
 
   const rejectTask = (taskId: string, reason: string) => {
@@ -618,6 +640,21 @@ export function Tasks() {
                   </p>
                 </div>
               )}
+
+              {/* Completion Photo */}
+              {selectedTask.completedPhoto && (
+                <div className="space-y-2">
+                  <p className="text-xs text-foreground-muted font-medium flex items-center gap-1">
+                    <Image size={14} />
+                    Photo Proof
+                  </p>
+                  <img
+                    src={selectedTask.completedPhoto}
+                    alt="Completion proof"
+                    className="w-full h-48 object-cover rounded-xl border border-border"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Actions */}
@@ -635,11 +672,11 @@ export function Tasks() {
 
               {selectedTask.status === 'in_progress' && (
                 <button
-                  onClick={() => updateTaskStatus(selectedTask.id, 'completed')}
+                  onClick={openCompleteModal}
                   className="w-full py-3 bg-success text-white rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2"
                 >
-                  <CheckCircle2 size={18} />
-                  Mark Complete
+                  <Camera size={18} />
+                  Complete with Photo
                 </button>
               )}
 
@@ -682,6 +719,72 @@ export function Tasks() {
               >
                 <Trash2 size={18} />
                 Delete Task
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Complete Task Modal with Photo Upload */}
+      {showCompleteModal && selectedTask && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 animate-fade-in">
+          <div className="bg-card w-full max-w-md rounded-2xl overflow-hidden animate-scale-in">
+            {/* Header */}
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={20} className="text-success" />
+                <span className="font-semibold text-foreground">Complete Task</span>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCompleteModal(false);
+                  setCompletionPhoto('');
+                }}
+                className="p-1 text-foreground-dim hover:text-foreground"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-4">
+              <div className="p-3 bg-white/5 rounded-xl">
+                <p className="font-medium text-foreground">{selectedTask.title}</p>
+                <p className="text-sm text-foreground-muted mt-1">
+                  Assigned to: {getEmployeeName(selectedTask.assignedTo)}
+                </p>
+              </div>
+
+              {/* Photo Upload */}
+              <PhotoUpload
+                onPhotoCapture={setCompletionPhoto}
+                currentPhoto={completionPhoto}
+                label="Completion Photo (Optional)"
+              />
+
+              {/* Info text */}
+              <p className="text-xs text-foreground-dim text-center">
+                Adding a photo helps verify task completion
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="p-4 border-t border-border flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCompleteModal(false);
+                  setCompletionPhoto('');
+                }}
+                className="flex-1 py-3 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={completeTaskWithPhoto}
+                className="flex-1 py-3 bg-success text-white rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2"
+              >
+                <Check size={18} />
+                {completionPhoto ? 'Complete with Photo' : 'Complete'}
               </button>
             </div>
           </div>

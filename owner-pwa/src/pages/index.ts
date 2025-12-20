@@ -6,4 +6,5 @@ export { Inventory } from './Inventory';
 export { Employees } from './Employees';
 export { Shifts } from './Shifts';
 export { Tasks } from './Tasks';
+export { Analytics } from './Analytics';
 export { Settings } from './Settings';

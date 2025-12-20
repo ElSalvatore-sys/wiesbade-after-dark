@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Login, Dashboard, Events, Bookings, Inventory, Employees, Shifts, Tasks, Settings } from './pages';
+import { Login, Dashboard, Events, Bookings, Inventory, Employees, Shifts, Tasks, Analytics, Settings } from './pages';
 import { DashboardLayout } from './components/layout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import OfflineBanner from './components/OfflineBanner';
 
-type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 'shifts' | 'tasks' | 'settings';
+type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 'shifts' | 'tasks' | 'analytics' | 'settings';
 
 function AppContent() {
   const { user, isAuthenticated, logout, hasPermission } = useAuth();
@@ -44,6 +44,8 @@ function AppContent() {
         return <Shifts />;
       case 'tasks':
         return <Tasks />;
+      case 'analytics':
+        return <Analytics />;
       case 'settings':
         return <Settings />;
       default:

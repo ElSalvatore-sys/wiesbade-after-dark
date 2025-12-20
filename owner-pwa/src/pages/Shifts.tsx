@@ -8,8 +8,10 @@ import {
   History,
   ChevronDown,
   X,
+  FileDown,
 } from 'lucide-react';
 import type { ShiftStatus, ShiftSummary, EmployeePin } from '../types/shifts';
+import { TimesheetExport, type ShiftRecord } from '../components/TimesheetExport';
 
 // Mock employees for the dropdown (will be replaced with API call)
 const mockEmployees: EmployeePin[] = [
@@ -34,6 +36,74 @@ const mockActiveShifts = [
   },
 ];
 
+// Mock completed shifts for timesheet export (past 2 weeks)
+const generateMockShiftHistory = (): ShiftRecord[] => {
+  const shifts: ShiftRecord[] = [];
+  const today = new Date();
+
+  // Generate shifts for the past 14 days
+  for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - dayOffset);
+    const dateStr = date.toISOString().split('T')[0];
+
+    // Skip some days randomly (employees don't work every day)
+    if (dayOffset % 7 === 6) continue; // Skip Sundays
+
+    // Tom Weber - bartender (works most days)
+    if (dayOffset % 3 !== 2) {
+      shifts.push({
+        id: `shift-tom-${dayOffset}`,
+        employeeId: 'emp1',
+        employeeName: 'Tom Weber',
+        employeeRole: 'Bartender',
+        date: dateStr,
+        clockIn: '18:00',
+        clockOut: dayOffset % 4 === 0 ? '03:30' : '02:00',
+        breakMinutes: 30,
+        totalHours: dayOffset % 4 === 0 ? 9 : 7.5,
+        overtime: dayOffset % 4 === 0 ? 1 : 0,
+      });
+    }
+
+    // Lisa Fischer - bartender (weekends mainly)
+    if (dayOffset % 7 <= 1 || dayOffset % 5 === 0) {
+      shifts.push({
+        id: `shift-lisa-${dayOffset}`,
+        employeeId: 'emp2',
+        employeeName: 'Lisa Fischer',
+        employeeRole: 'Bartender',
+        date: dateStr,
+        clockIn: '19:00',
+        clockOut: '03:00',
+        breakMinutes: 15,
+        totalHours: 7.75,
+        overtime: 0,
+      });
+    }
+
+    // Sarah Schmidt - manager (works most days)
+    if (dayOffset % 2 === 0) {
+      shifts.push({
+        id: `shift-sarah-${dayOffset}`,
+        employeeId: 'emp3',
+        employeeName: 'Sarah Schmidt',
+        employeeRole: 'Manager',
+        date: dateStr,
+        clockIn: '17:00',
+        clockOut: '01:00',
+        breakMinutes: 30,
+        totalHours: 7.5,
+        overtime: 0,
+      });
+    }
+  }
+
+  return shifts;
+};
+
+const mockShiftHistory = generateMockShiftHistory();
+
 const statusColors: Record<ShiftStatus, string> = {
   active: 'bg-success/20 text-success',
   on_break: 'bg-warning/20 text-warning',
@@ -57,6 +127,7 @@ export function Shifts() {
   const [employees] = useState(mockEmployees);
   const [showClockIn, setShowClockIn] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [pin, setPin] = useState(['', '', '', '']);
   const [pinError, setPinError] = useState('');
@@ -168,8 +239,16 @@ export function Shifts() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => setShowExport(true)}
+            className="p-2 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all"
+            title="Export Timesheet"
+          >
+            <FileDown size={20} />
+          </button>
+          <button
             onClick={() => setShowHistory(true)}
             className="p-2 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all"
+            title="Shift History"
           >
             <History size={20} />
           </button>
@@ -407,6 +486,13 @@ export function Shifts() {
           </div>
         </div>
       )}
+
+      {/* Timesheet Export Modal */}
+      <TimesheetExport
+        isOpen={showExport}
+        onClose={() => setShowExport(false)}
+        shifts={mockShiftHistory}
+      />
     </div>
   );
 }

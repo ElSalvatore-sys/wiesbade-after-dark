@@ -7,6 +7,7 @@ import {
   Users,
   Clock,
   ClipboardList,
+  BarChart3,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { id: 'employees', label: 'Employees', icon: <Users size={20} /> },
   { id: 'shifts', label: 'Shifts', icon: <Clock size={20} /> },
   { id: 'tasks', label: 'Tasks', icon: <ClipboardList size={20} /> },
+  { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
 ];
 
@@ -89,8 +91,11 @@ export function Sidebar({
           <div className={cn(
             'px-3 py-1.5 rounded-lg text-xs font-medium text-center',
             userRole === 'owner' && 'bg-purple-500/20 text-purple-400',
-            userRole === 'manager' && 'bg-blue-500/20 text-blue-400',
-            userRole === 'bartender' && 'bg-green-500/20 text-green-400',
+            userRole === 'manager' && 'bg-pink-500/20 text-pink-400',
+            userRole === 'bartender' && 'bg-amber-500/20 text-amber-400',
+            userRole === 'waiter' && 'bg-cyan-500/20 text-cyan-400',
+            userRole === 'security' && 'bg-red-500/20 text-red-400',
+            userRole === 'dj' && 'bg-violet-500/20 text-violet-400',
             userRole === 'inventory' && 'bg-orange-500/20 text-orange-400',
             userRole === 'cleaning' && 'bg-gray-500/20 text-gray-400'
           )}>
