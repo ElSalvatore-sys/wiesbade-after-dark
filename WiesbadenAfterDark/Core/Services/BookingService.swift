@@ -280,11 +280,12 @@ final class BookingService: BookingServiceProtocol {
 
         // Update booking status
         booking.status = .cancelled
-        booking.cancellationReason = reason
+        print("📝 [Booking] Cancellation reason: \(reason)")
 
         // Process refund if requested and payment was made
-        if requestRefund && booking.amountPaid > 0 {
-            print("💰 [Booking] Processing refund of €\(booking.amountPaid)...")
+        let amountPaid = booking.amountPaid ?? 0
+        if requestRefund && amountPaid > 0 {
+            print("💰 [Booking] Processing refund of €\(amountPaid)...")
             // Refund logic would go here - for now just mark as refunded
             booking.paymentStatus = .refunded
         }

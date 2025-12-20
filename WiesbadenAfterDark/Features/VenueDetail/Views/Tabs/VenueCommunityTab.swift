@@ -16,6 +16,9 @@ struct VenueCommunityTab: View {
 
     @State private var newPostText = ""
     @State private var showingPostInput = false
+    @State private var showingReplySheet = false
+    @State private var replyToPost: CommunityPost?
+    @State private var replyText = ""
 
     var body: some View {
         ScrollView {
@@ -78,8 +81,8 @@ struct VenueCommunityTab: View {
                                     viewModel.likePost(post)
                                 },
                                 onReply: {
-                                    // TODO: Implement reply
-                                    print("Reply to post: \(post.id)")
+                                    replyToPost = post
+                                    showingReplySheet = true
                                 }
                             )
                         }
@@ -91,17 +94,116 @@ struct VenueCommunityTab: View {
         }
         .background(Color.appBackground)
         .animation(Theme.Animation.quick, value: showingPostInput)
+        .sheet(isPresented: $showingReplySheet) {
+            ReplySheetView(
+                post: replyToPost,
+                replyText: $replyText,
+                onSubmit: submitReply,
+                onCancel: {
+                    showingReplySheet = false
+                    replyText = ""
+                    replyToPost = nil
+                }
+            )
+            .presentationDetents([.medium])
+        }
     }
 
     private func submitPost() {
         guard !newPostText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
-        // TODO: Implement post creation
-        print("📝 Creating post: \(newPostText)")
+        // Get current user
+        guard case .authenticated(let user) = authViewModel.authState else {
+            print("❌ User not authenticated")
+            return
+        }
+
+        viewModel.createPost(content: newPostText, user: user)
 
         // Clear input
         newPostText = ""
         showingPostInput = false
+    }
+
+    private func submitReply() {
+        guard !replyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let post = replyToPost else { return }
+
+        // Get current user
+        guard case .authenticated(let user) = authViewModel.authState else {
+            print("❌ User not authenticated")
+            return
+        }
+
+        viewModel.replyToPost(post, comment: replyText, user: user)
+
+        // Clear and dismiss
+        replyText = ""
+        replyToPost = nil
+        showingReplySheet = false
+    }
+}
+
+// MARK: - Reply Sheet View
+private struct ReplySheetView: View {
+    let post: CommunityPost?
+    @Binding var replyText: String
+    let onSubmit: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                // Original post preview
+                if let post = post {
+                    VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                        HStack {
+                            Text(post.userName)
+                                .font(Typography.labelMedium)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.textPrimary)
+                            Text("·")
+                                .foregroundColor(.textTertiary)
+                            Text(post.timeAgo)
+                                .font(Typography.captionMedium)
+                                .foregroundColor(.textSecondary)
+                        }
+                        Text(post.content)
+                            .font(Typography.bodyMedium)
+                            .foregroundColor(.textSecondary)
+                            .lineLimit(2)
+                    }
+                    .padding(Theme.Spacing.md)
+                    .background(Color.inputBackground)
+                    .cornerRadius(Theme.CornerRadius.md)
+                }
+
+                // Reply input
+                TextField("Write a reply...", text: $replyText, axis: .vertical)
+                    .lineLimit(3...6)
+                    .font(Typography.bodyMedium)
+                    .foregroundColor(.textPrimary)
+                    .padding(Theme.Spacing.md)
+                    .background(Color.inputBackground)
+                    .cornerRadius(Theme.CornerRadius.md)
+
+                Spacer()
+            }
+            .padding(Theme.Spacing.lg)
+            .background(Color.appBackground)
+            .navigationTitle("Reply")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Reply", action: onSubmit)
+                        .fontWeight(.semibold)
+                        .disabled(replyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
     }
 }
 

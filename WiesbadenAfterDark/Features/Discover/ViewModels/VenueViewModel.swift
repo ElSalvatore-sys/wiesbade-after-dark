@@ -286,6 +286,45 @@ final class VenueViewModel {
         }
     }
 
+    /// Creates a new community post
+    func createPost(content: String, imageURL: String? = nil, user: User) {
+        guard let venue = selectedVenue else {
+            print("❌ [VenueViewModel] No venue selected")
+            return
+        }
+
+        print("📝 [VenueViewModel] Creating post for venue: \(venue.name)")
+
+        let newPost = CommunityPost(
+            userId: user.id,
+            venueId: venue.id,
+            userName: user.displayName,
+            userTier: user.currentTier,
+            userAvatarURL: user.avatarURL,
+            content: content,
+            imageURL: imageURL,
+            timestamp: Date()
+        )
+
+        // Add to beginning of posts array
+        communityPosts.insert(newPost, at: 0)
+
+        print("✅ [VenueViewModel] Post created: \(newPost.id)")
+    }
+
+    /// Adds a reply/comment to a post (increments comment count)
+    func replyToPost(_ post: CommunityPost, comment: String, user: User) {
+        print("💬 [VenueViewModel] Replying to post: \(post.id)")
+
+        // Update comment count locally
+        if let index = communityPosts.firstIndex(where: { $0.id == post.id }) {
+            communityPosts[index].commentsCount += 1
+        }
+
+        // In production, this would send to backend and add Comment object
+        print("✅ [VenueViewModel] Reply added by \(user.displayName)")
+    }
+
     // MARK: - Helper Methods
 
     /// Clears error message

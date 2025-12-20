@@ -142,6 +142,25 @@ extension User {
     var displayName: String {
         return fullName ?? formattedPhoneNumber
     }
+
+    /// Total points for display (integer)
+    var totalPoints: Int {
+        return Int(totalPointsAvailable)
+    }
+
+    /// Current membership tier based on total points earned
+    var currentTier: MembershipTier {
+        switch totalPointsEarned {
+        case 0..<500:
+            return .bronze
+        case 500..<2000:
+            return .silver
+        case 2000..<5000:
+            return .gold
+        default:
+            return .platinum
+        }
+    }
 }
 
 // MARK: - Mock User Generation
