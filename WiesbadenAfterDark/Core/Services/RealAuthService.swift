@@ -269,11 +269,10 @@ final class RealAuthService: AuthServiceProtocol {
                 requiresAuth: false
             )
 
+            #if DEBUG
             print("✅ [RealAuthService] Refresh response decoded successfully")
-            print("   New access token: \(String(response.accessToken.prefix(20)))...")
-            print("   Token type: \(response.tokenType)")
-            print("   Expires in: \(response.expiresIn) seconds")
-            print("   Keeping existing refresh token (backend doesn't return new one)")
+            print("   Token expires in: \(response.expiresIn) seconds")
+            #endif
 
             let expiresAt = Date().addingTimeInterval(TimeInterval(response.expiresIn))
             // Return NEW access token but KEEP existing refresh token
