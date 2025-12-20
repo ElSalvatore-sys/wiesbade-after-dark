@@ -13,11 +13,14 @@ struct BookingDetailView: View {
 
     let booking: Booking
     let userId: UUID
+    var venueName: String = "Venue"
+    var venuePhone: String?
 
     // MARK: - State
 
     @State private var showCancelAlert = false
     @State private var isCancelling = false
+    @Environment(\.dismiss) private var dismiss
 
     // MARK: - Body
 
@@ -27,7 +30,7 @@ struct BookingDetailView: View {
                 // Booking Card
                 BookingCard(
                     booking: booking,
-                    venueName: "Mock Venue", // TODO: Fetch venue name
+                    venueName: venueName,
                     mode: .full
                 )
 
@@ -113,9 +116,7 @@ struct BookingDetailView: View {
     private var actionButtons: some View {
         VStack(spacing: Theme.Spacing.cardGap) {
             // Contact Venue
-            Button(action: {
-                // TODO: Contact venue
-            }) {
+            Button(action: contactVenue) {
                 HStack {
                     Image(systemName: "phone.fill")
                     Text("Contact Venue")
@@ -127,6 +128,7 @@ struct BookingDetailView: View {
                 .background(Color.primaryGradient)
                 .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
             }
+            .disabled(venuePhone == nil)
 
             // Cancel Booking
             Button(action: {
@@ -147,16 +149,38 @@ struct BookingDetailView: View {
         }
     }
 
-    // MARK: - Cancel Booking
+    // MARK: - Actions
+
+    private func contactVenue() {
+        guard let phone = venuePhone,
+              let url = URL(string: "tel://\(phone.replacingOccurrences(of: " ", with: ""))") else {
+            return
+        }
+
+        #if os(iOS)
+        UIApplication.shared.open(url)
+        #endif
+    }
 
     private func cancelBooking() {
         isCancelling = true
 
         Task {
-            // TODO: Call BookingService.cancelBooking()
-            print("🚫 Cancelling booking: \(booking.id)")
+            do {
+                let bookingService = BookingService()
+                let success = try await bookingService.cancelBooking(
+                    bookingId: booking.id,
+                    reason: "User requested cancellation",
+                    requestRefund: true
+                )
 
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
+                if success {
+                    print("✅ Booking cancelled successfully")
+                    dismiss()
+                }
+            } catch {
+                print("❌ Failed to cancel booking: \(error)")
+            }
 
             isCancelling = false
         }

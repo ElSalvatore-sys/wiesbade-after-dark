@@ -15,11 +15,29 @@ struct VenueBookingTab: View {
 
     @State private var selectedTableType: TableType = .standard
     @State private var selectedDate = Date()
+    @State private var selectedTimeSlot = "21:00"
     @State private var guestCount = 4
     @State private var specialRequests = ""
     @State private var showingConfirmation = false
     @State private var showPaymentSheet = false
-    @State private var userPoints = 3000 // TODO: Load from user profile
+
+    /// Available time slots for booking
+    private let timeSlots = ["18:00", "19:00", "20:00", "21:00", "22:00", "23:00"]
+
+    /// User points loaded from authenticated user profile
+    private var userPoints: Int {
+        if case .authenticated(let user) = authViewModel.authState {
+            return user.totalPoints
+        }
+        return 0
+    }
+
+    /// Formatted time slot range (2 hour window)
+    private var timeSlotRange: String {
+        let hour = Int(selectedTimeSlot.prefix(2)) ?? 21
+        let endHour = (hour + 2) % 24
+        return "\(selectedTimeSlot) - \(String(format: "%02d:00", endHour))"
+    }
 
     private let minDate = Date()
     private let maxDate = Calendar.current.date(byAdding: .month, value: 3, to: Date()) ?? Date()
@@ -42,24 +60,50 @@ struct VenueBookingTab: View {
                     .background(Color.textTertiary.opacity(0.2))
                     .padding(.horizontal, Theme.Spacing.lg)
 
-                // Date & time picker
+                // Date picker
                 VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                    Text("Date & Time")
+                    Text("Date")
                         .font(Typography.headlineMedium)
                         .fontWeight(.semibold)
                         .foregroundColor(.textPrimary)
 
                     DatePicker(
-                        "Select date and time",
+                        "Select date",
                         selection: $selectedDate,
                         in: minDate...maxDate,
-                        displayedComponents: [.date, .hourAndMinute]
+                        displayedComponents: [.date]
                     )
                     .datePickerStyle(.compact)
                     .labelsHidden()
                     .padding(Theme.Spacing.md)
                     .background(Color.cardBackground)
                     .cornerRadius(Theme.CornerRadius.md)
+                }
+                .padding(.horizontal, Theme.Spacing.lg)
+
+                // Time slot picker
+                VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                    Text("Time Slot")
+                        .font(Typography.headlineMedium)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.textPrimary)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: Theme.Spacing.sm) {
+                            ForEach(timeSlots, id: \.self) { slot in
+                                Button(action: { selectedTimeSlot = slot }) {
+                                    Text(slot)
+                                        .font(Typography.bodyMedium)
+                                        .fontWeight(selectedTimeSlot == slot ? .semibold : .regular)
+                                        .foregroundColor(selectedTimeSlot == slot ? .white : .textPrimary)
+                                        .padding(.horizontal, Theme.Spacing.md)
+                                        .padding(.vertical, Theme.Spacing.sm)
+                                        .background(selectedTimeSlot == slot ? Color.primary : Color.cardBackground)
+                                        .cornerRadius(Theme.CornerRadius.sm)
+                                }
+                            }
+                        }
+                    }
                 }
                 .padding(.horizontal, Theme.Spacing.lg)
 
@@ -181,7 +225,7 @@ struct VenueBookingTab: View {
                     tableType: selectedTableType,
                     partySize: guestCount,
                     date: selectedDate,
-                    timeSlot: "21:00 - 23:00", // TODO: Add time slot picker
+                    timeSlot: timeSlotRange,
                     specialRequests: specialRequests.isEmpty ? nil : specialRequests,
                     totalCost: selectedTableType.basePrice,
                     pointsCost: selectedTableType.pointsCost,

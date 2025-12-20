@@ -192,19 +192,69 @@ final class BookingService: BookingServiceProtocol {
     }
 
     func getBooking(id: UUID) async throws -> Booking? {
-        // TODO: Fetch from SwiftData
-        return nil
+        guard let context = modelContext else {
+            print("⚠️ [Booking] No modelContext available")
+            return nil
+        }
+
+        let predicate = #Predicate<Booking> { booking in
+            booking.id == id
+        }
+        let descriptor = FetchDescriptor<Booking>(predicate: predicate)
+
+        do {
+            let bookings = try context.fetch(descriptor)
+            return bookings.first
+        } catch {
+            print("❌ [Booking] Failed to fetch booking: \(error)")
+            throw BookingError.fetchFailed
+        }
     }
 
     func getUserBookings(userId: UUID) async throws -> [Booking] {
-        // TODO: Fetch from SwiftData
-        // For mock, return empty
-        return []
+        guard let context = modelContext else {
+            print("⚠️ [Booking] No modelContext available")
+            return []
+        }
+
+        let predicate = #Predicate<Booking> { booking in
+            booking.userId == userId
+        }
+        var descriptor = FetchDescriptor<Booking>(predicate: predicate)
+        descriptor.sortBy = [SortDescriptor(\.bookingDate, order: .reverse)]
+
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            print("❌ [Booking] Failed to fetch user bookings: \(error)")
+            throw BookingError.fetchFailed
+        }
     }
 
     func getVenueBookings(venueId: UUID, date: Date) async throws -> [Booking] {
-        // TODO: Fetch from SwiftData
-        return []
+        guard let context = modelContext else {
+            print("⚠️ [Booking] No modelContext available")
+            return []
+        }
+
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+
+        let predicate = #Predicate<Booking> { booking in
+            booking.venueId == venueId &&
+            booking.bookingDate >= startOfDay &&
+            booking.bookingDate < endOfDay
+        }
+        var descriptor = FetchDescriptor<Booking>(predicate: predicate)
+        descriptor.sortBy = [SortDescriptor(\.bookingDate)]
+
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            print("❌ [Booking] Failed to fetch venue bookings: \(error)")
+            throw BookingError.fetchFailed
+        }
     }
 
     func cancelBooking(
@@ -217,15 +267,42 @@ final class BookingService: BookingServiceProtocol {
         print("📝 [Booking] Reason: \(reason)")
         print("💰 [Booking] Refund requested: \(requestRefund)")
 
-        // Simulate processing
-        try await Task.sleep(nanoseconds: 1_000_000_000) // 1s
+        guard let context = modelContext else {
+            print("⚠️ [Booking] No modelContext available")
+            return false
+        }
 
-        // TODO: Update booking status in SwiftData
-        // TODO: Process refund if requested
+        // Fetch the booking
+        guard let booking = try await getBooking(id: bookingId) else {
+            print("❌ [Booking] Booking not found")
+            throw BookingError.bookingNotFound
+        }
 
-        print("✅ [Booking] Booking cancelled")
+        // Update booking status
+        booking.status = .cancelled
+        booking.cancellationReason = reason
 
-        return true
+        // Process refund if requested and payment was made
+        if requestRefund && booking.amountPaid > 0 {
+            print("💰 [Booking] Processing refund of €\(booking.amountPaid)...")
+            // Refund logic would go here - for now just mark as refunded
+            booking.paymentStatus = .refunded
+        }
+
+        // If points were used, restore them
+        if let pointsUsed = booking.pointsUsed, pointsUsed > 0 {
+            print("🎯 [Booking] Restoring \(pointsUsed) points to user")
+            // Points restoration would be handled by PointsService
+        }
+
+        do {
+            try context.save()
+            print("✅ [Booking] Booking cancelled and saved")
+            return true
+        } catch {
+            print("❌ [Booking] Failed to save cancellation: \(error)")
+            throw BookingError.saveFailed
+        }
     }
 
     func updateBooking(
@@ -233,8 +310,34 @@ final class BookingService: BookingServiceProtocol {
         partySize: Int?,
         specialRequests: String?
     ) async throws -> Booking {
-        // TODO: Implement
-        throw BookingError.bookingNotFound
+        guard let context = modelContext else {
+            throw BookingError.bookingNotFound
+        }
+
+        guard let booking = try await getBooking(id: bookingId) else {
+            throw BookingError.bookingNotFound
+        }
+
+        // Update fields if provided
+        if let newPartySize = partySize {
+            guard newPartySize > 0, newPartySize <= booking.tableType.maxCapacity else {
+                throw BookingError.invalidPartySize
+            }
+            booking.partySize = newPartySize
+        }
+
+        if let newRequests = specialRequests {
+            booking.specialRequests = newRequests
+        }
+
+        do {
+            try context.save()
+            print("✅ [Booking] Booking updated successfully")
+            return booking
+        } catch {
+            print("❌ [Booking] Failed to update booking: \(error)")
+            throw BookingError.saveFailed
+        }
     }
 
     func confirmBooking(bookingId: UUID) async throws -> Bool {

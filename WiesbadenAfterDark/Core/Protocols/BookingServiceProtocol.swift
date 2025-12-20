@@ -79,6 +79,7 @@ enum BookingError: LocalizedError {
     case alreadyCancelled
     case pastBooking
     case saveFailed
+    case fetchFailed
     case unknown
 
     var errorDescription: String? {
@@ -101,6 +102,8 @@ enum BookingError: LocalizedError {
             return "Cannot modify past bookings"
         case .saveFailed:
             return "Failed to save booking to database"
+        case .fetchFailed:
+            return "Failed to fetch booking data"
         case .unknown:
             return "An unknown error occurred"
         }
