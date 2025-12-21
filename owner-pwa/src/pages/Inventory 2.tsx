@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { cn } from '../lib/utils';
 import {
   Search,
@@ -15,8 +15,6 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Loader2,
-  RefreshCw,
 } from 'lucide-react';
 import { InventoryModal } from '../components/InventoryModal';
 import { BarcodeScanner } from '../components/BarcodeScanner';
@@ -24,8 +22,6 @@ import { StockUpdateModal } from '../components/StockUpdateModal';
 import { TransferModal } from '../components/TransferModal';
 import { VarianceModal } from '../components/VarianceModal';
 import type { InventoryItem as LegacyInventoryItem, InventoryCategory } from '../types';
-import { supabaseApi } from '../services/supabaseApi';
-import type { InventoryItem as SupabaseInventoryItem } from '../lib/supabase';
 
 interface InventoryItem {
   id: string;
@@ -41,42 +37,22 @@ interface InventoryItem {
   lastMovement?: string;
 }
 
-// Map Supabase inventory item to local format
-const mapSupabaseItemToLocal = (item: SupabaseInventoryItem): InventoryItem => ({
-  id: item.id,
-  name: item.name,
-  barcode: item.barcode || '',
-  category: item.category.charAt(0).toUpperCase() + item.category.slice(1).replace('_', ' '),
-  storageCount: item.storage_quantity,
-  barCount: item.bar_quantity,
-  minStock: item.min_stock_level,
-  price: item.sell_price || 0,
-  costPrice: item.cost_price || 0,
-  lastMovement: item.last_counted_at
-    ? formatTimeAgo(new Date(item.last_counted_at))
-    : undefined,
-});
-
-// Helper to format time ago
-function formatTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 60) return `${diffMins} min ago`;
-  if (diffHours < 24) return `${diffHours} hours ago`;
-  return `${diffDays} days ago`;
-}
-
 const CATEGORIES = ['All', 'Spirits', 'Beer', 'Wine', 'Mixers', 'Soft Drinks', 'Food', 'Supplies'];
 
+// Mock inventory data with dual locations
+const mockInventory: InventoryItem[] = [
+  { id: '1', name: 'Corona Extra', barcode: '7501064191091', category: 'Beer', storageCount: 48, barCount: 12, minStock: 24, price: 4.50, costPrice: 1.80, lastMovement: '2 hours ago' },
+  { id: '2', name: 'Hendricks Gin', barcode: '5010327755014', category: 'Spirits', storageCount: 6, barCount: 2, minStock: 4, price: 12.00, costPrice: 28.00, lastMovement: '1 hour ago' },
+  { id: '3', name: 'Grey Goose Vodka', barcode: '3700103831402', category: 'Spirits', storageCount: 8, barCount: 3, minStock: 4, price: 14.00, costPrice: 32.00, lastMovement: '3 hours ago' },
+  { id: '4', name: 'Coca Cola', barcode: '5449000000996', category: 'Soft Drinks', storageCount: 120, barCount: 24, minStock: 48, price: 3.50, costPrice: 0.80, lastMovement: '30 min ago' },
+  { id: '5', name: 'Red Bull', barcode: '9002490100070', category: 'Mixers', storageCount: 36, barCount: 18, minStock: 24, price: 4.00, costPrice: 1.50, lastMovement: '1 hour ago' },
+  { id: '6', name: 'Prosecco DOC', barcode: '8002270018527', category: 'Wine', storageCount: 12, barCount: 4, minStock: 8, price: 8.00, costPrice: 6.50, lastMovement: '4 hours ago' },
+  { id: '7', name: 'Jack Daniels', barcode: '5099873089798', category: 'Spirits', storageCount: 3, barCount: 1, minStock: 4, price: 10.00, costPrice: 22.00, lastMovement: '5 hours ago' },
+  { id: '8', name: 'Tonic Water', barcode: '5000196004528', category: 'Mixers', storageCount: 60, barCount: 20, minStock: 30, price: 3.00, costPrice: 0.60, lastMovement: '2 hours ago' },
+];
+
 export function Inventory() {
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [inventory, setInventory] = useState<InventoryItem[]>(mockInventory);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState<'all' | 'storage' | 'bar' | 'low'>('all');
@@ -87,36 +63,6 @@ export function Inventory() {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [showStockUpdate, setShowStockUpdate] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
-
-  // Load data from Supabase
-  const loadData = useCallback(async (showRefreshing = false) => {
-    try {
-      if (showRefreshing) {
-        setRefreshing(true);
-      }
-      setError(null);
-
-      const { data, error } = await supabaseApi.getInventoryItems();
-
-      if (error) {
-        console.error('Error loading inventory:', error);
-        setError('Failed to load inventory');
-      } else if (data) {
-        const mappedItems = data.map(mapSupabaseItemToLocal);
-        setInventory(mappedItems);
-      }
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Failed to load data');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   // Filter inventory
   const filteredInventory = inventory.filter(item => {
@@ -187,81 +133,39 @@ export function Inventory() {
     setInventory([...inventory, newItem]);
   };
 
-  const handleStockUpdate = async (itemId: string, newQuantity: number, _reason: string) => {
+  const handleStockUpdate = (itemId: string, newQuantity: number, _reason: string) => {
     const item = inventory.find(i => i.id === itemId);
     if (!item) return;
 
     const currentTotal = item.storageCount + item.barCount;
     const diff = newQuantity - currentTotal;
-    const newStorageQuantity = item.storageCount + diff;
 
-    try {
-      const { error } = await supabaseApi.updateInventoryQuantity(itemId, {
-        storage_quantity: newStorageQuantity,
-      });
-
-      if (error) {
-        console.error('Error updating stock:', error);
-        return;
-      }
-
-      setInventory(inventory.map(i =>
-        i.id === itemId
-          ? { ...i, storageCount: newStorageQuantity, lastMovement: 'Just now' }
-          : i
-      ));
-    } catch (err) {
-      console.error('Error updating stock:', err);
-    }
+    setInventory(inventory.map(i =>
+      i.id === itemId
+        ? { ...i, storageCount: i.storageCount + diff, lastMovement: 'Just now' }
+        : i
+    ));
   };
 
-  const handleTransfer = async (itemId: string, quantity: number, from: 'storage' | 'bar', to: 'storage' | 'bar') => {
-    try {
-      const { error } = await supabaseApi.createInventoryTransfer(
-        itemId,
-        from,
-        to,
-        quantity
-      );
-
-      if (error) {
-        console.error('Error creating transfer:', error);
-        return;
+  const handleTransfer = (itemId: string, quantity: number, from: 'storage' | 'bar', _to: 'storage' | 'bar') => {
+    setInventory(inventory.map(i => {
+      if (i.id === itemId) {
+        return {
+          ...i,
+          storageCount: from === 'storage' ? i.storageCount - quantity : i.storageCount + quantity,
+          barCount: from === 'bar' ? i.barCount - quantity : i.barCount + quantity,
+          lastMovement: 'Just now',
+        };
       }
-
-      // Update local state
-      setInventory(inventory.map(i => {
-        if (i.id === itemId) {
-          return {
-            ...i,
-            storageCount: from === 'storage' ? i.storageCount - quantity : i.storageCount + quantity,
-            barCount: from === 'bar' ? i.barCount - quantity : i.barCount + quantity,
-            lastMovement: 'Just now',
-          };
-        }
-        return i;
-      }));
-    } catch (err) {
-      console.error('Error transferring inventory:', err);
-    } finally {
-      setShowTransferModal(false);
-      setSelectedItem(null);
-    }
+      return i;
+    }));
+    setShowTransferModal(false);
+    setSelectedItem(null);
   };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
   };
-
-  // Loading state
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
-        <p className="text-foreground-muted">Loading inventory...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -272,14 +176,6 @@ export function Inventory() {
           <p className="text-foreground-secondary">Track stock across storage and bar</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {/* Refresh button */}
-          <button
-            onClick={() => loadData(true)}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-3 bg-card text-foreground rounded-xl hover:bg-card/80 transition-all border border-border disabled:opacity-50"
-          >
-            <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
-          </button>
           {/* PROMINENT SCAN BUTTON */}
           <button
             onClick={() => setShowScanner(true)}
@@ -314,13 +210,6 @@ export function Inventory() {
           </button>
         </div>
       </div>
-
-      {/* Error State */}
-      {error && (
-        <div className="p-4 bg-error/10 border border-error/30 rounded-xl text-error">
-          {error}
-        </div>
-      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

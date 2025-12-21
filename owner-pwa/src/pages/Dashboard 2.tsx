@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
 import {
   Calendar,
@@ -12,11 +12,9 @@ import {
   ArrowDownRight,
   Sparkles,
   RefreshCw,
-  Users,
-  Clock,
 } from 'lucide-react';
 import type { DashboardStats } from '../types';
-import { supabaseApi } from '../services/supabaseApi';
+import api from '../services/api';
 import { SkeletonStatCard, Skeleton } from '../components/Skeleton';
 
 interface DashboardProps {
@@ -138,58 +136,34 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [shiftStats, setShiftStats] = useState({
-    activeShifts: 0,
-    totalHoursToday: 0,
-    totalOvertimeToday: 0,
-    employeesOnBreak: 0,
-  });
-  const [pendingTasks, setPendingTasks] = useState(0);
-
-  const fetchDashboard = useCallback(async (isRefresh = false) => {
+  const fetchDashboard = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
-    try {
-      // Fetch real data from Supabase in parallel
-      const [lowStockResult, shiftSummary, tasksResult] = await Promise.all([
-        supabaseApi.getLowStockItems(),
-        supabaseApi.getShiftsSummary(),
-        supabaseApi.getTasks({ status: 'pending' }),
-      ]);
+    const result = await api.getDashboard();
 
-      // Update stats with real data where available
-      setStats(prev => ({
-        ...prev,
-        lowStockItems: lowStockResult.data?.length ?? defaultStats.lowStockItems,
-        // Keep other stats as defaults until we have those tables
-        todaysBookings: defaultStats.todaysBookings,
-        activeEvents: defaultStats.activeEvents,
-        todaysRevenue: defaultStats.todaysRevenue,
-        weeklyRevenue: defaultStats.weeklyRevenue,
-        monthlyRevenue: defaultStats.monthlyRevenue,
-        totalCustomers: defaultStats.totalCustomers,
-        averageRating: defaultStats.averageRating,
-      }));
-
-      // Set shift-specific stats
-      setShiftStats(shiftSummary);
-
-      // Set pending tasks count
-      setPendingTasks(tasksResult.data?.length ?? 0);
-
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      // Keep using default stats on error
+    if (result.data && typeof result.data === 'object') {
+      const data = result.data as Record<string, unknown>;
+      setStats({
+        todaysBookings: (data.todaysBookings as number) ?? defaultStats.todaysBookings,
+        activeEvents: (data.activeEvents as number) ?? defaultStats.activeEvents,
+        lowStockItems: (data.lowStockItems as number) ?? defaultStats.lowStockItems,
+        todaysRevenue: (data.todaysRevenue as number) ?? defaultStats.todaysRevenue,
+        weeklyRevenue: (data.weeklyRevenue as number) ?? defaultStats.weeklyRevenue,
+        monthlyRevenue: (data.monthlyRevenue as number) ?? defaultStats.monthlyRevenue,
+        totalCustomers: (data.totalCustomers as number) ?? defaultStats.totalCustomers,
+        averageRating: (data.averageRating as number) ?? defaultStats.averageRating,
+      });
     }
+    // If API fails, keep using default/current stats (demo mode)
 
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  };
 
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]);
+  }, []);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
@@ -252,19 +226,20 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </div>
       </div>
 
-      {/* Stats Grid - Real Data */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Staff On Shift"
-          value={shiftStats.activeShifts}
-          icon={<Users size={24} />}
+          title="Today's Bookings"
+          value={stats.todaysBookings}
+          icon={<BookOpen size={24} />}
+          trend={{ value: 12, isPositive: true }}
           gradient="purple"
           delay={0}
         />
         <StatCard
-          title="Hours Worked Today"
-          value={`${shiftStats.totalHoursToday}h`}
-          icon={<Clock size={24} />}
+          title="Active Events"
+          value={stats.activeEvents}
+          icon={<Calendar size={24} />}
           gradient="pink"
           delay={50}
         />
@@ -276,45 +251,12 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           delay={100}
         />
         <StatCard
-          title="Pending Tasks"
-          value={pendingTasks}
-          icon={<Calendar size={24} />}
-          gradient="cyan"
-          delay={150}
-        />
-      </div>
-
-      {/* Secondary Stats Grid - Demo Data */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Today's Bookings"
-          value={stats.todaysBookings}
-          icon={<BookOpen size={24} />}
-          trend={{ value: 12, isPositive: true }}
-          gradient="green"
-          delay={200}
-        />
-        <StatCard
-          title="Active Events"
-          value={stats.activeEvents}
-          icon={<Calendar size={24} />}
-          gradient="pink"
-          delay={250}
-        />
-        <StatCard
           title="Today's Revenue"
           value={formatCurrency(stats.todaysRevenue)}
           icon={<TrendingUp size={24} />}
           trend={{ value: 8, isPositive: true }}
           gradient="green"
-          delay={300}
-        />
-        <StatCard
-          title="Overtime Today"
-          value={`${Math.floor(shiftStats.totalOvertimeToday / 60)}h ${shiftStats.totalOvertimeToday % 60}m`}
-          icon={<Clock size={24} />}
-          gradient={shiftStats.totalOvertimeToday > 0 ? 'orange' : 'green'}
-          delay={350}
+          delay={150}
         />
       </div>
 

@@ -9,27 +9,100 @@ import {
   ChevronDown,
   X,
   FileDown,
-  RefreshCw,
-  Loader2,
 } from 'lucide-react';
-import type { ShiftStatus, ShiftSummary } from '../types/shifts';
+import type { ShiftStatus, ShiftSummary, EmployeePin } from '../types/shifts';
 import { TimesheetExport, type ShiftRecord } from '../components/TimesheetExport';
-import { supabaseApi } from '../services/supabaseApi';
-import type { Employee, Shift } from '../lib/supabase';
 
-// Type for active shift with calculated fields
-interface ActiveShift {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  employeeRole: string;
-  startedAt: string;
-  expectedHours: number;
-  elapsedMinutes: number;
-  isOnBreak: boolean;
-  totalBreakMinutes: number;
-  status: ShiftStatus;
-}
+// Mock employees for the dropdown (will be replaced with API call)
+const mockEmployees: EmployeePin[] = [
+  { id: '1', venueId: 'v1', employeeId: 'emp1', employeeName: 'Tom Weber', employeeRole: 'bartender', pin: '', isActive: true, createdAt: '', updatedAt: '' },
+  { id: '2', venueId: 'v1', employeeId: 'emp2', employeeName: 'Lisa Fischer', employeeRole: 'bartender', pin: '', isActive: true, createdAt: '', updatedAt: '' },
+  { id: '3', venueId: 'v1', employeeId: 'emp3', employeeName: 'Sarah Schmidt', employeeRole: 'manager', pin: '', isActive: true, createdAt: '', updatedAt: '' },
+];
+
+// Mock active shifts
+const mockActiveShifts = [
+  {
+    id: '1',
+    employeeId: 'emp1',
+    employeeName: 'Tom Weber',
+    employeeRole: 'bartender',
+    startedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
+    expectedHours: 8,
+    elapsedMinutes: 180,
+    isOnBreak: false,
+    totalBreakMinutes: 15,
+    status: 'active' as ShiftStatus,
+  },
+];
+
+// Mock completed shifts for timesheet export (past 2 weeks)
+const generateMockShiftHistory = (): ShiftRecord[] => {
+  const shifts: ShiftRecord[] = [];
+  const today = new Date();
+
+  // Generate shifts for the past 14 days
+  for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - dayOffset);
+    const dateStr = date.toISOString().split('T')[0];
+
+    // Skip some days randomly (employees don't work every day)
+    if (dayOffset % 7 === 6) continue; // Skip Sundays
+
+    // Tom Weber - bartender (works most days)
+    if (dayOffset % 3 !== 2) {
+      shifts.push({
+        id: `shift-tom-${dayOffset}`,
+        employeeId: 'emp1',
+        employeeName: 'Tom Weber',
+        employeeRole: 'Bartender',
+        date: dateStr,
+        clockIn: '18:00',
+        clockOut: dayOffset % 4 === 0 ? '03:30' : '02:00',
+        breakMinutes: 30,
+        totalHours: dayOffset % 4 === 0 ? 9 : 7.5,
+        overtime: dayOffset % 4 === 0 ? 1 : 0,
+      });
+    }
+
+    // Lisa Fischer - bartender (weekends mainly)
+    if (dayOffset % 7 <= 1 || dayOffset % 5 === 0) {
+      shifts.push({
+        id: `shift-lisa-${dayOffset}`,
+        employeeId: 'emp2',
+        employeeName: 'Lisa Fischer',
+        employeeRole: 'Bartender',
+        date: dateStr,
+        clockIn: '19:00',
+        clockOut: '03:00',
+        breakMinutes: 15,
+        totalHours: 7.75,
+        overtime: 0,
+      });
+    }
+
+    // Sarah Schmidt - manager (works most days)
+    if (dayOffset % 2 === 0) {
+      shifts.push({
+        id: `shift-sarah-${dayOffset}`,
+        employeeId: 'emp3',
+        employeeName: 'Sarah Schmidt',
+        employeeRole: 'Manager',
+        date: dateStr,
+        clockIn: '17:00',
+        clockOut: '01:00',
+        breakMinutes: 30,
+        totalHours: 7.5,
+        overtime: 0,
+      });
+    }
+  }
+
+  return shifts;
+};
+
+const mockShiftHistory = generateMockShiftHistory();
 
 const statusColors: Record<ShiftStatus, string> = {
   active: 'bg-success/20 text-success',
@@ -49,114 +122,15 @@ function formatTime(date: Date | string): string {
   return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 }
 
-// Convert database shift to UI active shift
-function toActiveShift(shift: Shift & { employee: Employee }): ActiveShift {
-  const clockIn = new Date(shift.clock_in);
-  const now = new Date();
-  const elapsedMinutes = Math.floor((now.getTime() - clockIn.getTime()) / 60000);
-
-  return {
-    id: shift.id,
-    employeeId: shift.employee_id,
-    employeeName: shift.employee?.name || 'Unknown',
-    employeeRole: shift.employee?.role || 'staff',
-    startedAt: shift.clock_in,
-    expectedHours: shift.expected_hours,
-    elapsedMinutes,
-    isOnBreak: !!shift.break_start,
-    totalBreakMinutes: shift.break_minutes || 0,
-    status: shift.break_start ? 'on_break' : (shift.status as ShiftStatus),
-  };
-}
-
-// Convert database shift to export format
-function toShiftRecord(shift: Shift & { employee: Employee }): ShiftRecord {
-  const clockIn = new Date(shift.clock_in);
-  const clockOut = shift.clock_out ? new Date(shift.clock_out) : null;
-
-  return {
-    id: shift.id,
-    employeeId: shift.employee_id,
-    employeeName: shift.employee?.name || 'Unknown',
-    employeeRole: shift.employee?.role || 'staff',
-    date: clockIn.toISOString().split('T')[0],
-    clockIn: clockIn.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
-    clockOut: clockOut?.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) || '',
-    breakMinutes: shift.break_minutes || 0,
-    totalHours: shift.actual_hours || 0,
-    overtime: Math.floor((shift.overtime_minutes || 0) / 60),
-  };
-}
-
 export function Shifts() {
-  const [activeShifts, setActiveShifts] = useState<ActiveShift[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [shiftHistory, setShiftHistory] = useState<ShiftRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [activeShifts, setActiveShifts] = useState(mockActiveShifts);
+  const [employees] = useState(mockEmployees);
   const [showClockIn, setShowClockIn] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [pin, setPin] = useState(['', '', '', '']);
   const [pinError, setPinError] = useState('');
-  const [isClockingIn, setIsClockingIn] = useState(false);
-  const [summary, setSummary] = useState<ShiftSummary>({
-    activeShifts: 0,
-    totalHoursToday: 0,
-    totalOvertimeToday: 0,
-    employeesOnBreak: 0,
-  });
-
-  // Load initial data
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Load employees, active shifts, and summary in parallel
-      const [employeesResult, shiftsResult, summaryResult] = await Promise.all([
-        supabaseApi.getEmployees(),
-        supabaseApi.getActiveShifts(),
-        supabaseApi.getShiftsSummary(),
-      ]);
-
-      if (employeesResult.error) {
-        console.error('Error loading employees:', employeesResult.error);
-      } else if (employeesResult.data) {
-        setEmployees(employeesResult.data);
-      }
-
-      if (shiftsResult.error) {
-        console.error('Error loading shifts:', shiftsResult.error);
-      } else if (shiftsResult.data) {
-        setActiveShifts(shiftsResult.data.map(toActiveShift));
-      }
-
-      setSummary(summaryResult);
-
-      // Load shift history for export (last 14 days)
-      const twoWeeksAgo = new Date();
-      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-      const historyResult = await supabaseApi.getShiftsHistory({
-        startDate: twoWeeksAgo.toISOString(),
-      });
-
-      if (historyResult.data) {
-        setShiftHistory(historyResult.data.map(toShiftRecord));
-      }
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Failed to load data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   // Update timers every second
   useEffect(() => {
     const interval = setInterval(() => {
@@ -199,166 +173,61 @@ export function Shifts() {
   }, []);
 
   // Clock in with PIN verification
-  const handleClockIn = async () => {
+  const handleClockIn = () => {
     const enteredPin = pin.join('');
     if (enteredPin.length !== 4) {
       setPinError('Please enter 4-digit PIN');
       return;
     }
-
-    setIsClockingIn(true);
-    setPinError('');
-
-    try {
-      // Verify PIN
-      const { valid, employee } = await supabaseApi.verifyEmployeePin(selectedEmployee, enteredPin);
-
-      if (!valid || !employee) {
-        setPinError('Invalid PIN. Please try again.');
-        setIsClockingIn(false);
-        return;
-      }
-
-      // Clock in
-      const { data: shift, error } = await supabaseApi.clockIn(selectedEmployee);
-
-      if (error) {
-        setPinError('Failed to clock in. Please try again.');
-        setIsClockingIn(false);
-        return;
-      }
-
-      if (shift) {
-        // Add to active shifts
-        setActiveShifts(prev => [...prev, {
-          id: shift.id,
-          employeeId: employee.id,
-          employeeName: employee.name,
-          employeeRole: employee.role,
-          startedAt: shift.clock_in,
-          expectedHours: shift.expected_hours,
-          elapsedMinutes: 0,
-          isOnBreak: false,
-          totalBreakMinutes: 0,
-          status: 'active',
-        }]);
-
-        // Update summary
-        setSummary(prev => ({
-          ...prev,
-          activeShifts: prev.activeShifts + 1,
-        }));
-      }
-
+    // TODO: Call API to verify PIN and clock in
+    // For now, mock success
+    const employee = employees.find(e => e.employeeId === selectedEmployee);
+    if (employee) {
+      setActiveShifts([...activeShifts, {
+        id: Date.now().toString(),
+        employeeId: employee.employeeId,
+        employeeName: employee.employeeName,
+        employeeRole: employee.employeeRole,
+        startedAt: new Date().toISOString(),
+        expectedHours: 8,
+        elapsedMinutes: 0,
+        isOnBreak: false,
+        totalBreakMinutes: 0,
+        status: 'active',
+      }]);
       setShowClockIn(false);
       setSelectedEmployee('');
       setPin(['', '', '', '']);
-    } catch (err) {
-      console.error('Clock in error:', err);
-      setPinError('An error occurred. Please try again.');
-    } finally {
-      setIsClockingIn(false);
     }
   };
 
   // Toggle break
-  const toggleBreak = async (shiftId: string) => {
-    const shift = activeShifts.find(s => s.id === shiftId);
-    if (!shift) return;
-
-    try {
-      if (shift.isOnBreak) {
-        // End break
-        const { error } = await supabaseApi.endBreak(shiftId);
-        if (error) {
-          console.error('Error ending break:', error);
-          return;
-        }
-      } else {
-        // Start break
-        const { error } = await supabaseApi.startBreak(shiftId);
-        if (error) {
-          console.error('Error starting break:', error);
-          return;
-        }
-      }
-
-      // Update UI
-      setActiveShifts(shifts =>
-        shifts.map(s =>
-          s.id === shiftId
-            ? { ...s, isOnBreak: !s.isOnBreak, status: s.isOnBreak ? 'active' : 'on_break' }
-            : s
-        )
-      );
-
-      // Update summary
-      setSummary(prev => ({
-        ...prev,
-        employeesOnBreak: shift.isOnBreak ? prev.employeesOnBreak - 1 : prev.employeesOnBreak + 1,
-      }));
-    } catch (err) {
-      console.error('Toggle break error:', err);
-    }
+  const toggleBreak = (shiftId: string) => {
+    setActiveShifts(shifts =>
+      shifts.map(s =>
+        s.id === shiftId
+          ? { ...s, isOnBreak: !s.isOnBreak, status: s.isOnBreak ? 'active' : 'on_break' }
+          : s
+      )
+    );
   };
 
   // Clock out
-  const clockOut = async (shiftId: string) => {
-    try {
-      const { error } = await supabaseApi.clockOut(shiftId);
-      if (error) {
-        console.error('Error clocking out:', error);
-        return;
-      }
-
-      // Remove from active shifts
-      setActiveShifts(shifts => shifts.filter(s => s.id !== shiftId));
-
-      // Update summary
-      setSummary(prev => ({
-        ...prev,
-        activeShifts: prev.activeShifts - 1,
-      }));
-
-      // Reload history
-      const twoWeeksAgo = new Date();
-      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-      const historyResult = await supabaseApi.getShiftsHistory({
-        startDate: twoWeeksAgo.toISOString(),
-      });
-
-      if (historyResult.data) {
-        setShiftHistory(historyResult.data.map(toShiftRecord));
-      }
-    } catch (err) {
-      console.error('Clock out error:', err);
-    }
+  const clockOut = (shiftId: string) => {
+    // TODO: Call API
+    setActiveShifts(shifts => shifts.filter(s => s.id !== shiftId));
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="glass-card p-6 rounded-xl text-center">
-          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-error" />
-          <p className="text-foreground mb-4">{error}</p>
-          <button
-            onClick={loadData}
-            className="px-4 py-2 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Summary stats
+  const summary: ShiftSummary = {
+    activeShifts: activeShifts.length,
+    totalHoursToday: activeShifts.reduce((sum, s) => sum + s.elapsedMinutes / 60, 0),
+    totalOvertimeToday: activeShifts.reduce((sum, s) => {
+      const overtime = s.elapsedMinutes / 60 - s.expectedHours;
+      return sum + (overtime > 0 ? overtime * 60 : 0);
+    }, 0),
+    employeesOnBreak: activeShifts.filter(s => s.isOnBreak).length,
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
@@ -369,13 +238,6 @@ export function Shifts() {
           <p className="text-foreground-muted">{summary.activeShifts} active now</p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={loadData}
-            className="p-2 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all"
-            title="Refresh"
-          >
-            <RefreshCw size={20} />
-          </button>
           <button
             onClick={() => setShowExport(true)}
             className="p-2 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all"
@@ -453,11 +315,8 @@ export function Shifts() {
                       <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-md ${statusColors[shift.status]}`}>
                         {shift.isOnBreak ? 'On Break' : 'Active'}
                       </span>
-                      <span className="text-foreground-dim text-xs capitalize">
-                        {shift.employeeRole}
-                      </span>
                       <span className="text-foreground-dim text-xs">
-                        • Started {formatTime(shift.startedAt)}
+                        Started {formatTime(shift.startedAt)}
                       </span>
                     </div>
                   </div>
@@ -525,8 +384,8 @@ export function Shifts() {
                 >
                   <option value="">Choose employee...</option>
                   {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.role})
+                    <option key={emp.employeeId} value={emp.employeeId}>
+                      {emp.employeeName} ({emp.employeeRole})
                     </option>
                   ))}
                 </select>
@@ -570,7 +429,6 @@ export function Shifts() {
                   setShowClockIn(false);
                   setSelectedEmployee('');
                   setPin(['', '', '', '']);
-                  setPinError('');
                 }}
                 className="flex-1 px-4 py-2 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all"
               >
@@ -578,17 +436,10 @@ export function Shifts() {
               </button>
               <button
                 onClick={handleClockIn}
-                disabled={!selectedEmployee || pin.join('').length !== 4 || isClockingIn}
-                className="flex-1 px-4 py-2 bg-gradient-primary text-white rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={!selectedEmployee || pin.join('').length !== 4}
+                className="flex-1 px-4 py-2 bg-gradient-primary text-white rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isClockingIn ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    <span>Clocking In...</span>
-                  </>
-                ) : (
-                  <span>Clock In</span>
-                )}
+                Clock In
               </button>
             </div>
           </div>
@@ -607,34 +458,30 @@ export function Shifts() {
               </button>
             </div>
 
+            {/* Mock history - will be replaced with API data */}
             <div className="space-y-3">
-              {shiftHistory.length === 0 ? (
-                <p className="text-center text-foreground-muted py-8">No shift history found</p>
-              ) : (
-                shiftHistory.slice(0, 20).map((shift) => (
-                  <div key={shift.id} className="flex items-center gap-4 p-3 bg-white/5 rounded-xl">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500/50 to-accent-pink/50 flex items-center justify-center text-white font-bold">
-                      {shift.employeeName.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-foreground font-medium">{shift.employeeName}</p>
-                      <p className="text-foreground-muted text-sm">
-                        {new Date(shift.date).toLocaleDateString('de-DE', {
-                          weekday: 'short',
-                          day: 'numeric',
-                          month: 'short',
-                        })} • {shift.clockIn} - {shift.clockOut || 'Active'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-foreground font-mono">{shift.totalHours.toFixed(1)}h</p>
-                      {shift.overtime > 0 && (
-                        <p className="text-error text-xs">+{shift.overtime}h OT</p>
-                      )}
-                    </div>
+              {[
+                { name: 'Tom Weber', date: 'Today', hours: '3h 45m', overtime: 0 },
+                { name: 'Lisa Fischer', date: 'Yesterday', hours: '8h 30m', overtime: 30 },
+                { name: 'Sarah Schmidt', date: 'Yesterday', hours: '7h 15m', overtime: 0 },
+                { name: 'Tom Weber', date: '2 days ago', hours: '9h 15m', overtime: 75 },
+              ].map((shift, i) => (
+                <div key={i} className="flex items-center gap-4 p-3 bg-white/5 rounded-xl">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500/50 to-accent-pink/50 flex items-center justify-center text-white font-bold">
+                    {shift.name.split(' ').map(n => n[0]).join('')}
                   </div>
-                ))
-              )}
+                  <div className="flex-1">
+                    <p className="text-foreground font-medium">{shift.name}</p>
+                    <p className="text-foreground-muted text-sm">{shift.date}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-foreground font-mono">{shift.hours}</p>
+                    {shift.overtime > 0 && (
+                      <p className="text-error text-xs">+{shift.overtime}m overtime</p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -644,7 +491,7 @@ export function Shifts() {
       <TimesheetExport
         isOpen={showExport}
         onClose={() => setShowExport(false)}
-        shifts={shiftHistory}
+        shifts={mockShiftHistory}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import {
   Plus,
   Check,
@@ -15,38 +15,94 @@ import {
   Calendar,
   Trash2,
   Image,
-  Loader2,
-  RefreshCw,
 } from 'lucide-react';
 import { PhotoUpload } from '../components/PhotoUpload';
 import { cn } from '../lib/utils';
 import type { Task, TaskStatus, TaskPriority, TaskCategory } from '../types/tasks';
 import { TASK_CATEGORIES, TASK_PRIORITIES, TASK_STATUSES } from '../types/tasks';
 import { useAuth } from '../contexts/AuthContext';
-import { supabaseApi } from '../services/supabaseApi';
-import type { Employee, Task as SupabaseTask } from '../lib/supabase';
 
-// Map Supabase task to local Task interface
-const mapSupabaseTaskToLocal = (supabaseTask: SupabaseTask & { assigned_employee: Employee | null }): Task => ({
-  id: supabaseTask.id,
-  title: supabaseTask.title,
-  description: supabaseTask.description || undefined,
-  category: supabaseTask.category,
-  priority: supabaseTask.priority,
-  status: supabaseTask.status,
-  assignedTo: supabaseTask.assigned_to || '',
-  assignedBy: '', // Not tracked in DB
-  dueDate: supabaseTask.due_date?.split('T')[0] || undefined,
-  dueTime: supabaseTask.due_date ? new Date(supabaseTask.due_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : undefined,
-  shiftId: supabaseTask.shift_id || undefined,
-  completedAt: supabaseTask.completed_at || undefined,
-  completedPhoto: supabaseTask.photo_url || undefined,
-  approvedAt: supabaseTask.approved_by ? new Date().toISOString() : undefined, // Approximate
-  approvedBy: supabaseTask.approved_by || undefined,
-  rejectionReason: supabaseTask.rejection_reason || undefined,
-  createdAt: supabaseTask.created_at,
-  updatedAt: supabaseTask.updated_at,
-});
+// Demo employees for assignment dropdown
+const DEMO_EMPLOYEES = [
+  { id: '1', name: 'Max Müller' },
+  { id: '2', name: 'Sarah Schmidt' },
+  { id: '3', name: 'Tom Weber' },
+  { id: '4', name: 'Lisa Fischer' },
+  { id: '5', name: 'Hans Becker' },
+];
+
+// Mock tasks for demo
+const mockTasks: Task[] = [
+  {
+    id: '1',
+    title: 'Clean bar area',
+    description: 'Wipe down bar top, clean beer taps, organize bottles',
+    assignedTo: '3',
+    assignedBy: '1',
+    dueTime: '22:00',
+    status: 'pending',
+    category: 'cleaning',
+    priority: 'high',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Restock beer fridge',
+    description: 'Check inventory and restock all refrigerated beverages',
+    assignedTo: '4',
+    assignedBy: '1',
+    dueTime: '18:00',
+    status: 'in_progress',
+    category: 'inventory',
+    priority: 'medium',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    title: 'Prepare garnishes',
+    description: 'Cut limes, lemons, prepare mint leaves',
+    assignedTo: '3',
+    assignedBy: '2',
+    dueTime: '17:00',
+    status: 'completed',
+    category: 'bar',
+    priority: 'medium',
+    completedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '4',
+    title: 'Count cash register',
+    description: 'End of night cash count and reconciliation',
+    assignedTo: '2',
+    assignedBy: '1',
+    dueTime: '03:00',
+    status: 'pending',
+    category: 'closing',
+    priority: 'urgent',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '5',
+    title: 'Deep clean kitchen',
+    description: 'Full kitchen deep clean including hood vents',
+    assignedTo: '5',
+    assignedBy: '1',
+    dueDate: new Date().toISOString().split('T')[0],
+    status: 'approved',
+    category: 'cleaning',
+    priority: 'low',
+    completedAt: new Date(Date.now() - 86400000).toISOString(),
+    approvedAt: new Date().toISOString(),
+    approvedBy: '1',
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
 
 const getStatusIcon = (status: TaskStatus) => {
   switch (status) {
@@ -72,11 +128,7 @@ const getCategoryInfo = (category: TaskCategory) => {
 
 export function Tasks() {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [showAdd, setShowAdd] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -95,47 +147,6 @@ export function Tasks() {
     priority: 'medium' as TaskPriority,
   });
 
-  // Load data from Supabase
-  const loadData = useCallback(async (showRefreshing = false) => {
-    try {
-      if (showRefreshing) {
-        setRefreshing(true);
-      }
-      setError(null);
-
-      // Fetch employees and tasks in parallel
-      const [employeesResult, tasksResult] = await Promise.all([
-        supabaseApi.getEmployees(),
-        supabaseApi.getTasks(),
-      ]);
-
-      if (employeesResult.error) {
-        console.error('Error loading employees:', employeesResult.error);
-      } else if (employeesResult.data) {
-        setEmployees(employeesResult.data);
-      }
-
-      if (tasksResult.error) {
-        console.error('Error loading tasks:', tasksResult.error);
-        setError('Failed to load tasks');
-      } else if (tasksResult.data) {
-        // Map Supabase tasks to local Task format
-        const mappedTasks = tasksResult.data.map(mapSupabaseTaskToLocal);
-        setTasks(mappedTasks);
-      }
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Failed to load data');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   // Filter tasks
   const filteredTasks = tasks.filter(task => {
     if (filterStatus !== 'all' && task.status !== filterStatus) return false;
@@ -151,55 +162,31 @@ export function Tasks() {
   const rejectedTasks = filteredTasks.filter(t => t.status === 'rejected');
 
   const getEmployeeName = (id: string) => {
-    return employees.find(e => e.id === id)?.name || 'Unknown';
+    return DEMO_EMPLOYEES.find(e => e.id === id)?.name || 'Unknown';
   };
 
-  const updateTaskStatus = async (taskId: string, newStatus: TaskStatus, photo?: string) => {
-    try {
-      const updates: Partial<SupabaseTask> = {
-        status: newStatus
-      };
-
-      if (newStatus === 'completed') {
-        updates.completed_at = new Date().toISOString();
-        if (photo) {
-          updates.photo_url = photo;
-        }
-      } else if (newStatus === 'approved') {
-        updates.approved_by = user?.id || null;
-      }
-
-      const { error } = await supabaseApi.updateTask(taskId, updates);
-
-      if (error) {
-        console.error('Error updating task:', error);
-        return;
-      }
-
-      // Update local state
-      setTasks(tasks.map(t => {
-        if (t.id === taskId) {
-          const localUpdates: Partial<Task> = { status: newStatus, updatedAt: new Date().toISOString() };
-          if (newStatus === 'completed') {
-            localUpdates.completedAt = new Date().toISOString();
-            if (photo) {
-              localUpdates.completedPhoto = photo;
-            }
-          } else if (newStatus === 'approved') {
-            localUpdates.approvedAt = new Date().toISOString();
-            localUpdates.approvedBy = user?.id || '1';
+  const updateTaskStatus = (taskId: string, newStatus: TaskStatus, photo?: string) => {
+    setTasks(tasks.map(t => {
+      if (t.id === taskId) {
+        const updates: Partial<Task> = { status: newStatus, updatedAt: new Date().toISOString() };
+        if (newStatus === 'in_progress') {
+          // Task started
+        } else if (newStatus === 'completed') {
+          updates.completedAt = new Date().toISOString();
+          if (photo) {
+            updates.completedPhoto = photo;
           }
-          return { ...t, ...localUpdates };
+        } else if (newStatus === 'approved') {
+          updates.approvedAt = new Date().toISOString();
+          updates.approvedBy = user?.id || '1';
         }
-        return t;
-      }));
-    } catch (err) {
-      console.error('Error updating task status:', err);
-    } finally {
-      setSelectedTask(null);
-      setShowCompleteModal(false);
-      setCompletionPhoto('');
-    }
+        return { ...t, ...updates };
+      }
+      return t;
+    }));
+    setSelectedTask(null);
+    setShowCompleteModal(false);
+    setCompletionPhoto('');
   };
 
   // Open completion modal with photo upload
@@ -215,112 +202,55 @@ export function Tasks() {
     }
   };
 
-  const rejectTask = async (taskId: string, reason: string) => {
-    try {
-      const { error } = await supabaseApi.updateTask(taskId, {
-        status: 'rejected',
-        rejection_reason: reason,
-      });
-
-      if (error) {
-        console.error('Error rejecting task:', error);
-        return;
+  const rejectTask = (taskId: string, reason: string) => {
+    setTasks(tasks.map(t => {
+      if (t.id === taskId) {
+        return {
+          ...t,
+          status: 'rejected' as TaskStatus,
+          rejectionReason: reason,
+          updatedAt: new Date().toISOString()
+        };
       }
-
-      setTasks(tasks.map(t => {
-        if (t.id === taskId) {
-          return {
-            ...t,
-            status: 'rejected' as TaskStatus,
-            rejectionReason: reason,
-            updatedAt: new Date().toISOString()
-          };
-        }
-        return t;
-      }));
-    } catch (err) {
-      console.error('Error rejecting task:', err);
-    } finally {
-      setSelectedTask(null);
-    }
+      return t;
+    }));
+    setSelectedTask(null);
   };
 
-  const deleteTask = async (taskId: string) => {
-    try {
-      const { error } = await supabaseApi.deleteTask(taskId);
-
-      if (error) {
-        console.error('Error deleting task:', error);
-        return;
-      }
-
-      setTasks(tasks.filter(t => t.id !== taskId));
-    } catch (err) {
-      console.error('Error deleting task:', err);
-    } finally {
-      setSelectedTask(null);
-    }
+  const deleteTask = (taskId: string) => {
+    setTasks(tasks.filter(t => t.id !== taskId));
+    setSelectedTask(null);
   };
 
-  const addTask = async () => {
+  const addTask = () => {
     if (!newTask.title.trim()) return;
 
-    try {
-      // Combine date and time for due_date
-      let dueDate: string | null = null;
-      if (newTask.dueDate) {
-        dueDate = newTask.dueTime
-          ? `${newTask.dueDate}T${newTask.dueTime}:00`
-          : `${newTask.dueDate}T23:59:00`;
-      }
+    const task: Task = {
+      id: Date.now().toString(),
+      title: newTask.title,
+      description: newTask.description,
+      assignedTo: newTask.assignedTo || DEMO_EMPLOYEES[0].id,
+      assignedBy: user?.id || '1',
+      dueDate: newTask.dueDate,
+      dueTime: newTask.dueTime,
+      status: 'pending',
+      category: newTask.category,
+      priority: newTask.priority,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
-      const { data, error } = await supabaseApi.createTask({
-        title: newTask.title,
-        description: newTask.description || null,
-        assigned_to: newTask.assignedTo || (employees[0]?.id || null),
-        due_date: dueDate,
-        category: newTask.category,
-        priority: newTask.priority,
-        status: 'pending',
-      });
-
-      if (error) {
-        console.error('Error creating task:', error);
-        return;
-      }
-
-      if (data) {
-        // Add to local state
-        const task: Task = {
-          id: data.id,
-          title: data.title,
-          description: data.description || undefined,
-          assignedTo: data.assigned_to || '',
-          assignedBy: user?.id || '',
-          dueDate: newTask.dueDate || undefined,
-          dueTime: newTask.dueTime || undefined,
-          status: 'pending',
-          category: data.category,
-          priority: data.priority,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        };
-        setTasks([task, ...tasks]);
-      }
-
-      setNewTask({
-        title: '',
-        description: '',
-        assignedTo: '',
-        dueDate: '',
-        dueTime: '',
-        category: 'general',
-        priority: 'medium',
-      });
-      setShowAdd(false);
-    } catch (err) {
-      console.error('Error creating task:', err);
-    }
+    setTasks([task, ...tasks]);
+    setNewTask({
+      title: '',
+      description: '',
+      assignedTo: '',
+      dueDate: '',
+      dueTime: '',
+      category: 'general',
+      priority: 'medium',
+    });
+    setShowAdd(false);
   };
 
   const TaskCard = ({ task }: { task: Task }) => {
@@ -425,16 +355,6 @@ export function Tasks() {
     );
   };
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
-        <p className="text-foreground-muted">Loading tasks...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in pb-20">
       {/* Header */}
@@ -446,13 +366,6 @@ export function Tasks() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => loadData(true)}
-            disabled={refreshing}
-            className="p-2 rounded-xl bg-white/10 text-foreground hover:bg-white/20 transition-all disabled:opacity-50"
-          >
-            <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
-          </button>
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={cn(
@@ -473,13 +386,6 @@ export function Tasks() {
           </button>
         </div>
       </div>
-
-      {/* Error State */}
-      {error && (
-        <div className="p-4 bg-error/10 border border-error/30 rounded-xl text-error">
-          {error}
-        </div>
-      )}
 
       {/* Filters */}
       {showFilters && (
@@ -554,7 +460,7 @@ export function Tasks() {
                 className="w-full px-3 py-2 bg-white/5 border border-border rounded-xl text-foreground focus:outline-none focus:border-primary-500"
               >
                 <option value="">Select employee...</option>
-                {employees.map(e => (
+                {DEMO_EMPLOYEES.map(e => (
                   <option key={e.id} value={e.id}>{e.name}</option>
                 ))}
               </select>
