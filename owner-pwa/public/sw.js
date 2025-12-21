@@ -152,7 +152,7 @@ self.addEventListener('push', (event) => {
     title: 'WiesbadenAfterDark',
     body: 'You have a new notification',
     icon: '/icon-192.png',
-    badge: '/icon-96.png',
+    badge: '/icon-192.png',
   };
 
   if (event.data) {
@@ -163,15 +163,43 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  // Configure notification options
+  const notificationOptions = {
+    body: data.body,
+    icon: data.icon,
+    badge: data.badge,
+    tag: data.tag || 'default',
+    requireInteraction: data.requireInteraction || false,
+    data: data.data || {},
+    vibrate: [200, 100, 200], // Vibration pattern
+  };
+
+  // Add action buttons for task approval notifications
+  if (data.tag === 'task-approval' || data.tag === 'task-completed') {
+    notificationOptions.actions = [
+      { action: 'approve-task', title: '✓ Genehmigen' },
+      { action: 'view-task', title: 'Anzeigen' },
+    ];
+  }
+
+  // Add action buttons for shift notifications
+  if (data.tag === 'shift-overtime') {
+    notificationOptions.actions = [
+      { action: 'view-shift', title: 'Schicht anzeigen' },
+      { action: 'dismiss', title: 'OK' },
+    ];
+  }
+
+  // Add action buttons for inventory alerts
+  if (data.tag === 'inventory-low' || data.tag === 'stock-low') {
+    notificationOptions.actions = [
+      { action: 'view-inventory', title: 'Inventar öffnen' },
+      { action: 'dismiss', title: 'Später' },
+    ];
+  }
+
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon,
-      badge: data.badge,
-      tag: data.tag || 'default',
-      requireInteraction: data.requireInteraction || false,
-      data: data.data || {},
-    })
+    self.registration.showNotification(data.title, notificationOptions)
   );
 });
 
@@ -192,7 +220,7 @@ self.addEventListener('notificationclick', (event) => {
     urlToOpen = '/?page=tasks';
   } else if (notificationTag.startsWith('booking-')) {
     urlToOpen = '/?page=bookings';
-  } else if (notificationTag.startsWith('stock-')) {
+  } else if (notificationTag.startsWith('stock-') || notificationTag.startsWith('inventory-')) {
     urlToOpen = '/?page=inventory';
   } else if (notificationTag.startsWith('event-')) {
     urlToOpen = '/?page=events';
@@ -205,10 +233,16 @@ self.addEventListener('notificationclick', (event) => {
     console.log('[SW] Notification action:', event.action);
     switch (event.action) {
       case 'approve-task':
-        urlToOpen = `/?page=tasks&action=approve&taskId=${notificationData.taskId}`;
+        urlToOpen = `/?page=tasks&action=approve&taskId=${notificationData.taskId || ''}`;
+        break;
+      case 'view-task':
+        urlToOpen = '/?page=tasks';
         break;
       case 'view-shift':
-        urlToOpen = `/?page=shifts&shiftId=${notificationData.shiftId}`;
+        urlToOpen = `/?page=shifts&shiftId=${notificationData.shiftId || ''}`;
+        break;
+      case 'view-inventory':
+        urlToOpen = '/?page=inventory';
         break;
       case 'dismiss':
         return; // Just close the notification

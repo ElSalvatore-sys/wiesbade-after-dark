@@ -1,15 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Login, Dashboard, Events, Bookings, Inventory, Employees, Shifts, Tasks, Analytics, Settings } from './pages';
 import { DashboardLayout } from './components/layout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import OfflineBanner from './components/OfflineBanner';
+import { pushNotificationService } from './services/pushNotifications';
+import { registerServiceWorker } from './services/notifications';
 
 type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 'shifts' | 'tasks' | 'analytics' | 'settings';
 
 function AppContent() {
   const { user, isAuthenticated, logout, hasPermission } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
+
+  // Initialize push notifications and realtime listeners when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user?.venueId && user?.role) {
+      // Register service worker
+      registerServiceWorker();
+
+      // Setup realtime notifications for venue
+      pushNotificationService.setupRealtime(user.venueId, user.role);
+
+      // Cleanup on logout
+      return () => {
+        pushNotificationService.cleanupRealtime();
+      };
+    }
+  }, [isAuthenticated, user?.venueId, user?.role]);
 
   const handleLogin = () => {
     // Auth state is managed by context
