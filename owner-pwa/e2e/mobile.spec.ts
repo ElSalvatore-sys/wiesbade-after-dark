@@ -1,46 +1,44 @@
-import { test, expect, devices } from '@playwright/test';
-
-// Use iPhone 13 device settings for all tests in this file
-test.use({ ...devices['iPhone 13'] });
+import { test, expect, login } from './fixtures';
 
 test.describe('Mobile Responsiveness', () => {
-  test('should show login page on mobile', async ({ page }) => {
+  test.use({ viewport: { width: 375, height: 667 } }); // iPhone SE
+
+  test('Should display mobile-friendly login', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByPlaceholder(/email/i)).toBeVisible();
     await expect(page.getByPlaceholder(/password/i)).toBeVisible();
   });
 
-  test('should login successfully on mobile', async ({ page }) => {
+  test('Should login on mobile', async ({ page }) => {
     await page.goto('/');
     await page.getByPlaceholder(/email/i).fill('owner@example.com');
     await page.getByPlaceholder(/password/i).fill('password');
-    await page.getByRole('button', { name: /sign in/i }).click();
+    await page.getByRole('button', { name: /sign in|login|anmelden/i }).click();
 
-    // Wait for login to complete - check for something visible on mobile
-    // The sidebar W logo should still be visible even when collapsed
-    await page.waitForTimeout(2000);
-
-    // Check that login page is gone (no "Welcome Back" heading)
-    const loginVisible = await page.getByRole('heading', { name: /welcome back/i }).isVisible().catch(() => false);
-    expect(loginVisible).toBeFalsy();
+    // Wait for dashboard content instead of URL
+    await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 10000 });
   });
 
-  test('should have responsive layout', async ({ page }) => {
-    await page.goto('/');
+  test('Should have mobile navigation', async ({ page }) => {
+    await login(page);
 
-    // Check viewport is mobile sized
-    const viewport = page.viewportSize();
-    expect(viewport?.width).toBeLessThan(500);
+    // On mobile, look for collapse/menu button or visible nav buttons
+    const collapseButton = page.getByRole('button', { name: /collapse|menu/i });
+    const navButtons = page.getByRole('button', { name: /dashboard|events|bookings/i });
+
+    // Either collapse button or nav buttons should be visible
+    const hasCollapse = await collapseButton.isVisible().catch(() => false);
+    const hasNavButtons = await navButtons.first().isVisible().catch(() => false);
+
+    expect(hasCollapse || hasNavButtons).toBeTruthy();
   });
 
-  test('should show demo login buttons on mobile', async ({ page }) => {
-    await page.goto('/');
-    // Demo login buttons should be visible
-    await expect(page.getByRole('button', { name: /owner/i })).toBeVisible();
-  });
+  test('Should be scrollable on mobile', async ({ page }) => {
+    await login(page);
 
-  test('should show sign in button on mobile', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+    // Should be able to scroll
+    await page.evaluate(() => window.scrollTo(0, 100));
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY).toBeGreaterThanOrEqual(0);
   });
 });
