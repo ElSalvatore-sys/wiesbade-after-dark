@@ -170,7 +170,7 @@ final class RealCheckInService: CheckInServiceProtocol {
 
         let response: CheckInHistoryResponse = try await apiClient.get(
             APIConfig.Endpoints.checkInHistory(userId: userId.uuidString),
-            parameters: venueId != nil ? ["venueId": venueId!.uuidString] : nil,
+            parameters: venueId.map { ["venueId": $0.uuidString] },
             requiresAuth: true
         )
 

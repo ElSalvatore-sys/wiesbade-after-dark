@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import WidgetKit
 
 @main
 struct WiesbadenAfterDarkApp: App {
@@ -60,6 +61,9 @@ struct WiesbadenAfterDarkApp: App {
         Task { @MainActor in
             PointsExpirationService.shared.registerBackgroundTask()
         }
+
+        // Configure widget extension with API credentials
+        WidgetHelper.configure()
 
         // Configure UITabBar appearance for consistent look across iOS versions
         configureTabBarAppearance()

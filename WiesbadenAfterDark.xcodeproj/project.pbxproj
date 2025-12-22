@@ -6,7 +6,45 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		472E5B4F6E259280448BE572 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD0E88120AC538BAEAB4D0A5 /* Assets.xcassets */; };
+		842B9D4530FA9D3A55DA2DAE /* WiesbadenAfterDarkWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 06695B7CAE9444965E08FADF /* WiesbadenAfterDarkWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AF7B79ECD15F8CA435073E74 /* WidgetSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BDEE321E37392CAB58FB852 /* WidgetSettings.swift */; };
+		C048AC53A27DA34DA10D9846 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE33442987066D921B332E5D /* Foundation.framework */; };
+		CA20DBB6C6BAD80849A8F7BB /* WiesbadenAfterDarkWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 714691F79AD2F89532FB9037 /* WiesbadenAfterDarkWidget.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3AF790CEEF90A47FA20125EF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF278C532EBAFD59000553A3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 89504760AA05BAF3FACD8110;
+			remoteInfo = WiesbadenAfterDarkWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		7E28B9409E6D3DC6006DD033 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				842B9D4530FA9D3A55DA2DAE /* WiesbadenAfterDarkWidgetExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		06695B7CAE9444965E08FADF /* WiesbadenAfterDarkWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WiesbadenAfterDarkWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A0D11E3733FDE5A15E744A2 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = WiesbadenAfterDarkWidget/Info.plist; sourceTree = "<group>"; };
+		714691F79AD2F89532FB9037 /* WiesbadenAfterDarkWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WiesbadenAfterDarkWidget.swift; path = WiesbadenAfterDarkWidget/WiesbadenAfterDarkWidget.swift; sourceTree = "<group>"; };
+		9BDEE321E37392CAB58FB852 /* WidgetSettings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WidgetSettings.swift; path = WiesbadenAfterDarkWidget/WidgetSettings.swift; sourceTree = "<group>"; };
+		AE33442987066D921B332E5D /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		CD0E88120AC538BAEAB4D0A5 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = WiesbadenAfterDarkWidget/Assets.xcassets; sourceTree = "<group>"; };
 		CF278C5B2EBAFD59000553A3 /* WiesbadenAfterDark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WiesbadenAfterDark.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -32,6 +70,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		80B3E4B0BCA69C9D730CF3C3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C048AC53A27DA34DA10D9846 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CF278C582EBAFD59000553A3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -47,6 +93,8 @@
 			children = (
 				CF278C5D2EBAFD59000553A3 /* WiesbadenAfterDark */,
 				CF278C5C2EBAFD59000553A3 /* Products */,
+				E86A7A570A8365F63E7522E8 /* Frameworks */,
+				E884DBBCCE13A9B369A96D95 /* WiesbadenAfterDarkWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -54,13 +102,58 @@
 			isa = PBXGroup;
 			children = (
 				CF278C5B2EBAFD59000553A3 /* WiesbadenAfterDark.app */,
+				06695B7CAE9444965E08FADF /* WiesbadenAfterDarkWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E86A7A570A8365F63E7522E8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				EC90868D17F4BA48F02033E4 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E884DBBCCE13A9B369A96D95 /* WiesbadenAfterDarkWidget */ = {
+			isa = PBXGroup;
+			children = (
+				714691F79AD2F89532FB9037 /* WiesbadenAfterDarkWidget.swift */,
+				1A0D11E3733FDE5A15E744A2 /* Info.plist */,
+				CD0E88120AC538BAEAB4D0A5 /* Assets.xcassets */,
+				9BDEE321E37392CAB58FB852 /* WidgetSettings.swift */,
+			);
+			name = WiesbadenAfterDarkWidget;
+			sourceTree = "<group>";
+		};
+		EC90868D17F4BA48F02033E4 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				AE33442987066D921B332E5D /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		89504760AA05BAF3FACD8110 /* WiesbadenAfterDarkWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FB586EBAE92AD6F439C4DB6F /* Build configuration list for PBXNativeTarget "WiesbadenAfterDarkWidgetExtension" */;
+			buildPhases = (
+				0AF9847F012F286B3998D402 /* Sources */,
+				80B3E4B0BCA69C9D730CF3C3 /* Frameworks */,
+				7AB3A3D742AD10518A345136 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WiesbadenAfterDarkWidgetExtension;
+			productName = WiesbadenAfterDarkWidgetExtension;
+			productReference = 06695B7CAE9444965E08FADF /* WiesbadenAfterDarkWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		CF278C5A2EBAFD59000553A3 /* WiesbadenAfterDark */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CF278C682EBAFD59000553A3 /* Build configuration list for PBXNativeTarget "WiesbadenAfterDark" */;
@@ -68,17 +161,17 @@
 				CF278C572EBAFD59000553A3 /* Sources */,
 				CF278C582EBAFD59000553A3 /* Frameworks */,
 				CF278C592EBAFD59000553A3 /* Resources */,
+				7E28B9409E6D3DC6006DD033 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				DE9457DDC4E26893D4D78CCB /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				CF278C5D2EBAFD59000553A3 /* WiesbadenAfterDark */,
 			);
 			name = WiesbadenAfterDark;
-			packageProductDependencies = (
-			);
 			productName = WiesbadenAfterDark;
 			productReference = CF278C5B2EBAFD59000553A3 /* WiesbadenAfterDark.app */;
 			productType = "com.apple.product-type.application";
@@ -113,11 +206,20 @@
 			projectRoot = "";
 			targets = (
 				CF278C5A2EBAFD59000553A3 /* WiesbadenAfterDark */,
+				89504760AA05BAF3FACD8110 /* WiesbadenAfterDarkWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		7AB3A3D742AD10518A345136 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				472E5B4F6E259280448BE572 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CF278C592EBAFD59000553A3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -128,6 +230,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0AF9847F012F286B3998D402 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CA20DBB6C6BAD80849A8F7BB /* WiesbadenAfterDarkWidget.swift in Sources */,
+				AF7B79ECD15F8CA435073E74 /* WidgetSettings.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CF278C572EBAFD59000553A3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -137,7 +248,71 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		DE9457DDC4E26893D4D78CCB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = WiesbadenAfterDarkWidgetExtension;
+			target = 89504760AA05BAF3FACD8110 /* WiesbadenAfterDarkWidgetExtension */;
+			targetProxy = 3AF790CEEF90A47FA20125EF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		8BA9DA5B6424D3AA250E853A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = WiesbadenAfterDarkWidget/WiesbadenAfterDarkWidgetExtension.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WiesbadenAfterDarkWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ea-solutions.WiesbadenAfterDark.WiesbadenAfterDark.Widget";
+				PRODUCT_NAME = WiesbadenAfterDarkWidgetExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGET_NAME = WiesbadenAfterDarkWidgetExtension;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B51BD7D753969B0005EFB262 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = WiesbadenAfterDarkWidget/WiesbadenAfterDarkWidgetExtension.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WiesbadenAfterDarkWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ea-solutions.WiesbadenAfterDark.WiesbadenAfterDark.Widget";
+				PRODUCT_NAME = WiesbadenAfterDarkWidgetExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGET_NAME = WiesbadenAfterDarkWidgetExtension;
+			};
+			name = Debug;
+		};
 		CF278C662EBAFD59000553A3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -264,6 +439,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WiesbadenAfterDark/WiesbadenAfterDark.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3BQ832JLX7;
@@ -298,6 +474,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WiesbadenAfterDark/WiesbadenAfterDark.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3BQ832JLX7;
@@ -344,6 +521,15 @@
 			buildConfigurations = (
 				CF278C692EBAFD59000553A3 /* Debug */,
 				CF278C6A2EBAFD59000553A3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FB586EBAE92AD6F439C4DB6F /* Build configuration list for PBXNativeTarget "WiesbadenAfterDarkWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8BA9DA5B6424D3AA250E853A /* Release */,
+				B51BD7D753969B0005EFB262 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

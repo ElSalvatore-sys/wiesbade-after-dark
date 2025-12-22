@@ -70,7 +70,7 @@ final class SecureLogger {
 
     /// Log errors
     func error(_ message: String, error: Error? = nil, category: String = "General") {
-        let errorMessage = error != nil ? "\(message): \(error!.localizedDescription)" : message
+        let errorMessage = error.map { "\(message): \($0.localizedDescription)" } ?? message
 
         #if DEBUG
         print("❌ [\(category)] \(errorMessage)")

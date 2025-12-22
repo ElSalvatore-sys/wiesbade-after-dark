@@ -51,11 +51,13 @@ final class RealVenueService: VenueServiceProtocol {
         }
 
         do {
-            // Fetch from backend
-            let venueDTOs: [VenueDTO] = try await apiClient.get(
+            // Fetch from backend - Edge Function returns wrapped response
+            let response: VenuesResponse = try await apiClient.get(
                 APIConfig.Endpoints.venues,
                 requiresAuth: false
             )
+
+            let venueDTOs = response.venues
 
             #if DEBUG
             print("✅ [RealVenueService] Fetched \(venueDTOs.count) venues from backend")
@@ -144,13 +146,16 @@ final class RealVenueService: VenueServiceProtocol {
         #endif
 
         do {
-            let eventDTOs: [EventDTO] = try await apiClient.get(
+            // Edge Function returns wrapped response { events: [...], total, limit, offset }
+            let response: EventsResponse = try await apiClient.get(
                 APIConfig.Endpoints.venueEvents(id: venueId.uuidString),
                 requiresAuth: false
             )
 
+            let eventDTOs = response.events
+
             #if DEBUG
-            print("✅ [RealVenueService] Fetched \(eventDTOs.count) events")
+            print("✅ [RealVenueService] Fetched \(eventDTOs.count) events for venue")
             #endif
 
             // Convert DTOs to Event models
@@ -174,13 +179,16 @@ final class RealVenueService: VenueServiceProtocol {
         #endif
 
         do {
-            let eventDTOs: [EventDTO] = try await apiClient.get(
-                "/api/v1/events",
+            // Edge Function returns wrapped response { events: [...], total, limit, offset }
+            let response: EventsResponse = try await apiClient.get(
+                APIConfig.Endpoints.events,
                 requiresAuth: false
             )
 
+            let eventDTOs = response.events
+
             #if DEBUG
-            print("✅ [RealVenueService] Fetched \(eventDTOs.count) events")
+            print("✅ [RealVenueService] Fetched \(eventDTOs.count) events from all venues")
             #endif
 
             // Convert DTOs to Event models
@@ -435,14 +443,26 @@ final class RealVenueService: VenueServiceProtocol {
         // Note: Backend may send margin fields (foodMarginPercent, beverageMarginPercent, defaultMarginPercent)
         // but they are not part of the Venue model, so we ignore them during conversion
 
+        // Map venue_type from DB to VenueType enum
+        let venueType: VenueType
+        switch dto.venueType?.lowercased() {
+        case "bar": venueType = .bar
+        case "club": venueType = .club
+        case "restaurant": venueType = .restaurant
+        case "lounge": venueType = .lounge
+        case "hotel": venueType = .hotel
+        case "bar/restaurant/club", "barrestaurantclub": venueType = .barRestaurantClub
+        default: venueType = .bar
+        }
+
         return Venue(
             id: dto.id,
             name: dto.name,
             slug: dto.slug ?? dto.name.lowercased().replacingOccurrences(of: " ", with: "-"),
-            type: VenueType(rawValue: dto.type ?? "Bar") ?? .bar,
+            type: venueType,
             description: dto.description ?? "",
-            address: dto.address,
-            city: dto.city,
+            address: dto.address ?? "",
+            city: dto.city ?? "",
             postalCode: dto.postalCode ?? "",
             latitude: dto.latitude,
             longitude: dto.longitude,
@@ -468,11 +488,28 @@ final class RealVenueService: VenueServiceProtocol {
         )
     }
 
-    /// Converts EventDTO to Event model (placeholder - needs Event model details)
+    /// Converts EventDTO to Event model
     private func convertToEvent(from dto: EventDTO) -> Event? {
-        // Implementation depends on Event model structure
-        // This is a placeholder that should be implemented based on actual Event model
-        return nil
+        // Default end time to 4 hours after start if not provided
+        let endTime = dto.endTime ?? Calendar.current.date(byAdding: .hour, value: 4, to: dto.startTime) ?? dto.startTime
+
+        return Event(
+            id: dto.id,
+            title: dto.title,
+            description: dto.description ?? "",
+            venueId: dto.venueId,
+            startTime: dto.startTime,
+            endTime: endTime,
+            djLineup: dto.djLineup ?? [],
+            coverCharge: dto.coverCharge != nil ? Decimal(dto.coverCharge!) : nil,
+            genre: dto.genre ?? dto.eventType,
+            attendingCount: dto.attendingCount ?? 0,
+            interestedCount: dto.interestedCount ?? 0,
+            pointsMultiplier: Decimal(dto.pointsMultiplier ?? 1.0),
+            imageURL: dto.imageUrl,
+            isCancelled: dto.isCancelled ?? false,
+            createdAt: dto.createdAt ?? Date()
+        )
     }
 
     /// Converts RewardDTO to Reward model (placeholder - needs Reward model details)
@@ -499,15 +536,32 @@ final class RealVenueService: VenueServiceProtocol {
 
 // MARK: - DTO Models
 
+/// Response wrapper for venues list endpoint
+private struct VenuesResponse: Decodable {
+    let venues: [VenueDTO]
+    let total: Int
+    let limit: Int
+    let offset: Int
+}
+
+/// Response wrapper for events list endpoint
+private struct EventsResponse: Decodable {
+    let events: [EventDTO]
+    let total: Int
+    let limit: Int
+    let offset: Int
+}
+
 /// Data Transfer Object for Venue API responses
+/// Field names match Supabase column names (snake_case decoded via keyDecodingStrategy)
 private struct VenueDTO: Decodable {
     let id: UUID
     let name: String
     let slug: String?
-    let type: String?
+    let venueType: String?  // Matches venue_type in DB
     let description: String?
-    let address: String
-    let city: String
+    let address: String?
+    let city: String?
     let postalCode: String?
     let latitude: Double?
     let longitude: Double?
@@ -515,7 +569,7 @@ private struct VenueDTO: Decodable {
     let email: String?
     let website: String?
     let instagram: String?
-    let imageUrl: String?
+    let imageUrl: String?  // Matches image_url in DB
     let logoUrl: String?
     let galleryUrls: [String]?
     let dressCode: String?
@@ -530,6 +584,7 @@ private struct VenueDTO: Decodable {
     let totalPosts: Int?
     let createdAt: Date?
     let updatedAt: Date?
+    let isActive: Bool?
 
     // Margin fields from backend (not used in Venue model)
     let foodMarginPercent: Double?
@@ -538,16 +593,24 @@ private struct VenueDTO: Decodable {
 }
 
 /// Data Transfer Object for Event API responses
+/// Field names match Supabase column names (snake_case decoded via keyDecodingStrategy)
 private struct EventDTO: Decodable {
     let id: UUID
-    let venueId: UUID
-    let name: String
+    let venueId: UUID           // Maps from venue_id
+    let title: String
     let description: String?
-    let startTime: Date
-    let endTime: Date?
-    let imageUrl: String?
-    let attendingCount: Int?
-    let interestedCount: Int?
+    let startTime: Date         // Maps from start_time
+    let endTime: Date?          // Maps from end_time
+    let eventType: String?      // Maps from event_type
+    let imageUrl: String?       // Maps from image_url
+    let djLineup: [String]?     // Maps from dj_lineup
+    let coverCharge: Double?    // Maps from cover_charge
+    let genre: String?
+    let attendingCount: Int?    // Maps from attending_count
+    let interestedCount: Int?   // Maps from interested_count
+    let pointsMultiplier: Double? // Maps from points_multiplier
+    let isCancelled: Bool?      // Maps from is_cancelled
+    let createdAt: Date?        // Maps from created_at
 }
 
 /// Data Transfer Object for Reward API responses
