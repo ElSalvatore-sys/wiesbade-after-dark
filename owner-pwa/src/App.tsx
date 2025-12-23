@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Login, Dashboard, Events, Bookings, Inventory, Employees, Shifts, Tasks, Analytics, Settings } from './pages';
 import { DashboardLayout } from './components/layout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { ToastProvider } from './contexts/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import OfflineBanner from './components/OfflineBanner';
 import { pushNotificationService } from './services/pushNotifications';
@@ -97,10 +99,14 @@ function AppContent() {
 function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <OfflineBanner />
-        <AppContent />
-      </AuthProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <OfflineBanner />
+            <AppContent />
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

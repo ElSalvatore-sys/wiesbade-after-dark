@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { cn } from '../../lib/utils';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { MobileNav } from './MobileNav';
 import type { Notification } from '../../types';
 import { X } from 'lucide-react';
 
@@ -172,12 +173,16 @@ export function DashboardLayout({
       <main
         className={cn(
           'pt-16 min-h-screen transition-all duration-standard',
+          'pb-20 md:pb-0', // Bottom padding for mobile nav
           'md:pl-[240px]',
           isSidebarCollapsed && 'md:pl-[72px]'
         )}
       >
         <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav currentPage={currentPage} onNavigate={onNavigate} />
     </div>
   );
 }
