@@ -30,7 +30,7 @@ test.describe('Authentication', () => {
     await expect(page.locator('text=/welcome|staff on shift|today/i').first()).toBeVisible({ timeout: 5000 });
   });
 
-  test('Should logout successfully', async ({ page }) => {
+  test('Should logout successfully', async ({ page, isMobile }) => {
     // Login first
     await page.goto('/');
     await page.getByPlaceholder(/email/i).fill('owner@example.com');
@@ -40,8 +40,29 @@ test.describe('Authentication', () => {
     // Wait for dashboard content to appear
     await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 10000 });
 
-    // Find and click logout
-    const logoutButton = page.getByRole('button', { name: /logout|abmelden|sign out/i });
+    // On mobile, open the hamburger menu first to access sidebar
+    if (isMobile) {
+      // Click hamburger menu to open sidebar
+      const menuButton = page.locator('button').filter({ has: page.locator('svg.lucide-menu') }).first();
+      if (await menuButton.isVisible()) {
+        await menuButton.click();
+        await page.waitForTimeout(300); // Wait for sidebar animation
+      }
+    }
+
+    // Find and click logout - could be in sidebar or user dropdown
+    const logoutButton = page.getByRole('button', { name: /logout|abmelden|sign out/i }).first();
+
+    // If logout button not visible, try the user dropdown menu
+    if (!(await logoutButton.isVisible({ timeout: 2000 }).catch(() => false))) {
+      // Try clicking user avatar/dropdown to reveal logout
+      const userMenu = page.locator('[class*="user"]').first();
+      if (await userMenu.isVisible()) {
+        await userMenu.click();
+        await page.waitForTimeout(200);
+      }
+    }
+
     await expect(logoutButton).toBeVisible({ timeout: 5000 });
     await logoutButton.click();
 
