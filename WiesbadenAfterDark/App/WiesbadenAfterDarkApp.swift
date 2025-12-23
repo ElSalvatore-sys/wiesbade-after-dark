@@ -38,7 +38,9 @@ struct WiesbadenAfterDarkApp: App {
             VenueTierConfig.self,      // Agent 9: Venue-specific tier configuration
             // COMMUNITY FEATURE: Social feed models
             Post.self,                 // Social posts (check-ins, status, photos)
-            Comment.self               // Comments on posts
+            Comment.self,              // Comments on posts
+            // OFFLINE MODE: Pending actions for sync
+            PendingAction.self         // Offline action queue
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -141,6 +143,9 @@ struct WiesbadenAfterDarkApp: App {
 
                         // Initialize RealWalletPassService with model context
                         RealWalletPassService.shared.setModelContext(context)
+
+                        // Initialize OfflineSyncService for offline mode
+                        OfflineSyncService.shared.configure(with: context)
                     }
             }
         }
@@ -185,12 +190,16 @@ struct RootView: View {
 struct OnboardingFlow: View {
     @Environment(AuthenticationViewModel.self) private var viewModel
     @State private var navigationPath = NavigationPath()
+    @AppStorage("hasSeenIntroOnboarding") private var hasSeenIntroOnboarding = false
+    @State private var showIntro = false
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            WelcomeView {
-                navigationPath.append(OnboardingRoute.phoneInput)
-            }
+        ZStack {
+            // Main auth flow
+            NavigationStack(path: $navigationPath) {
+                WelcomeView {
+                    navigationPath.append(OnboardingRoute.phoneInput)
+                }
             .navigationDestination(for: OnboardingRoute.self) { route in
                 switch route {
                 case .welcome:
@@ -227,6 +236,30 @@ struct OnboardingFlow: View {
                     }
                 }
             }
+            }
+
+            // Intro onboarding overlay for first-time users
+            if showIntro {
+                OnboardingView {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                        hasSeenIntroOnboarding = true
+                        showIntro = false
+                    }
+                }
+                .transition(.opacity)
+                .zIndex(1)
+            }
+        }
+        .onAppear {
+            // Show intro if user hasn't seen it yet
+            if !hasSeenIntroOnboarding {
+                // Use DispatchQueue to ensure view is fully loaded before showing overlay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeIn(duration: 0.3)) {
+                        showIntro = true
+                    }
+                }
+            }
         }
     }
 }
@@ -241,25 +274,31 @@ struct MainTabView: View {
         ("house", "house.fill", "Home"),
         ("map", "map.fill", "Discover"),
         ("calendar", "calendar", "Events"),
-        ("person.2", "person.2.fill", "Community"),
+        ("wallet.pass", "wallet.pass.fill", "Wallet"),
         ("person.crop.circle", "person.crop.circle.fill", "Profile")
     ]
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Content based on selected tab
-                Group {
-                    switch selectedTab {
-                    case 0: HomeView()
-                    case 1: DiscoverView()
-                    case 2: EventsView()
-                    case 3: CommunityView()
-                    case 4: ProfileView()
-                    default: HomeView()
+                // Content based on selected tab with offline banner
+                VStack(spacing: 0) {
+                    // Offline banner at top
+                    OfflineBanner()
+
+                    // Tab content
+                    Group {
+                        switch selectedTab {
+                        case 0: HomeView()
+                        case 1: DiscoverView()
+                        case 2: EventsView()
+                        case 3: WalletView()
+                        case 4: ProfileView()
+                        default: HomeView()
+                        }
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     // Reserve space for custom tab bar
                     Color.clear.frame(height: 70)

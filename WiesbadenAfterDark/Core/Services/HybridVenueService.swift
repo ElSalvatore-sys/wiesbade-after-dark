@@ -2,14 +2,14 @@
 //  HybridVenueService.swift
 //  WiesbadenAfterDark
 //
-//  Hybrid venue service that tries real backend first, falls back to mock data
+//  Hybrid venue service that tries real backend first, falls back to cached/mock data
 //  This ensures the app always has data to display even when offline
 //
 
 import Foundation
 
-/// Hybrid venue service with automatic fallback to mock data
-/// Tries RealVenueService first, falls back to MockVenueService on failure
+/// Hybrid venue service with automatic fallback to cached/mock data
+/// Tries RealVenueService first, falls back to cache or MockVenueService on failure
 final class HybridVenueService: VenueServiceProtocol {
     // MARK: - Properties
 
@@ -18,6 +18,9 @@ final class HybridVenueService: VenueServiceProtocol {
 
     /// Tracks if we're currently using mock data
     private(set) var isUsingMockData = false
+
+    /// Tracks if we're using cached data
+    private(set) var isUsingCachedData = false
 
     /// Last error from real service (for debugging)
     private(set) var lastRealServiceError: Error?
@@ -28,37 +31,91 @@ final class HybridVenueService: VenueServiceProtocol {
 
     private init() {
         #if DEBUG
-        print("🔄 [HybridVenueService] Initialized with fallback support")
+        print("🔄 [HybridVenueService] Initialized with offline & fallback support")
         #endif
     }
 
     // MARK: - VenueServiceProtocol Implementation
 
-    /// Fetches all venues - tries real backend first, falls back to mock
+    /// Fetches all venues - tries real backend first, falls back to cache or mock
     func fetchVenues() async throws -> [Venue] {
         #if DEBUG
         print("🔄 [HybridVenueService] Fetching venues (trying real backend first)")
         #endif
 
+        // Check if offline - use cached data immediately
+        if !NetworkMonitor.shared.isConnected {
+            #if DEBUG
+            print("📴 [HybridVenueService] Offline - checking cache")
+            #endif
+
+            let cachedVenues = await MainActor.run {
+                OfflineSyncService.shared.loadCachedVenues()
+            }
+
+            if !cachedVenues.isEmpty {
+                #if DEBUG
+                print("💾 [HybridVenueService] Using \(cachedVenues.count) cached venues")
+                #endif
+                isUsingCachedData = true
+                isUsingMockData = false
+                return cachedVenues
+            }
+
+            // No cache, fall through to mock
+            #if DEBUG
+            print("⚠️ [HybridVenueService] No cache - using mock data")
+            #endif
+            isUsingMockData = true
+            isUsingCachedData = false
+            return try await mockService.fetchVenues()
+        }
+
         do {
             let venues = try await realService.fetchVenues()
             isUsingMockData = false
+            isUsingCachedData = false
             lastRealServiceError = nil
 
             #if DEBUG
             print("✅ [HybridVenueService] Got \(venues.count) venues from real backend")
             #endif
 
+            // Cache venues for offline use
+            await MainActor.run {
+                OfflineSyncService.shared.cacheVenues(venues)
+            }
+
             return venues
 
         } catch {
             #if DEBUG
             print("⚠️ [HybridVenueService] Real backend failed: \(error.localizedDescription)")
-            print("🔄 [HybridVenueService] Falling back to mock data...")
             #endif
 
             lastRealServiceError = error
+
+            // Try cached data first
+            let cachedVenues = await MainActor.run {
+                OfflineSyncService.shared.loadCachedVenues()
+            }
+
+            if !cachedVenues.isEmpty {
+                #if DEBUG
+                print("💾 [HybridVenueService] Using \(cachedVenues.count) cached venues as fallback")
+                #endif
+                isUsingCachedData = true
+                isUsingMockData = false
+                return cachedVenues
+            }
+
+            // No cache, use mock
+            #if DEBUG
+            print("🔄 [HybridVenueService] Falling back to mock data...")
+            #endif
+
             isUsingMockData = true
+            isUsingCachedData = false
 
             let venues = try await mockService.fetchVenues()
 

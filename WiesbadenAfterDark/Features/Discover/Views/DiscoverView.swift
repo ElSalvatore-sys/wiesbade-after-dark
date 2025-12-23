@@ -86,10 +86,10 @@ struct DiscoverView: View {
 
                             // Venues list (single column, responsive)
                             if viewModel.venues.isEmpty && !viewModel.isLoading {
-                                EmptyStateView()
+                                EmptyStateView(.noVenues)
                             } else {
                                 LazyVStack(spacing: Theme.Spacing.cardPadding) {
-                                    ForEach(viewModel.venues, id: \.id) { venue in
+                                    ForEach(Array(viewModel.venues.enumerated()), id: \.element.id) { index, venue in
                                         VenueCard(venue: venue) {
                                             // CRITICAL FIX: Only select if not already selected
                                             if selectedVenueId != venue.id {
@@ -101,6 +101,7 @@ struct DiscoverView: View {
                                             }
                                         }
                                         .padding(.horizontal, geometry.size.width * 0.05)
+                                        .staggeredAppear(index: index)
                                     }
                                 }
                             }
@@ -108,15 +109,14 @@ struct DiscoverView: View {
                         .padding(.bottom, Theme.Spacing.xl)
                     }
                     .refreshable {
+                        HapticManager.shared.light()
                         await viewModel.fetchVenues()
                     }
                 }
 
-                // Loading overlay
+                // Skeleton loading overlay
                 if viewModel.isLoading && viewModel.venues.isEmpty {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .primary))
-                        .scaleEffect(1.5)
+                    DiscoverLoadingSkeleton()
                 }
             }
             .navigationDestination(for: UUID.self) { venueId in
@@ -151,28 +151,6 @@ struct DiscoverView: View {
     }
 }
 
-// MARK: - Empty State
-private struct EmptyStateView: View {
-    var body: some View {
-        VStack(spacing: Theme.Spacing.lg) {
-            Image(systemName: "map")
-                .font(.system(size: 60))
-                .foregroundColor(.textTertiary)
-
-            Text("No Venues Yet")
-                .font(Typography.titleMedium)
-                .foregroundColor(.textPrimary)
-
-            Text("Check back soon for exciting venues!")
-                .font(Typography.bodyMedium)
-                .foregroundColor(.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, Theme.Spacing.xxl * 2)
-        .padding(.horizontal, Theme.Spacing.xl)
-    }
-}
 
 // MARK: - Preview
 #Preview("Discover View") {

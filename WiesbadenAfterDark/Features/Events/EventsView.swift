@@ -84,8 +84,7 @@ struct EventsView: View {
                 Color.appBackground.ignoresSafeArea()
 
                 if isLoading {
-                    ProgressView()
-                        .tint(.primary)
+                    EventsLoadingSkeleton()
                 } else if let error = errorMessage {
                     errorStateView(message: error)
                 } else {
@@ -112,6 +111,7 @@ struct EventsView: View {
                 await loadEvents()
             }
             .refreshable {
+                HapticManager.shared.light()
                 await loadEvents()
             }
         }
@@ -143,7 +143,7 @@ struct EventsView: View {
     private var eventsListView: some View {
         ScrollView {
             LazyVStack(spacing: Theme.Spacing.md) {
-                ForEach(filteredEvents) { event in
+                ForEach(Array(filteredEvents.enumerated()), id: \.element.id) { index, event in
                     EventCard(
                         event: event,
                         onGoing: {
@@ -160,6 +160,7 @@ struct EventsView: View {
                     .onTapGesture {
                         selectedEvent = event
                     }
+                    .staggeredAppear(index: index)
                 }
             }
             .padding(.horizontal, Theme.Spacing.md)
@@ -171,20 +172,7 @@ struct EventsView: View {
 
     private var emptyStateView: some View {
         VStack(spacing: Theme.Spacing.lg) {
-            Image(systemName: "calendar.badge.clock")
-                .font(.system(size: 60))
-                .foregroundColor(.textTertiary)
-
-            VStack(spacing: Theme.Spacing.xs) {
-                Text(emptyStateTitle)
-                    .font(Typography.titleMedium)
-                    .foregroundColor(.textPrimary)
-
-                Text(emptyStateMessage)
-                    .font(Typography.bodyMedium)
-                    .foregroundColor(.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
+            EmptyStateView(emptyStateConfig)
 
             // Show "View All" button if filtering and there are events
             if selectedTimeFilter != .all && !events.isEmpty {
@@ -197,31 +185,18 @@ struct EventsView: View {
                         .font(Typography.buttonMedium)
                         .foregroundColor(.primary)
                 }
-                .padding(.top, Theme.Spacing.sm)
             }
         }
-        .padding(Theme.Spacing.xl)
     }
 
-    private var emptyStateTitle: String {
+    private var emptyStateConfig: EmptyStateConfig {
         switch selectedTimeFilter {
         case .all:
-            return "No Events Yet"
+            return .noEvents
         case .thisWeek:
-            return "No Events This Week"
+            return .noEventsThisWeek
         case .thisWeekend:
-            return "No Events This Weekend"
-        }
-    }
-
-    private var emptyStateMessage: String {
-        switch selectedTimeFilter {
-        case .all:
-            return "Check back soon for exciting events"
-        case .thisWeek:
-            return "No events scheduled for the next 7 days"
-        case .thisWeekend:
-            return "No events scheduled for this weekend"
+            return .noEventsThisWeekend
         }
     }
 

@@ -246,6 +246,9 @@ struct TierUpgradeCelebrationView: View {
     // MARK: - Animation Sequence
 
     private func performAnimation() {
+        // Play tier upgrade celebration sound
+        SoundManager.shared.playTierUpgrade(withHaptic: true)
+
         // Badge reveal
         withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
             showBadge = true

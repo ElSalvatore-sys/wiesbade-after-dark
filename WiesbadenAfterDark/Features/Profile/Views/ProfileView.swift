@@ -63,7 +63,7 @@ struct ProfileView: View {
                                         .foregroundColor(.textPrimary)
                                 }
 
-                                Text("Member since \(memberSince)")
+                                Text("Mitglied seit \(memberSince)")
                                     .font(.system(size: 12))
                                     .foregroundColor(.textTertiary)
                                     .padding(.top, 2)
@@ -86,8 +86,8 @@ struct ProfileView: View {
                         if let user = user {
                             ProfileActionButton(
                                 icon: "star.circle.fill",
-                                title: "My Points",
-                                subtitle: "\(user.totalPointsAvailable) points available",
+                                title: "Meine Punkte",
+                                subtitle: "\(user.totalPointsAvailable) Punkte verfügbar",
                                 color: .orange
                             ) {
                                 // Navigate to points detail
@@ -98,8 +98,8 @@ struct ProfileView: View {
 
                         ProfileActionButton(
                             icon: "building.2.fill",
-                            title: "Venue Memberships",
-                            subtitle: "View your memberships",
+                            title: "Venue-Mitgliedschaften",
+                            subtitle: "Deine Mitgliedschaften",
                             color: .blue
                         ) {
                             // Navigate to memberships
@@ -110,8 +110,8 @@ struct ProfileView: View {
                         NavigationLink(destination: NotificationSettingsView()) {
                             ProfileActionButton(
                                 icon: "bell.fill",
-                                title: "Notifications",
-                                subtitle: "Manage preferences",
+                                title: "Benachrichtigungen",
+                                subtitle: "Einstellungen verwalten",
                                 color: .purple
                             )
                         }
@@ -122,8 +122,8 @@ struct ProfileView: View {
                         NavigationLink(destination: HelpSupportView()) {
                             ProfileActionButton(
                                 icon: "questionmark.circle.fill",
-                                title: "Help & Support",
-                                subtitle: "Get assistance",
+                                title: "Hilfe & Support",
+                                subtitle: "Unterstützung erhalten",
                                 color: .green
                             )
                         }
@@ -134,8 +134,8 @@ struct ProfileView: View {
                         NavigationLink(destination: PrivacySecurityView()) {
                             ProfileActionButton(
                                 icon: "lock.shield.fill",
-                                title: "Privacy & Security",
-                                subtitle: "Manage your data",
+                                title: "Datenschutz & Sicherheit",
+                                subtitle: "Deine Daten verwalten",
                                 color: .cyan
                             )
                         }
@@ -146,8 +146,8 @@ struct ProfileView: View {
                         NavigationLink(destination: LegalView()) {
                             ProfileActionButton(
                                 icon: "doc.text.fill",
-                                title: "Legal",
-                                subtitle: "Terms & Privacy Policy",
+                                title: "Rechtliches",
+                                subtitle: "AGB & Datenschutz",
                                 color: .gray
                             )
                         }
@@ -167,7 +167,7 @@ struct ProfileView: View {
                     Button {
                         showingSignOutAlert = true
                     } label: {
-                        Text("Sign Out")
+                        Text("Abmelden")
                             .font(.headline)
                             .foregroundColor(.error)
                             .frame(maxWidth: .infinity)
@@ -181,18 +181,22 @@ struct ProfileView: View {
                 }
             }
             .background(Color.appBackground)
-            .navigationTitle("Profile")
+            .navigationTitle("Profil")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color.appBackground, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .alert("Sign Out", isPresented: $showingSignOutAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Sign Out", role: .destructive) {
+            .refreshable {
+                HapticManager.shared.light()
+                await loadRecentTransactions()
+            }
+            .alert("Abmelden", isPresented: $showingSignOutAlert) {
+                Button("Abbrechen", role: .cancel) { }
+                Button("Abmelden", role: .destructive) {
                     authViewModel.signOut()
                 }
             } message: {
-                Text("Are you sure you want to sign out?")
+                Text("Möchtest du dich wirklich abmelden?")
             }
             .task {
                 await loadRecentTransactions()
@@ -263,7 +267,7 @@ private struct ReferralCardCompact: View {
         VStack(spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Your Referral Code")
+                    Text("Dein Empfehlungscode")
                         .font(.caption)
                         .foregroundColor(.textSecondary)
 
@@ -277,6 +281,7 @@ private struct ReferralCardCompact: View {
                 Button {
                     UIPasteboard.general.string = code
                     showCopied = true
+                    HapticManager.shared.light()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                         showCopied = false
                     }
@@ -291,11 +296,11 @@ private struct ReferralCardCompact: View {
 
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Earned from Referrals")
+                    Text("Durch Empfehlungen verdient")
                         .font(.caption)
                         .foregroundColor(.textSecondary)
 
-                    Text("\(totalEarned) points")
+                    Text("\(totalEarned) Punkte")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(.success)
@@ -303,10 +308,10 @@ private struct ReferralCardCompact: View {
 
                 Spacer()
 
-                ShareLink(item: "Join Wiesbaden After Dark with code: \(code)") {
+                ShareLink(item: "Tritt Wiesbaden After Dark bei mit Code: \(code)") {
                     HStack(spacing: 6) {
                         Image(systemName: "square.and.arrow.up")
-                        Text("Share")
+                        Text("Teilen")
                     }
                     .font(.subheadline)
                     .fontWeight(.medium)
@@ -319,7 +324,7 @@ private struct ReferralCardCompact: View {
             }
 
             // Compact benefit note
-            Text("Earn 25% when friends check in!")
+            Text("Verdiene 25% wenn Freunde einchecken!")
                 .font(.caption2)
                 .foregroundColor(.textTertiary)
                 .multilineTextAlignment(.center)
@@ -383,7 +388,7 @@ private struct RecentActivitySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Recent Activity")
+            Text("Letzte Aktivität")
                 .font(.headline)
                 .foregroundStyle(Color.textPrimary)
 
@@ -394,7 +399,7 @@ private struct RecentActivitySection: View {
                         .font(.system(size: 32))
                         .foregroundStyle(Color.textTertiary)
 
-                    Text("No transactions yet")
+                    Text("Noch keine Transaktionen")
                         .font(.subheadline)
                         .foregroundStyle(Color.textSecondary)
                 }

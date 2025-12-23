@@ -40,18 +40,26 @@ struct HomeView: View {
             ZStack {
                 ScrollView {
                     VStack(spacing: Theme.Spacing.lg) {
+                        // User Greeting Header
+                        userGreetingHeader
+                            .padding(.horizontal)
+                            .fadeSlide(direction: .down, delay: 0.1)
+
                         // Points Balance Card
                         if homeViewModel.totalPoints > 0 {
                             pointsBalanceCard
                                 .padding(.horizontal)
+                                .cardAppear(delay: 0.15)
                         }
 
                         // Quick Actions (Check-in, Wallet)
                         quickActionsSection
                             .padding(.horizontal)
+                            .fadeSlide(direction: .up, delay: 0.2)
 
                         // Event Highlights Section
                         eventHighlightsSection
+                            .fadeSlide(direction: .up, delay: 0.3)
 
                         Spacer()
                             .frame(height: Theme.Spacing.xl)
@@ -59,12 +67,13 @@ struct HomeView: View {
                     .padding(.top)
                 }
                 .background(Color.appBackground.ignoresSafeArea())
-                .navigationTitle("Home")
+                .navigationTitle("Startseite")
                 .navigationBarTitleDisplayMode(.large)
                 .toolbarBackground(Color.appBackground, for: .navigationBar)
                 .toolbarBackground(.visible, for: .navigationBar)
                 .toolbarColorScheme(.dark, for: .navigationBar)
                 .refreshable {
+                    HapticManager.shared.light()
                     if let user = authViewModel.authState.user {
                         await homeViewModel.refresh(userId: user.id)
                     }
@@ -76,26 +85,17 @@ struct HomeView: View {
                     }
                 }
 
-                // Loading overlay - show only on initial load
+                // Skeleton loading - show only on initial load
                 if homeViewModel.isLoading && homeViewModel.venues.isEmpty {
-                    VStack(spacing: Theme.Spacing.md) {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .primary))
-                            .scaleEffect(1.5)
-
-                        Text("Loading your points...")
-                            .font(.subheadline)
-                            .foregroundStyle(Color.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.appBackground)
+                    HomeLoadingSkeleton()
+                        .background(Color.appBackground)
                 }
             }
-            .alert("Error", isPresented: .constant(homeViewModel.errorMessage != nil)) {
+            .alert("Fehler", isPresented: .constant(homeViewModel.errorMessage != nil)) {
                 Button("OK") {
                     homeViewModel.clearError()
                 }
-                Button("Retry") {
+                Button("Erneut versuchen") {
                     if let user = authViewModel.authState.user {
                         Task {
                             await homeViewModel.loadHomeData(userId: user.id)
@@ -103,7 +103,7 @@ struct HomeView: View {
                     }
                 }
             } message: {
-                Text(homeViewModel.errorMessage ?? "An error occurred")
+                Text(homeViewModel.errorMessage ?? "Ein Fehler ist aufgetreten")
             }
             .sheet(isPresented: $showMyPasses) {
                 if let user = authViewModel.authState.user {
@@ -149,12 +149,66 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - User Greeting Header
+
+    private var userGreetingHeader: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(greetingText)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.textSecondary)
+
+                if let user = authViewModel.authState.user {
+                    Text(user.displayName)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.textPrimary)
+
+                    // Tier badge
+                    if let membership = homeViewModel.memberships.first {
+                        HStack(spacing: 6) {
+                            Image(systemName: membership.tier.icon)
+                                .font(.caption)
+                            Text(membership.tier.displayName)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundStyle(Color(hex: membership.tier.color))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color(hex: membership.tier.color).opacity(0.15))
+                        .clipShape(Capsule())
+                    }
+                }
+            }
+
+            Spacer()
+
+            // User avatar
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "#8B5CF6"), Color(hex: "#EC4899")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 50, height: 50)
+                .overlay(
+                    Text(userInitials)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                )
+        }
+    }
+
     // MARK: - Points Balance Card
 
     private var pointsBalanceCard: some View {
         VStack(spacing: Theme.Spacing.cardGap) {
             // "Your Points" label
-            Text("Your Points")
+            Text("Deine Punkte")
                 .font(.subheadline)
                 .foregroundStyle(Color.textSecondary)
 
@@ -176,7 +230,7 @@ struct HomeView: View {
             }
 
             // Euro value conversion (10:1 ratio - 10 points = €1)
-            Text("= €\(homeViewModel.totalPoints / 10) value")
+            Text("= €\(homeViewModel.totalPoints / 10) Wert")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.textSecondary)
@@ -187,7 +241,7 @@ struct HomeView: View {
                     .padding(.vertical, Theme.Spacing.xs)
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                    Text("Points by Venue")
+                    Text("Punkte nach Venue")
                         .font(.caption)
                         .foregroundStyle(Color.textSecondary)
 
@@ -200,7 +254,7 @@ struct HomeView: View {
 
                                 Spacer()
 
-                                Text("\(membership.pointsBalance) pts")
+                                Text("\(membership.pointsBalance) Pkt")
                                     .font(.caption)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(Color.textSecondary)
@@ -264,7 +318,7 @@ struct HomeView: View {
                 Button {
                     // Navigate to events tab
                 } label: {
-                    Text("See All")
+                    Text("Alle anzeigen")
                         .font(.subheadline)
                         .foregroundStyle(Color.primary)
                 }
@@ -313,11 +367,11 @@ struct HomeView: View {
                         .font(.system(size: 48))
                         .foregroundStyle(Color.textTertiary)
 
-                    Text("No events scheduled")
+                    Text("Keine Events geplant")
                         .font(.headline)
                         .foregroundStyle(Color.textPrimary)
 
-                    Text("Check back later for upcoming events!")
+                    Text("Schau später nochmal vorbei!")
                         .font(.caption)
                         .foregroundStyle(Color.textSecondary)
                 }
@@ -332,7 +386,7 @@ struct HomeView: View {
 
     private var quickActionsSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Quick Actions")
+            Text("Schnellzugriff")
                 .font(.headline)
                 .foregroundStyle(Color.textPrimary)
 
@@ -343,7 +397,7 @@ struct HomeView: View {
                 // Check-In (Show venue picker)
                 quickActionButton(
                     icon: "wave.3.right.circle.fill",
-                    title: "Check In",
+                    title: "Einchecken",
                     color: .purple
                 ) {
                     HapticManager.shared.medium()
@@ -353,7 +407,7 @@ struct HomeView: View {
                 // My Passes
                 quickActionButton(
                     icon: "wallet.pass.fill",
-                    title: "My Passes",
+                    title: "Meine Pässe",
                     color: .blue
                 ) {
                     HapticManager.shared.light()
@@ -363,7 +417,7 @@ struct HomeView: View {
                 // History
                 quickActionButton(
                     icon: "clock.fill",
-                    title: "History",
+                    title: "Verlauf",
                     color: .green
                 ) {
                     HapticManager.shared.light()
@@ -373,7 +427,7 @@ struct HomeView: View {
                 // Share Referral
                 quickActionButton(
                     icon: "gift.fill",
-                    title: "Refer Friend",
+                    title: "Freunde einladen",
                     color: .orange
                 ) {
                     HapticManager.shared.light()
@@ -383,23 +437,6 @@ struct HomeView: View {
                     }
                 }
             }
-
-            // Sign Out Button
-            Button(action: {
-                authViewModel.signOut()
-            }) {
-                HStack {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                    Text("Sign Out")
-                }
-                .font(.subheadline)
-                .foregroundStyle(Color.textSecondary)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.sm))
-            }
-            .padding(.top, Theme.Spacing.sm)
         }
     }
 
@@ -428,15 +465,46 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
         }
         .buttonStyle(ScaleButtonStyle())
+        .pressEffect()
     }
 
     // MARK: - Computed Properties
 
+    private var greetingText: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        if hour < 12 {
+            return "Guten Morgen"
+        } else if hour < 17 {
+            return "Guten Tag"
+        } else {
+            return "Guten Abend"
+        }
+    }
+
+    private var userInitials: String {
+        guard let user = authViewModel.authState.user else { return "?" }
+
+        if let firstName = user.firstName, !firstName.isEmpty {
+            let firstInitial = String(firstName.prefix(1)).uppercased()
+            if let lastName = user.lastName, !lastName.isEmpty {
+                let lastInitial = String(lastName.prefix(1)).uppercased()
+                return "\(firstInitial)\(lastInitial)"
+            }
+            return firstInitial
+        }
+
+        let digits = user.phoneNumber.filter { $0.isNumber }
+        if digits.count >= 2 {
+            return String(digits.suffix(2))
+        }
+        return "WL"
+    }
+
     private var eventSectionTitle: String {
         if !homeViewModel.todayEvents.isEmpty {
-            return "Tonight's Events"
+            return "Heute Abend"
         } else if !homeViewModel.upcomingEvents.isEmpty {
-            return "Upcoming Events"
+            return "Kommende Events"
         } else {
             return "Events"
         }
@@ -444,18 +512,18 @@ struct HomeView: View {
 
     private var eventSectionSubtitle: String {
         if !homeViewModel.todayEvents.isEmpty {
-            return "Happening today"
+            return "Findet heute statt"
         } else if !homeViewModel.upcomingEvents.isEmpty {
-            return "This week"
+            return "Diese Woche"
         } else {
-            return "No events scheduled"
+            return "Keine Events geplant"
         }
     }
 
     // MARK: - Helper Methods
 
     private func shareReferralCode(_ code: String) {
-        let text = "Join Wiesbaden After Dark with my referral code: \(code)"
+        let text = "Tritt Wiesbaden After Dark bei mit meinem Empfehlungscode: \(code)"
         let activityVC = UIActivityViewController(
             activityItems: [text],
             applicationActivities: nil
@@ -521,7 +589,7 @@ struct NearbyVenueCard: View {
                         Image(systemName: "star.fill")
                             .font(.caption2)
 
-                        Text("\(pointsBalance) points")
+                        Text("\(pointsBalance) Punkte")
                             .font(.caption)
                             .fontWeight(.semibold)
                     }
@@ -548,7 +616,7 @@ struct RecentTransactionsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Recent Activity")
+            Text("Letzte Aktivität")
                 .font(.headline)
                 .foregroundStyle(Color.textPrimary)
 
@@ -559,7 +627,7 @@ struct RecentTransactionsView: View {
                         .font(.system(size: 32))
                         .foregroundStyle(Color.textTertiary)
 
-                    Text("No transactions yet")
+                    Text("Noch keine Transaktionen")
                         .font(.subheadline)
                         .foregroundStyle(Color.textSecondary)
                 }

@@ -100,6 +100,7 @@ struct CommunityView: View {
                 CreatePostView()
             }
             .refreshable {
+                HapticManager.shared.light()
                 await viewModel.loadPosts()
             }
             .task {
@@ -160,18 +161,7 @@ struct CommunityView: View {
 
     private var emptyStateView: some View {
         VStack(spacing: Theme.Spacing.md) {
-            Image(systemName: emptyStateIcon)
-                .font(.system(size: 48))
-                .foregroundColor(.textTertiary)
-
-            Text(emptyStateTitle)
-                .font(Typography.titleSmall)
-                .foregroundStyle(Color.textPrimary)
-
-            Text(emptyStateMessage)
-                .font(Typography.bodyMedium)
-                .foregroundStyle(Color.textSecondary)
-                .multilineTextAlignment(.center)
+            EmptyStateView(emptyStateConfig)
 
             if viewModel.selectedFilter != .all || viewModel.selectedVenueFilter != nil {
                 Button {
@@ -184,42 +174,19 @@ struct CommunityView: View {
                         .font(Typography.buttonMedium)
                         .foregroundColor(.primary)
                 }
-                .padding(.top, Theme.Spacing.sm)
             }
         }
-        .padding(Theme.Spacing.xl)
     }
 
-    private var emptyStateIcon: String {
-        switch viewModel.selectedFilter {
-        case .all: return "bubble.left.and.bubble.right"
-        case .checkIns: return "location.circle"
-        case .photos: return "photo"
-        case .achievements: return "star.circle"
-        }
-    }
-
-    private var emptyStateTitle: String {
-        if viewModel.selectedVenueFilter != nil {
-            return "No Posts from This Venue"
+    private var emptyStateConfig: EmptyStateConfig {
+        if let venueName = viewModel.selectedVenueFilter {
+            return .noPostsFromVenue(venueName)
         }
         switch viewModel.selectedFilter {
-        case .all: return "No Posts Yet"
-        case .checkIns: return "No Check-ins Yet"
-        case .photos: return "No Photos Yet"
-        case .achievements: return "No Achievements Yet"
-        }
-    }
-
-    private var emptyStateMessage: String {
-        if viewModel.selectedVenueFilter != nil {
-            return "Be the first to post from here!"
-        }
-        switch viewModel.selectedFilter {
-        case .all: return "Be the first to share something!"
-        case .checkIns: return "Check in at a venue to see posts here"
-        case .photos: return "Share a photo to see posts here"
-        case .achievements: return "Earn achievements to see posts here"
+        case .all: return .noPosts
+        case .checkIns: return .noCheckInPosts
+        case .photos: return .noPhotos
+        case .achievements: return .noAchievements
         }
     }
 }

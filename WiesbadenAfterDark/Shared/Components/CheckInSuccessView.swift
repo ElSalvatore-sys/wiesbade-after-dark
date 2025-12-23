@@ -2,12 +2,12 @@
 //  CheckInSuccessView.swift
 //  WiesbadenAfterDark
 //
-//  Success screen shown after successful check-in
+//  Success screen shown after successful check-in with celebration effects
 //
 
 import SwiftUI
 
-/// Check-in success celebration screen
+/// Check-in success celebration screen with confetti, haptics, and animations
 struct CheckInSuccessView: View {
     // MARK: - Properties
 
@@ -20,7 +20,9 @@ struct CheckInSuccessView: View {
     @State private var showPoints = false
     @State private var showBreakdown = false
     @State private var pulseAnimation = false
-    @State private var celebrationParticles: [CelebrationParticle] = []
+    @State private var confettiTrigger = 0
+    @State private var displayedPoints: Int = 0
+    @State private var showShareSheet = false
 
     // MARK: - Body
 
@@ -30,14 +32,8 @@ struct CheckInSuccessView: View {
             Color.appBackground
                 .ignoresSafeArea()
 
-            // Celebration particles
-            ForEach(celebrationParticles) { particle in
-                Circle()
-                    .fill(particle.color)
-                    .frame(width: particle.size, height: particle.size)
-                    .position(particle.position)
-                    .opacity(particle.opacity)
-            }
+            // Confetti overlay (reuse from TierUpgradeCelebration)
+            ConfettiView(trigger: confettiTrigger, tierColor: .purple)
 
             ScrollView {
                 VStack(spacing: 32) {
@@ -76,7 +72,7 @@ struct CheckInSuccessView: View {
 
                     // Success Message
                     VStack(spacing: 8) {
-                        Text("Check-In Successful!")
+                        Text("Check-In Erfolgreich!")
                             .font(.title)
                             .fontWeight(.bold)
                             .foregroundStyle(Color.textPrimary)
@@ -91,7 +87,7 @@ struct CheckInSuccessView: View {
 
                     // Points Earned Card
                     VStack(spacing: 20) {
-                        // Large Points Display with celebration
+                        // Large Points Display with counting animation
                         VStack(spacing: 8) {
                             HStack(spacing: 8) {
                                 // Sparkle icon
@@ -103,9 +99,12 @@ struct CheckInSuccessView: View {
                                     .rotationEffect(.degrees(showPoints ? 0 : -180))
                                     .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.5), value: showPoints)
 
-                                Text("+\(checkIn.pointsEarned)")
+                                // Animated counting points display
+                                Text("+\(displayedPoints)")
                                     .font(.system(size: 64, weight: .bold))
                                     .foregroundStyle(Color.primaryGradient)
+                                    .contentTransition(.numericText())
+                                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: displayedPoints)
 
                                 // Sparkle icon
                                 Image(systemName: "sparkles")
@@ -117,7 +116,7 @@ struct CheckInSuccessView: View {
                                     .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.5), value: showPoints)
                             }
 
-                            Text("Points Earned")
+                            Text("Punkte verdient")
                                 .font(.headline)
                                 .foregroundStyle(Color.textSecondary)
                         }
@@ -133,12 +132,12 @@ struct CheckInSuccessView: View {
                                     .foregroundStyle(.orange)
 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Day \(checkIn.streakDay) Streak!")
+                                    Text("Tag \(checkIn.streakDay) Serie!")
                                         .font(.headline)
                                         .fontWeight(.bold)
                                         .foregroundStyle(.orange)
 
-                                    Text("Keep it going tomorrow!")
+                                    Text("Morgen weitermachen!")
                                         .font(.subheadline)
                                         .foregroundStyle(Color.textSecondary)
                                 }
@@ -168,7 +167,7 @@ struct CheckInSuccessView: View {
                         VStack(spacing: 0) {
                             // Header
                             HStack {
-                                Text("Points Breakdown")
+                                Text("Punkte-Aufschlüsselung")
                                     .font(.headline)
                                     .foregroundStyle(Color.textPrimary)
 
@@ -185,7 +184,7 @@ struct CheckInSuccessView: View {
                                 // Base Points
                                 breakdownRow(
                                     icon: "star.fill",
-                                    label: "Base Points",
+                                    label: "Basis-Punkte",
                                     value: "\(checkIn.basePoints)",
                                     color: Color.primary
                                 )
@@ -194,7 +193,7 @@ struct CheckInSuccessView: View {
                                 if checkIn.pointsMultiplier > 1.0 {
                                     breakdownRow(
                                         icon: "calendar.badge.clock",
-                                        label: "Event/Weekend Bonus",
+                                        label: "Event/Wochenend-Bonus",
                                         value: "×\(String(format: "%.1f", NSDecimalNumber(decimal: checkIn.pointsMultiplier).doubleValue))",
                                         color: Color.secondary
                                     )
@@ -204,7 +203,7 @@ struct CheckInSuccessView: View {
                                 if checkIn.isStreakBonus {
                                     breakdownRow(
                                         icon: "flame.fill",
-                                        label: "Streak Bonus",
+                                        label: "Serien-Bonus",
                                         value: "×\(String(format: "%.1f", NSDecimalNumber(decimal: checkIn.streakMultiplier).doubleValue))",
                                         color: .orange
                                     )
@@ -216,7 +215,7 @@ struct CheckInSuccessView: View {
                                 // Total
                                 breakdownRow(
                                     icon: "creditcard.fill",
-                                    label: "Total Earned",
+                                    label: "Gesamt verdient",
                                     value: "+\(checkIn.pointsEarned)",
                                     color: Color.primary,
                                     isBold: true
@@ -260,15 +259,36 @@ struct CheckInSuccessView: View {
                     .opacity(showBreakdown ? 1 : 0)
                     .animation(.easeOut(duration: 0.5).delay(0.9), value: showBreakdown)
 
-                    // Continue Button
-                    Button(action: onDismiss) {
-                        Text("Continue")
+                    // Action Buttons
+                    VStack(spacing: 12) {
+                        // Share Button
+                        Button(action: { showShareSheet = true }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Teilen")
+                            }
                             .font(.headline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.primary)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.primaryGradient)
+                            .background(Color.cardBackground)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.primary.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+
+                        // Continue Button
+                        Button(action: onDismiss) {
+                            Text("Weiter")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.primaryGradient)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
                     }
                     .padding(.horizontal)
                     .padding(.top, 8)
@@ -281,8 +301,13 @@ struct CheckInSuccessView: View {
             }
         }
         .onAppear {
-            // Generate celebration particles
-            generateCelebrationParticles()
+            // Play celebration sound with haptic burst
+            SoundManager.shared.playCheckInSuccess(withHaptic: true)
+
+            // Trigger confetti
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                confettiTrigger += 1
+            }
 
             // Trigger animations in sequence
             withAnimation {
@@ -293,6 +318,9 @@ struct CheckInSuccessView: View {
                 withAnimation {
                     showPoints = true
                 }
+
+                // Start counting animation for points
+                animatePointsCount()
             }
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -304,9 +332,47 @@ struct CheckInSuccessView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 pulseAnimation = true
             }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(items: [shareText])
+        }
+    }
 
-            // Animate particles
-            animateCelebrationParticles()
+    // MARK: - Share Text
+
+    private var shareText: String {
+        var text = "🎉 Gerade bei \(checkIn.venueName) eingecheckt! +\(checkIn.pointsEarned) Punkte verdient"
+        if checkIn.isStreakBonus {
+            text += " 🔥 Tag \(checkIn.streakDay) Serie!"
+        }
+        text += " #WiesbadenAfterDark"
+        return text
+    }
+
+    // MARK: - Points Counting Animation
+
+    private func animatePointsCount() {
+        let duration = 1.0
+        let steps = min(checkIn.pointsEarned, 30) // Max 30 steps for smooth animation
+        let pointsPerStep = Double(checkIn.pointsEarned) / Double(steps)
+        let stepDuration = duration / Double(steps)
+
+        for step in 0..<steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + (stepDuration * Double(step))) {
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                    displayedPoints = min(Int(Double(step + 1) * pointsPerStep), checkIn.pointsEarned)
+                }
+
+                // Small haptic on each increment
+                if step % 5 == 0 {
+                    HapticManager.shared.light()
+                }
+            }
+        }
+
+        // Play points earned sound when count finishes
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+            SoundManager.shared.playPointsEarned(withHaptic: true)
         }
     }
 
@@ -369,52 +435,19 @@ struct CheckInSuccessView: View {
         }
     }
 
-    // MARK: - Celebration Particles
-
-    private func generateCelebrationParticles() {
-        let colors: [Color] = [.orange, .yellow, .purple, .blue, .green, .pink]
-        let screenWidth = UIScreen.main.bounds.width
-        let screenHeight = UIScreen.main.bounds.height
-
-        for _ in 0..<20 {
-            let particle = CelebrationParticle(
-                id: UUID(),
-                position: CGPoint(
-                    x: screenWidth / 2 + CGFloat.random(in: -100...100),
-                    y: screenHeight / 3
-                ),
-                color: colors.randomElement() ?? .orange,
-                size: CGFloat.random(in: 8...16),
-                opacity: 1.0
-            )
-            celebrationParticles.append(particle)
-        }
-    }
-
-    private func animateCelebrationParticles() {
-        for (index, _) in celebrationParticles.enumerated() {
-            let delay = Double(index) * 0.05
-            let duration = Double.random(in: 1.0...1.5)
-            let xOffset = CGFloat.random(in: -150...150)
-            let yOffset = CGFloat.random(in: -200...(-50))
-
-            withAnimation(.easeOut(duration: duration).delay(delay)) {
-                celebrationParticles[index].position.x += xOffset
-                celebrationParticles[index].position.y += yOffset
-                celebrationParticles[index].opacity = 0
-            }
-        }
-    }
 }
 
-// MARK: - Celebration Particle
+// MARK: - Share Sheet
 
-struct CelebrationParticle: Identifiable {
-    let id: UUID
-    var position: CGPoint
-    let color: Color
-    let size: CGFloat
-    var opacity: Double
+/// UIKit share sheet wrapper for SwiftUI
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 // MARK: - Preview
