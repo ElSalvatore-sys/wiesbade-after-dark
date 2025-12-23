@@ -10,24 +10,6 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
-interface PointTransaction {
-  id: string
-  user_id: string
-  venue_id: string | null
-  venue_name: string
-  type: 'earn' | 'redeem' | 'bonus' | 'refund'
-  source: string
-  amount: number
-  description: string
-  balance_before: number
-  balance_after: number
-  check_in_id: string | null
-  reward_id: string | null
-  event_id: string | null
-  timestamp: string
-  created_at: string
-}
-
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -112,27 +94,29 @@ Deno.serve(async (req) => {
         throw error
       }
 
-      // Transform to iOS-expected format
-      const transformedTransactions: PointTransaction[] = (transactions || []).map((t: any, index: number) => {
+      // Transform to iOS-expected format (camelCase for Swift Codable)
+      const transformedTransactions = (transactions || []).map((t: any) => {
         const isEarning = t.amount > 0
         const metadata = t.metadata || {}
 
         return {
           id: t.id,
-          user_id: userId,
-          venue_id: metadata.venue_id || null,
-          venue_name: metadata.venue_name || 'Das Wohnzimmer',
+          userId: userId,
+          venueId: metadata.venue_id || null,
+          venueName: metadata.venue_name || 'Das Wohnzimmer',
           type: isEarning ? 'earn' : 'redeem',
           source: t.transaction_type || 'check_in',
           amount: Math.abs(t.amount) * (isEarning ? 1 : -1),
           description: t.description || (isEarning ? 'Points earned' : 'Points redeemed'),
-          balance_before: 0, // Would need running balance calculation
-          balance_after: 0,
-          check_in_id: metadata.check_in_id || null,
-          reward_id: metadata.reward_id || null,
-          event_id: metadata.event_id || null,
-          timestamp: t.created_at,
-          created_at: t.created_at
+          balanceBefore: 0,
+          balanceAfter: 0,
+          checkInId: metadata.check_in_id || null,
+          rewardId: metadata.reward_id || null,
+          eventId: metadata.event_id || null,
+          createdAt: t.created_at,
+          metadata: {
+            venueName: metadata.venue_name || 'Das Wohnzimmer'
+          }
         }
       })
 
@@ -143,8 +127,7 @@ Deno.serve(async (req) => {
         pagination: {
           page,
           limit,
-          total: count || 0,
-          total_pages: totalPages
+          total: count || 0
         }
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

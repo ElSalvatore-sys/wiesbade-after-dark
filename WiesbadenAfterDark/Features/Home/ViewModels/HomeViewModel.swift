@@ -272,29 +272,97 @@ final class HomeViewModel {
 
     // MARK: - Transactions Methods
 
-    /// Loads recent transactions for the user
+    /// Loads recent transactions for the user from the backend
     private func loadRecentTransactions(userId: UUID) async {
-        print("💳 [HomeViewModel] Loading recent transactions")
+        print("💳 [HomeViewModel] Loading recent transactions from backend")
 
-        // In production, this would fetch from the backend
-        // For now, use mock data if we have memberships
-        guard !memberships.isEmpty else {
-            recentTransactions = []
-            return
-        }
-
-        // Generate mock transactions for the first venue
-        if let firstMembership = memberships.first,
-           let venue = venues.first(where: { $0.id == firstMembership.venueId }) {
-            recentTransactions = PointTransaction.mockHistory(
-                userId: userId,
-                venueId: venue.id,
-                venueName: venue.name,
-                count: 8
+        do {
+            // Fetch from real backend API
+            let endpoint = APIConfig.Endpoints.userTransactions(userId: userId.uuidString)
+            let response: TransactionListResponse = try await APIClient.shared.get(
+                endpoint,
+                parameters: ["limit": "8"],
+                requiresAuth: true
             )
+
+            // Convert DTOs to models
+            recentTransactions = response.transactions.compactMap { dto in
+                convertDTOToTransaction(dto, userId: userId)
+            }
+
+            print("✅ [HomeViewModel] Loaded \(recentTransactions.count) transactions from backend")
+
+        } catch {
+            print("⚠️ [HomeViewModel] Failed to load transactions: \(error)")
+            // On error, show empty state
+            recentTransactions = []
+        }
+    }
+
+    /// Converts backend DTO to PointTransaction model
+    private func convertDTOToTransaction(_ dto: TransactionDTO, userId: UUID) -> PointTransaction? {
+        let type: TransactionType = dto.amount >= 0 ? .earn : .redeem
+        let source: TransactionSource
+
+        switch dto.source.lowercased() {
+        case "check_in", "checkin":
+            source = .checkIn
+        case "reward", "redeem", "rewardredemption":
+            source = .rewardRedemption
+        case "streak", "streak_bonus", "streakbonus":
+            source = .streakBonus
+        case "event", "event_bonus", "eventbonus":
+            source = .eventBonus
+        case "referral", "referralbonus":
+            source = .referralBonus
+        case "promo", "promotion", "promotionalbonus":
+            source = .promotionalBonus
+        case "refund":
+            source = .refund
+        default:
+            source = .checkIn
         }
 
-        print("✅ [HomeViewModel] Loaded \(recentTransactions.count) recent transactions")
+        // Get venue name from metadata or use default
+        let venueName = dto.metadata?["venueName"] as? String ?? "Das Wohnzimmer"
+
+        return PointTransaction(
+            id: dto.id,
+            userId: userId,
+            venueId: dto.venueId,
+            venueName: venueName,
+            type: type,
+            source: source,
+            amount: dto.amount,
+            transactionDescription: generateGermanDescription(source: source, venueName: venueName),
+            balanceBefore: dto.balanceBefore,
+            balanceAfter: dto.balanceAfter,
+            checkInId: dto.checkInId,
+            rewardId: dto.metadata?["rewardId"] as? UUID,
+            eventId: dto.metadata?["eventId"] as? UUID,
+            timestamp: dto.createdAt,
+            createdAt: dto.createdAt
+        )
+    }
+
+    /// Generates German transaction description based on source
+    private func generateGermanDescription(source: TransactionSource, venueName: String) -> String {
+        switch source {
+        case .checkIn:
+            return "Check-in bei \(venueName)"
+        case .rewardRedemption:
+            return "Prämie eingelöst bei \(venueName)"
+        case .streakBonus:
+            return "Streak-Bonus"
+        case .eventBonus:
+            return "Event-Bonus bei \(venueName)"
+        case .referralBonus:
+            return "Empfehlungsbonus"
+        case .promotionalBonus:
+            return "Aktionsbonus"
+        case .refund:
+            return "Rückerstattung"
+        }
     }
 
     // MARK: - Location Methods
