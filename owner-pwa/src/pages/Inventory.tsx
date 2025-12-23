@@ -26,6 +26,7 @@ import { VarianceModal } from '../components/VarianceModal';
 import type { InventoryItem as LegacyInventoryItem, InventoryCategory } from '../types';
 import { supabaseApi } from '../services/supabaseApi';
 import type { InventoryItem as SupabaseInventoryItem } from '../lib/supabase';
+import { useRealtimeSubscription } from '../hooks';
 
 interface InventoryItem {
   id: string;
@@ -117,6 +118,17 @@ export function Inventory() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Subscribe to Realtime for automatic UI updates (inventory items and transfers)
+  useRealtimeSubscription({
+    subscriptions: [
+      { table: 'inventory_items', event: '*' },
+      { table: 'inventory_transfers', event: '*' },
+    ],
+    onDataChange: () => loadData(true),
+    enabled: !loading,
+    debounceMs: 500,
+  });
 
   // Filter inventory
   const filteredInventory = inventory.filter(item => {

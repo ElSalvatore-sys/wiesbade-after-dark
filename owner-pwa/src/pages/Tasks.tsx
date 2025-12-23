@@ -25,6 +25,7 @@ import { TASK_CATEGORIES, TASK_PRIORITIES, TASK_STATUSES } from '../types/tasks'
 import { useAuth } from '../contexts/AuthContext';
 import { supabaseApi } from '../services/supabaseApi';
 import type { Employee, Task as SupabaseTask } from '../lib/supabase';
+import { useRealtimeTable } from '../hooks';
 
 // Map Supabase task to local Task interface
 const mapSupabaseTaskToLocal = (supabaseTask: SupabaseTask & { assigned_employee: Employee | null }): Task => ({
@@ -135,6 +136,9 @@ export function Tasks() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Subscribe to Realtime for automatic UI updates
+  useRealtimeTable('tasks', () => loadData(true), { enabled: !loading });
 
   // Filter tasks
   const filteredTasks = tasks.filter(task => {

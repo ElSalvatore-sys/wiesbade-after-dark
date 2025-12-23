@@ -16,6 +16,7 @@ import type { ShiftStatus, ShiftSummary } from '../types/shifts';
 import { TimesheetExport, type ShiftRecord } from '../components/TimesheetExport';
 import { supabaseApi } from '../services/supabaseApi';
 import type { Employee, Shift } from '../lib/supabase';
+import { useRealtimeSubscription } from '../hooks';
 
 // Type for active shift with calculated fields
 interface ActiveShift {
@@ -156,6 +157,17 @@ export function Shifts() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Subscribe to Realtime for automatic UI updates (shifts and employees)
+  useRealtimeSubscription({
+    subscriptions: [
+      { table: 'shifts', event: '*' },
+      { table: 'employees', event: '*' },
+    ],
+    onDataChange: loadData,
+    enabled: !loading,
+    debounceMs: 500,
+  });
 
   // Update timers every second
   useEffect(() => {

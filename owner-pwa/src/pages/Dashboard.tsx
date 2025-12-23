@@ -18,6 +18,7 @@ import {
 import type { DashboardStats } from '../types';
 import { supabaseApi } from '../services/supabaseApi';
 import { SkeletonStatCard, Skeleton } from '../components/Skeleton';
+import { useRealtimeSubscription } from '../hooks';
 
 interface DashboardProps {
   onNavigate: (page: string) => void;
@@ -190,6 +191,18 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+
+  // Subscribe to Realtime for automatic UI updates
+  useRealtimeSubscription({
+    subscriptions: [
+      { table: 'tasks', event: '*' },
+      { table: 'shifts', event: '*' },
+      { table: 'inventory_items', event: '*' },
+    ],
+    onDataChange: () => fetchDashboard(true),
+    enabled: !loading,
+    debounceMs: 1000, // Wait 1s to batch rapid changes
+  });
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
