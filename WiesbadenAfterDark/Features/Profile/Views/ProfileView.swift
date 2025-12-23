@@ -211,16 +211,101 @@ struct ProfileView: View {
 
         isLoadingTransactions = true
 
-        // Load transactions from mock data
-        // In production, this would fetch from the backend via a service
-        recentTransactions = PointTransaction.mockHistory(
-            userId: user.id,
-            venueId: UUID(), // Mock venue ID
-            venueName: "Das Wohnzimmer",
-            count: 8
-        )
+        do {
+            // Try to fetch from real backend
+            let endpoint = APIConfig.Endpoints.userTransactions(userId: user.id.uuidString)
+            let response: TransactionListResponse = try await APIClient.shared.get(
+                endpoint,
+                parameters: ["limit": "8"],
+                requiresAuth: true
+            )
+
+            // Convert DTOs to models
+            recentTransactions = response.transactions.compactMap { dto in
+                convertDTOToTransaction(dto, userId: user.id)
+            }
+
+            #if DEBUG
+            print("📊 [ProfileView] Loaded \(recentTransactions.count) transactions from backend")
+            #endif
+
+        } catch {
+            #if DEBUG
+            print("⚠️ [ProfileView] Failed to load transactions: \(error)")
+            print("   Using empty state - no transactions yet")
+            #endif
+
+            // On error, show empty state (not mock data)
+            recentTransactions = []
+        }
 
         isLoadingTransactions = false
+    }
+
+    /// Converts backend DTO to PointTransaction model
+    private func convertDTOToTransaction(_ dto: TransactionDTO, userId: UUID) -> PointTransaction? {
+        let type: TransactionType = dto.amount >= 0 ? .earn : .redeem
+        let source: TransactionSource
+
+        switch dto.source.lowercased() {
+        case "check_in", "checkin":
+            source = .checkIn
+        case "reward", "redeem", "rewardredemption":
+            source = .rewardRedemption
+        case "streak", "streak_bonus", "streakbonus":
+            source = .streakBonus
+        case "event", "event_bonus", "eventbonus":
+            source = .eventBonus
+        case "referral", "referralbonus":
+            source = .referralBonus
+        case "promo", "promotion", "promotionalbonus":
+            source = .promotionalBonus
+        case "refund":
+            source = .refund
+        default:
+            source = .checkIn
+        }
+
+        // Get venue name from metadata or use default
+        let venueName = dto.metadata?["venueName"] as? String ?? "Das Wohnzimmer"
+
+        return PointTransaction(
+            id: dto.id,
+            userId: userId,
+            venueId: dto.venueId,
+            venueName: venueName,
+            type: type,
+            source: source,
+            amount: dto.amount,
+            transactionDescription: generateDescription(source: source, venueName: venueName),
+            balanceBefore: dto.balanceBefore,
+            balanceAfter: dto.balanceAfter,
+            checkInId: dto.checkInId,
+            rewardId: dto.metadata?["rewardId"] as? UUID,
+            eventId: dto.metadata?["eventId"] as? UUID,
+            timestamp: dto.createdAt,
+            createdAt: dto.createdAt
+        )
+    }
+
+    /// Generates transaction description based on source
+    private func generateDescription(source: TransactionSource, venueName: String) -> String {
+        switch source {
+        case .checkIn:
+            return "Check-in bei \(venueName)"
+        case .rewardRedemption:
+            return "Prämie eingelöst bei \(venueName)"
+        case .streakBonus:
+            return "Streak-Bonus"
+        case .eventBonus:
+            return "Event-Bonus bei \(venueName)"
+        case .referralBonus:
+            return "Empfehlungsbonus"
+        case .promotionalBonus:
+            return "Aktionsbonus"
+        case .refund:
+            return "Rückerstattung"
+        }
     }
 
     // MARK: - Computed Properties
