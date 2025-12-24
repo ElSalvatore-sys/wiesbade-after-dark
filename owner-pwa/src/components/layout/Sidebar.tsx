@@ -9,6 +9,7 @@ import {
   ClipboardList,
   BarChart3,
   Settings,
+  History,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
   { id: 'shifts', label: 'Shifts', icon: <Clock size={20} /> },
   { id: 'tasks', label: 'Tasks', icon: <ClipboardList size={20} /> },
   { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
+  { id: 'audit', label: 'Protokoll', icon: <History size={20} /> },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
 ];
 

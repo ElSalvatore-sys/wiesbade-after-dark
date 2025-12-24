@@ -1038,6 +1038,43 @@ class SupabaseApiService {
       error: null,
     };
   }
+
+  // ============ AUDIT LOGS ============
+
+  /**
+   * Get audit logs for the venue
+   */
+  async getAuditLogs(entityType?: string): Promise<{
+    id: string;
+    venue_id: string;
+    user_id: string | null;
+    user_name: string | null;
+    action: string;
+    entity_type: string;
+    entity_id: string | null;
+    details: Record<string, unknown> | null;
+    created_at: string;
+  }[]> {
+    let query = supabase
+      .from('audit_logs')
+      .select('*')
+      .eq('venue_id', this.venueId)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (entityType) {
+      query = query.eq('entity_type', entityType);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching audit logs:', error);
+      throw error;
+    }
+
+    return data || [];
+  }
 }
 
 export const supabaseApi = new SupabaseApiService();

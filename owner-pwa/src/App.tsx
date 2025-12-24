@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Login, Dashboard, Events, Bookings, Inventory, Employees, Shifts, Tasks, Analytics, Settings } from './pages';
+import { Login, Dashboard, Events, Bookings, Inventory, Employees, Shifts, Tasks, Analytics, Settings, AuditLog } from './pages';
 import { DashboardLayout } from './components/layout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -10,7 +10,7 @@ import OfflineBanner from './components/OfflineBanner';
 import { pushNotificationService } from './services/pushNotifications';
 import { registerServiceWorker } from './services/notifications';
 
-type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 'shifts' | 'tasks' | 'analytics' | 'settings';
+type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 'shifts' | 'tasks' | 'analytics' | 'settings' | 'audit';
 
 function AppContent() {
   const { user, isAuthenticated, logout, hasPermission } = useAuth();
@@ -105,6 +105,12 @@ function AppContent() {
         return (
           <PageErrorBoundary pageName="Einstellungen" onNavigateBack={goToDashboard}>
             <Settings />
+          </PageErrorBoundary>
+        );
+      case 'audit':
+        return (
+          <PageErrorBoundary pageName="Aktivitätsprotokoll" onNavigateBack={goToDashboard}>
+            <AuditLog />
           </PageErrorBoundary>
         );
       default:
