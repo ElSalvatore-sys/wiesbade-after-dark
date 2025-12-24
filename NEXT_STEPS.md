@@ -67,15 +67,15 @@
 ## 🎯 PRIORITY 3: Feature Enhancements
 
 ### PWA Remaining
-- [ ] Bulk operations (multi-select tasks/inventory)
-- [ ] Real-time UI updates (Supabase Realtime subscriptions)
+- [x] Bulk operations (multi-select tasks/inventory) - DONE Dec 24
+- [x] Real-time UI updates (Supabase Realtime subscriptions) - DONE Dec 23
 - [ ] Form polish (floating labels)
 - [ ] Print stylesheets for reports
 - [ ] Drag-and-drop task reordering
 
 ### iOS Remaining
-- [ ] Profile page real data
-- [ ] Home screen redesign
+- [x] Profile page real data - DONE Dec 22
+- [x] Home screen real transactions API - DONE Dec 22
 - [ ] Deep linking (share venues/events)
 - [ ] Apple Wallet passes ($99 needed)
 - [ ] Widgets polish
@@ -91,8 +91,8 @@
 
 | Component | Completion | Notes |
 |-----------|------------|-------|
-| iOS App | 90% | Missing real profile data |
-| Owner PWA | 95% | Missing bulk ops, real-time |
+| iOS App | 95% | Profile + Home done, real API connected |
+| Owner PWA | 98% | Bulk ops + Realtime done |
 | Database | 100% | Ready, needs real data |
 | Testing | 95% | 212 tests, 25/25 passing |
 | Documentation | 100% | All docs created |
@@ -127,10 +127,12 @@
 
 | Task | Time | Impact |
 |------|------|--------|
-| Fix iOS profile page | 2 hours | High |
-| Add real-time to PWA | 3 hours | Medium |
-| Bulk select in tasks | 2 hours | Medium |
+| ~~Fix iOS profile page~~ | ~~2 hours~~ | ~~DONE~~ |
+| ~~Add real-time to PWA~~ | ~~3 hours~~ | ~~DONE~~ |
+| ~~Bulk select in tasks~~ | ~~2 hours~~ | ~~DONE~~ |
 | Generate screenshots | 1 hour | Needed for App Store |
+| Integrate bulk ops into Tasks.tsx | 1 hour | Medium |
+| Create data import template | 30 min | Needed for pilot |
 
 ---
 
