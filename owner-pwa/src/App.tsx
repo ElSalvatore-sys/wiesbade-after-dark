@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './contexts/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import PageErrorBoundary from './components/PageErrorBoundary';
 import OfflineBanner from './components/OfflineBanner';
 import { pushNotificationService } from './services/pushNotifications';
 import { registerServiceWorker } from './services/notifications';
@@ -48,28 +49,70 @@ function AppContent() {
     return <Login onLogin={handleLogin} />;
   }
 
+  const goToDashboard = () => setCurrentPage('dashboard');
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard onNavigate={handleNavigate} />;
+        return (
+          <PageErrorBoundary pageName="Dashboard">
+            <Dashboard onNavigate={handleNavigate} />
+          </PageErrorBoundary>
+        );
       case 'events':
-        return <Events />;
+        return (
+          <PageErrorBoundary pageName="Veranstaltungen" onNavigateBack={goToDashboard}>
+            <Events />
+          </PageErrorBoundary>
+        );
       case 'bookings':
-        return <Bookings />;
+        return (
+          <PageErrorBoundary pageName="Reservierungen" onNavigateBack={goToDashboard}>
+            <Bookings />
+          </PageErrorBoundary>
+        );
       case 'inventory':
-        return <Inventory />;
+        return (
+          <PageErrorBoundary pageName="Inventar" onNavigateBack={goToDashboard}>
+            <Inventory />
+          </PageErrorBoundary>
+        );
       case 'employees':
-        return <Employees />;
+        return (
+          <PageErrorBoundary pageName="Mitarbeiter" onNavigateBack={goToDashboard}>
+            <Employees />
+          </PageErrorBoundary>
+        );
       case 'shifts':
-        return <Shifts />;
+        return (
+          <PageErrorBoundary pageName="Schichten" onNavigateBack={goToDashboard}>
+            <Shifts />
+          </PageErrorBoundary>
+        );
       case 'tasks':
-        return <Tasks />;
+        return (
+          <PageErrorBoundary pageName="Aufgaben" onNavigateBack={goToDashboard}>
+            <Tasks />
+          </PageErrorBoundary>
+        );
       case 'analytics':
-        return <Analytics />;
+        return (
+          <PageErrorBoundary pageName="Statistiken" onNavigateBack={goToDashboard}>
+            <Analytics />
+          </PageErrorBoundary>
+        );
       case 'settings':
-        return <Settings />;
+        return (
+          <PageErrorBoundary pageName="Einstellungen" onNavigateBack={goToDashboard}>
+            <Settings />
+          </PageErrorBoundary>
+        );
       default:
-        return <Dashboard onNavigate={handleNavigate} />;
+        return (
+          <PageErrorBoundary pageName="Dashboard">
+            <Dashboard onNavigate={handleNavigate} />
+          </PageErrorBoundary>
+        );
     }
   };
 

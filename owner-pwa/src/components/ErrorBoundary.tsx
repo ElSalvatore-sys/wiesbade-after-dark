@@ -51,11 +51,11 @@ class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <h1 className="text-xl font-semibold text-white mb-2">
-              Something went wrong
+              Ein Fehler ist aufgetreten
             </h1>
 
             <p className="text-zinc-400 mb-6">
-              We encountered an unexpected error. Please try refreshing the page.
+              Es ist ein unerwarteter Fehler aufgetreten. Bitte versuchen Sie, die Seite neu zu laden.
             </p>
 
             {import.meta.env.DEV && this.state.error && (
@@ -72,7 +72,7 @@ class ErrorBoundary extends Component<Props, State> {
                 className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-colors"
               >
                 <Home className="w-4 h-4" />
-                Go Home
+                Startseite
               </button>
 
               <button
@@ -80,7 +80,7 @@ class ErrorBoundary extends Component<Props, State> {
                 className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
-                Refresh
+                Erneut versuchen
               </button>
             </div>
           </div>
