@@ -18,10 +18,12 @@ import {
   Users,
   Loader2,
   AlertCircle,
+  Download,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabaseApi } from '../services/supabaseApi';
 import type { Employee as DbEmployee } from '../lib/supabase';
+import { exportEmployeesCSV } from '../lib/exportUtils';
 
 // Granular roles for bar/club operations
 export type EmployeeRole = 'owner' | 'manager' | 'bartender' | 'waiter' | 'security' | 'dj' | 'cleaning';
@@ -257,6 +259,19 @@ export function Employees() {
   const activeCount = employees.filter(e => e.isActive).length;
   const totalHourlyRate = employees.filter(e => e.isActive && e.hourlyRate).reduce((sum, e) => sum + (e.hourlyRate || 0), 0);
 
+  // Export employees to CSV
+  const handleExport = () => {
+    const exportData = employees.map(emp => ({
+      name: emp.name,
+      role: emp.role,
+      email: emp.email,
+      phone: emp.phone,
+      isActive: emp.isActive,
+      startDate: emp.createdAt ? new Date(emp.createdAt).toLocaleDateString('de-DE') : undefined,
+    }));
+    exportEmployeesCSV(exportData, 'Das Wohnzimmer');
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -286,13 +301,23 @@ export function Employees() {
           <h1 className="text-2xl font-bold text-foreground">Team</h1>
           <p className="text-foreground-muted">{activeCount} aktive Mitarbeiter</p>
         </div>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-primary text-white rounded-xl hover:opacity-90 transition-all shadow-glow-sm"
-        >
-          <Plus size={18} />
-          <span>Hinzufügen</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all border border-border"
+            title="Export als CSV"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+          <button
+            onClick={openAddModal}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-primary text-white rounded-xl hover:opacity-90 transition-all shadow-glow-sm"
+          >
+            <Plus size={18} />
+            <span>Hinzufügen</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

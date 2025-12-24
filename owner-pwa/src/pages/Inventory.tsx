@@ -17,7 +17,9 @@ import {
   Trash2,
   Loader2,
   RefreshCw,
+  Download,
 } from 'lucide-react';
+import { exportInventoryCSV } from '../lib/exportUtils';
 import { InventoryModal } from '../components/InventoryModal';
 import { BarcodeScanner } from '../components/BarcodeScanner';
 import { StockUpdateModal } from '../components/StockUpdateModal';
@@ -265,6 +267,21 @@ export function Inventory() {
     return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
   };
 
+  // Export inventory to CSV
+  const handleExport = () => {
+    const exportData = inventory.map(item => ({
+      name: item.name,
+      category: item.category,
+      storageQuantity: item.storageCount,
+      barQuantity: item.barCount,
+      unit: 'Stück',
+      minStockLevel: item.minStock,
+      price: item.price,
+      barcode: item.barcode,
+    }));
+    exportInventoryCSV(exportData, 'Das Wohnzimmer');
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -323,6 +340,14 @@ export function Inventory() {
           >
             <Plus size={18} />
             <span className="hidden sm:inline">Add Item</span>
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-3 bg-card text-foreground rounded-xl hover:bg-card/80 transition-all border border-border"
+            title="Export als CSV"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">Export</span>
           </button>
         </div>
       </div>
