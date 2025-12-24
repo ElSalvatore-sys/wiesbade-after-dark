@@ -189,6 +189,8 @@
 | 462d214 | Phase 4.2: Password Reset Flow |
 | b798921 | Phase 5: Add Final Test Report |
 | 6cd04b8 | Integrate missing UX features |
+| 2f24d1d | Update test report with Phase 5 |
+| 2275583 | Add export buttons to Inventory/Employees |
 
 ---
 
