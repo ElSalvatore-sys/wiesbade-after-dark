@@ -7,6 +7,9 @@ import { ToastProvider } from './contexts/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import PageErrorBoundary from './components/PageErrorBoundary';
 import OfflineBanner from './components/OfflineBanner';
+import { CommandPalette } from './components/ui/CommandPalette';
+import { ShortcutsHelp } from './components/ui/ShortcutsHelp';
+import { useKeyboardShortcuts } from './hooks';
 import { pushNotificationService } from './services/pushNotifications';
 import { registerServiceWorker } from './services/notifications';
 
@@ -15,6 +18,15 @@ type Page = 'dashboard' | 'events' | 'bookings' | 'inventory' | 'employees' | 's
 function AppContent() {
   const { user, isAuthenticated, logout, hasPermission } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
+
+  // Keyboard shortcuts hook
+  const {
+    shortcuts,
+    showHelp,
+    setShowHelp,
+    showCommandPalette,
+    setShowCommandPalette,
+  } = useKeyboardShortcuts({ onNavigate: (page) => setCurrentPage(page as Page) });
 
   // Initialize push notifications and realtime listeners when authenticated
   useEffect(() => {
@@ -130,18 +142,37 @@ function AppContent() {
   };
 
   return (
-    <DashboardLayout
-      currentPage={currentPage}
-      onNavigate={handleNavigateWithPermission}
-      onLogout={handleLogout}
-      venueName={user?.venueName || 'Das Wohnzimmer'}
-      userName={user?.name || 'User'}
-      userAvatar={undefined}
-      userRole={user?.role}
-      hasPermission={hasPermission}
-    >
-      {renderPage()}
-    </DashboardLayout>
+    <>
+      <DashboardLayout
+        currentPage={currentPage}
+        onNavigate={handleNavigateWithPermission}
+        onLogout={handleLogout}
+        venueName={user?.venueName || 'Das Wohnzimmer'}
+        userName={user?.name || 'User'}
+        userAvatar={undefined}
+        userRole={user?.role}
+        hasPermission={hasPermission}
+      >
+        {renderPage()}
+      </DashboardLayout>
+
+      {/* Command Palette - ⌘K to open */}
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        onNavigate={(page) => {
+          setCurrentPage(page as Page);
+          setShowCommandPalette(false);
+        }}
+      />
+
+      {/* Shortcuts Help - ? to open */}
+      <ShortcutsHelp
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        shortcuts={shortcuts}
+      />
+    </>
   );
 }
 
