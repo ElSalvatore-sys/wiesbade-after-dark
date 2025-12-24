@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import { PhotoUpload } from '../components/PhotoUpload';
 import { cn } from '../lib/utils';
+import { useBulkSelect } from '../hooks/useBulkSelect';
+import { BulkActionsBar, taskBulkActions } from '../components/ui/BulkActionsBar';
+import { Checkbox } from '../components/ui/Checkbox';
 import type { Task, TaskStatus, TaskPriority, TaskCategory } from '../types/tasks';
 import { TASK_CATEGORIES, TASK_PRIORITIES, TASK_STATUSES } from '../types/tasks';
 import { useAuth } from '../contexts/AuthContext';
@@ -147,6 +150,21 @@ export function Tasks() {
     return true;
   });
 
+  // Bulk selection
+  const {
+    isSelected,
+    toggle,
+    selectAll,
+    deselectAll,
+    isAllSelected,
+    isSomeSelected,
+    selectedCount,
+    selectedItems,
+  } = useBulkSelect({
+    items: filteredTasks,
+    getItemId: (task) => task.id,
+  });
+
   // Group tasks by status
   const pendingTasks = filteredTasks.filter(t => t.status === 'pending');
   const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress');
@@ -266,6 +284,37 @@ export function Tasks() {
     }
   };
 
+  // Bulk action handlers
+  const handleBulkComplete = async () => {
+    try {
+      await Promise.all(
+        selectedItems.map((task) =>
+          supabaseApi.updateTask(task.id, { status: 'completed' })
+        )
+      );
+      // Refresh and deselect
+      await loadData(true);
+      deselectAll();
+    } catch (err) {
+      console.error('Error bulk completing tasks:', err);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`${selectedCount} Aufgaben wirklich löschen?`)) return;
+
+    try {
+      await Promise.all(
+        selectedItems.map((task) => supabaseApi.deleteTask(task.id))
+      );
+      // Refresh and deselect
+      await loadData(true);
+      deselectAll();
+    } catch (err) {
+      console.error('Error bulk deleting tasks:', err);
+    }
+  };
+
   const addTask = async () => {
     if (!newTask.title.trim()) return;
 
@@ -329,6 +378,7 @@ export function Tasks() {
 
   const TaskCard = ({ task }: { task: Task }) => {
     const categoryInfo = getCategoryInfo(task.category);
+    const selected = isSelected(task.id);
 
     return (
       <div
@@ -336,10 +386,20 @@ export function Tasks() {
         className={cn(
           "p-4 glass-card rounded-xl cursor-pointer hover:border-primary-500/50 transition-all",
           task.status === 'approved' && "opacity-60",
-          task.status === 'rejected' && "opacity-50 border-error/30"
+          task.status === 'rejected' && "opacity-50 border-error/30",
+          selected && "border-purple-500/50 bg-purple-500/10"
         )}
       >
         <div className="flex items-start gap-3">
+          {/* Bulk select checkbox */}
+          <div className="mt-0.5 flex-shrink-0">
+            <Checkbox
+              checked={selected}
+              onChange={() => toggle(task.id)}
+              size="sm"
+            />
+          </div>
+
           {/* Status indicator */}
           <div
             className="mt-0.5 flex-shrink-0"
@@ -443,11 +503,22 @@ export function Tasks() {
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in pb-20">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Tasks</h1>
-          <p className="text-foreground-muted">
-            {pendingTasks.length + inProgressTasks.length} active, {completedTasks.length} awaiting approval
-          </p>
+        <div className="flex items-center gap-3">
+          {/* Select All Checkbox */}
+          <Checkbox
+            checked={isAllSelected}
+            indeterminate={isSomeSelected}
+            onChange={(checked) => (checked ? selectAll() : deselectAll())}
+            size="md"
+          />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Tasks</h1>
+            <p className="text-foreground-muted">
+              {selectedCount > 0
+                ? `${selectedCount} ausgewählt`
+                : `${pendingTasks.length + inProgressTasks.length} active, ${completedTasks.length} awaiting approval`}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -888,6 +959,16 @@ export function Tasks() {
           </div>
         </div>
       )}
+
+      {/* Bulk Actions Bar */}
+      <BulkActionsBar
+        selectedCount={selectedCount}
+        onDeselectAll={deselectAll}
+        actions={[
+          taskBulkActions.markComplete(handleBulkComplete),
+          taskBulkActions.delete(handleBulkDelete),
+        ]}
+      />
     </div>
   );
 }

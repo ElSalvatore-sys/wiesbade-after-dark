@@ -1,4 +1,4 @@
-import { supabase, type Employee, type Shift, type Task, type InventoryItem, type InventoryTransfer } from '../lib/supabase';
+import { supabase, type Employee, type Shift, type Task, type InventoryItem, type InventoryTransfer, type VenueBooking } from '../lib/supabase';
 
 // Default venue ID for Das Wohnzimmer (from seed data)
 const DEFAULT_VENUE_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
@@ -20,14 +20,18 @@ class SupabaseApiService {
   }
 
   // ============ EMPLOYEES ============
-  async getEmployees(): Promise<{ data: Employee[] | null; error: Error | null }> {
-    const { data, error } = await supabase
+  async getEmployees(includeInactive = false): Promise<{ data: Employee[] | null; error: Error | null }> {
+    let query = supabase
       .from('employees')
       .select('*')
       .eq('venue_id', this.venueId)
-      .eq('is_active', true)
       .order('name');
 
+    if (!includeInactive) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query;
     return { data, error: error as Error | null };
   }
 
@@ -39,6 +43,44 @@ class SupabaseApiService {
       .single();
 
     return { data, error: error as Error | null };
+  }
+
+  async createEmployee(employee: Partial<Employee>): Promise<{ data: Employee | null; error: Error | null }> {
+    const { data, error } = await supabase
+      .from('employees')
+      .insert({
+        venue_id: this.venueId,
+        ...employee,
+        is_active: employee.is_active ?? true,
+      })
+      .select()
+      .single();
+
+    return { data, error: error as Error | null };
+  }
+
+  async updateEmployee(employeeId: string, updates: Partial<Employee>): Promise<{ data: Employee | null; error: Error | null }> {
+    const { data, error } = await supabase
+      .from('employees')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', employeeId)
+      .select()
+      .single();
+
+    return { data, error: error as Error | null };
+  }
+
+  async deleteEmployee(employeeId: string): Promise<{ error: Error | null }> {
+    // Soft delete by setting is_active to false
+    const { error } = await supabase
+      .from('employees')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', employeeId);
+
+    return { error: error as Error | null };
   }
 
   async verifyEmployeePin(employeeId: string, pin: string): Promise<{ valid: boolean; employee: Employee | null }> {
@@ -427,7 +469,634 @@ class SupabaseApiService {
 
     return { data: lowStock, error: null };
   }
+
+  // ============ VENUE BOOKINGS ============
+  async getBookings(params?: {
+    date?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{ data: VenueBooking[] | null; error: Error | null }> {
+    let query = supabase
+      .from('venue_bookings')
+      .select('*')
+      .eq('venue_id', this.venueId)
+      .order('date', { ascending: true })
+      .order('time', { ascending: true });
+
+    if (params?.date) {
+      query = query.eq('date', params.date);
+    }
+    if (params?.status) {
+      query = query.eq('status', params.status);
+    }
+    if (params?.startDate) {
+      query = query.gte('date', params.startDate);
+    }
+    if (params?.endDate) {
+      query = query.lte('date', params.endDate);
+    }
+
+    const { data, error } = await query;
+    return { data, error: error as Error | null };
+  }
+
+  async getBooking(bookingId: string): Promise<{ data: VenueBooking | null; error: Error | null }> {
+    const { data, error } = await supabase
+      .from('venue_bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .single();
+
+    return { data, error: error as Error | null };
+  }
+
+  async createBooking(booking: Partial<VenueBooking>): Promise<{ data: VenueBooking | null; error: Error | null }> {
+    const { data, error } = await supabase
+      .from('venue_bookings')
+      .insert({
+        venue_id: this.venueId,
+        ...booking,
+        status: booking.status ?? 'pending',
+      })
+      .select()
+      .single();
+
+    return { data, error: error as Error | null };
+  }
+
+  async updateBooking(bookingId: string, updates: Partial<VenueBooking>): Promise<{ data: VenueBooking | null; error: Error | null }> {
+    const { data, error } = await supabase
+      .from('venue_bookings')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', bookingId)
+      .select()
+      .single();
+
+    return { data, error: error as Error | null };
+  }
+
+  async deleteBooking(bookingId: string): Promise<{ error: Error | null }> {
+    const { error } = await supabase
+      .from('venue_bookings')
+      .delete()
+      .eq('id', bookingId);
+
+    return { error: error as Error | null };
+  }
+
+  async getBookingsSummary(date?: string): Promise<{
+    total: number;
+    pending: number;
+    confirmed: number;
+    cancelled: number;
+    totalGuests: number;
+  }> {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+
+    const { data } = await supabase
+      .from('venue_bookings')
+      .select('*')
+      .eq('venue_id', this.venueId)
+      .eq('date', targetDate);
+
+    if (!data) {
+      return { total: 0, pending: 0, confirmed: 0, cancelled: 0, totalGuests: 0 };
+    }
+
+    return {
+      total: data.length,
+      pending: data.filter(b => b.status === 'pending').length,
+      confirmed: data.filter(b => b.status === 'confirmed').length,
+      cancelled: data.filter(b => b.status === 'cancelled').length,
+      totalGuests: data.reduce((sum, b) => sum + b.party_size, 0),
+    };
+  }
+
+  // ============ ANALYTICS ============
+  async getLaborCostsByRole(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
+    data: Array<{
+      role: string;
+      totalHours: number;
+      totalCost: number;
+      shiftCount: number;
+    }> | null;
+    error: Error | null;
+  }> {
+    let query = supabase
+      .from('shifts')
+      .select(`
+        *,
+        employee:employees(role, hourly_rate)
+      `)
+      .eq('venue_id', this.venueId)
+      .eq('status', 'completed');
+
+    if (params?.startDate) {
+      query = query.gte('clock_in', params.startDate);
+    }
+    if (params?.endDate) {
+      query = query.lte('clock_in', params.endDate);
+    }
+
+    const { data, error } = await query;
+
+    if (error || !data) {
+      return { data: null, error: error as Error | null };
+    }
+
+    // Group by role
+    const roleMap = new Map<string, { totalHours: number; totalCost: number; shiftCount: number }>();
+
+    for (const shift of data) {
+      // Supabase joins return arrays, access first element
+      const employeeData = shift.employee as { role: string; hourly_rate: number }[] | null;
+      const role = employeeData?.[0]?.role || 'unknown';
+      const hours = shift.actual_hours || 0;
+      const hourlyRate = employeeData?.[0]?.hourly_rate || 0;
+      const cost = hours * hourlyRate;
+
+      const existing = roleMap.get(role) || { totalHours: 0, totalCost: 0, shiftCount: 0 };
+      roleMap.set(role, {
+        totalHours: existing.totalHours + hours,
+        totalCost: existing.totalCost + cost,
+        shiftCount: existing.shiftCount + 1,
+      });
+    }
+
+    const result = Array.from(roleMap.entries()).map(([role, data]) => ({
+      role,
+      totalHours: parseFloat(data.totalHours.toFixed(1)),
+      totalCost: parseFloat(data.totalCost.toFixed(2)),
+      shiftCount: data.shiftCount,
+    }));
+
+    // Sort by cost descending
+    result.sort((a, b) => b.totalCost - a.totalCost);
+
+    return { data: result, error: null };
+  }
+
+  async getAnalyticsSummary(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
+    totalLaborCost: number;
+    totalHoursWorked: number;
+    averageShiftLength: number;
+    totalShifts: number;
+    bookingsCount: number;
+    totalGuests: number;
+  }> {
+    // Get shifts data
+    let shiftQuery = supabase
+      .from('shifts')
+      .select(`
+        actual_hours,
+        employee:employees(hourly_rate)
+      `)
+      .eq('venue_id', this.venueId)
+      .eq('status', 'completed');
+
+    if (params?.startDate) {
+      shiftQuery = shiftQuery.gte('clock_in', params.startDate);
+    }
+    if (params?.endDate) {
+      shiftQuery = shiftQuery.lte('clock_in', params.endDate);
+    }
+
+    const { data: shifts } = await shiftQuery;
+
+    // Get bookings data
+    let bookingQuery = supabase
+      .from('venue_bookings')
+      .select('party_size')
+      .eq('venue_id', this.venueId)
+      .in('status', ['confirmed', 'completed']);
+
+    if (params?.startDate) {
+      bookingQuery = bookingQuery.gte('date', params.startDate);
+    }
+    if (params?.endDate) {
+      bookingQuery = bookingQuery.lte('date', params.endDate);
+    }
+
+    const { data: bookings } = await bookingQuery;
+
+    // Calculate metrics
+    let totalLaborCost = 0;
+    let totalHoursWorked = 0;
+
+    if (shifts) {
+      for (const shift of shifts) {
+        const hours = shift.actual_hours || 0;
+        // Supabase joins return arrays, access first element
+        const employeeData = shift.employee as { hourly_rate: number }[] | null;
+        const rate = employeeData?.[0]?.hourly_rate || 0;
+        totalHoursWorked += hours;
+        totalLaborCost += hours * rate;
+      }
+    }
+
+    const totalShifts = shifts?.length || 0;
+    const averageShiftLength = totalShifts > 0 ? totalHoursWorked / totalShifts : 0;
+
+    const bookingsCount = bookings?.length || 0;
+    const totalGuests = bookings?.reduce((sum, b) => sum + b.party_size, 0) || 0;
+
+    return {
+      totalLaborCost: parseFloat(totalLaborCost.toFixed(2)),
+      totalHoursWorked: parseFloat(totalHoursWorked.toFixed(1)),
+      averageShiftLength: parseFloat(averageShiftLength.toFixed(1)),
+      totalShifts,
+      bookingsCount,
+      totalGuests,
+    };
+  }
+
+  // ============ ADVANCED ANALYTICS ============
+
+  /**
+   * Get daily statistics for charts
+   */
+  async getDailyStats(params: {
+    startDate: string;
+    endDate: string;
+  }): Promise<{
+    data: {
+      date: string;
+      shifts: number;
+      hoursWorked: number;
+      laborCost: number;
+      tasksCompleted: number;
+      bookings: number;
+    }[];
+    error: Error | null;
+  }> {
+    // Get shifts with employee rates
+    const { data: shifts } = await supabase
+      .from('shifts')
+      .select('clock_in, clock_out, break_minutes, employee:employees(hourly_rate)')
+      .eq('venue_id', this.venueId)
+      .gte('clock_in', params.startDate)
+      .lte('clock_in', params.endDate);
+
+    // Get completed tasks
+    const { data: tasks } = await supabase
+      .from('tasks')
+      .select('status, updated_at')
+      .eq('venue_id', this.venueId)
+      .in('status', ['completed', 'approved'])
+      .gte('updated_at', params.startDate)
+      .lte('updated_at', params.endDate);
+
+    // Get bookings
+    const { data: bookings } = await supabase
+      .from('venue_bookings')
+      .select('date')
+      .eq('venue_id', this.venueId)
+      .in('status', ['confirmed', 'completed'])
+      .gte('date', params.startDate)
+      .lte('date', params.endDate);
+
+    // Group by date
+    const dailyMap = new Map<string, {
+      date: string;
+      shifts: number;
+      hoursWorked: number;
+      laborCost: number;
+      tasksCompleted: number;
+      bookings: number;
+    }>();
+
+    // Initialize all dates in range
+    const start = new Date(params.startDate);
+    const end = new Date(params.endDate);
+    const current = new Date(start);
+    while (current <= end) {
+      const dateKey = current.toISOString().split('T')[0];
+      dailyMap.set(dateKey, {
+        date: dateKey,
+        shifts: 0,
+        hoursWorked: 0,
+        laborCost: 0,
+        tasksCompleted: 0,
+        bookings: 0,
+      });
+      current.setDate(current.getDate() + 1);
+    }
+
+    // Aggregate shifts
+    (shifts || []).forEach(shift => {
+      if (!shift.clock_in) return;
+      const dateKey = shift.clock_in.split('T')[0];
+      const stats = dailyMap.get(dateKey);
+      if (!stats) return;
+
+      stats.shifts++;
+
+      if (shift.clock_out) {
+        const clockIn = new Date(shift.clock_in);
+        const clockOut = new Date(shift.clock_out);
+        const hours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
+        const breakHours = (shift.break_minutes || 0) / 60;
+        const netHours = Math.max(0, hours - breakHours);
+        stats.hoursWorked += netHours;
+
+        const employeeData = shift.employee as { hourly_rate: number }[] | null;
+        const rate = employeeData?.[0]?.hourly_rate || 12;
+        stats.laborCost += netHours * rate;
+      }
+    });
+
+    // Aggregate tasks
+    (tasks || []).forEach(task => {
+      if (!task.updated_at) return;
+      const dateKey = task.updated_at.split('T')[0];
+      const stats = dailyMap.get(dateKey);
+      if (stats) stats.tasksCompleted++;
+    });
+
+    // Aggregate bookings
+    (bookings || []).forEach(booking => {
+      if (!booking.date) return;
+      const dateKey = booking.date.split('T')[0];
+      const stats = dailyMap.get(dateKey);
+      if (stats) stats.bookings++;
+    });
+
+    // Round values
+    const result = Array.from(dailyMap.values()).map(stats => ({
+      ...stats,
+      hoursWorked: Math.round(stats.hoursWorked * 100) / 100,
+      laborCost: Math.round(stats.laborCost * 100) / 100,
+    }));
+
+    return { data: result, error: null };
+  }
+
+  /**
+   * Get per-employee statistics
+   */
+  async getEmployeePerformance(params: {
+    startDate: string;
+    endDate: string;
+  }): Promise<{
+    data: {
+      id: string;
+      name: string;
+      role: string;
+      totalShifts: number;
+      totalHours: number;
+      totalEarnings: number;
+      avgShiftLength: number;
+      tasksCompleted: number;
+    }[];
+    error: Error | null;
+  }> {
+    // Get employees with shifts in range
+    const { data: employees } = await supabase
+      .from('employees')
+      .select('id, name, role, hourly_rate')
+      .eq('venue_id', this.venueId)
+      .eq('is_active', true);
+
+    if (!employees) return { data: [], error: null };
+
+    const result = await Promise.all(employees.map(async (emp) => {
+      // Get shifts for this employee
+      const { data: shifts } = await supabase
+        .from('shifts')
+        .select('clock_in, clock_out, break_minutes')
+        .eq('employee_id', emp.id)
+        .gte('clock_in', params.startDate)
+        .lte('clock_in', params.endDate);
+
+      // Get tasks completed by this employee
+      const { data: tasks } = await supabase
+        .from('tasks')
+        .select('id')
+        .eq('assigned_to', emp.id)
+        .in('status', ['completed', 'approved'])
+        .gte('updated_at', params.startDate)
+        .lte('updated_at', params.endDate);
+
+      let totalHours = 0;
+      (shifts || []).forEach(shift => {
+        if (shift.clock_in && shift.clock_out) {
+          const clockIn = new Date(shift.clock_in);
+          const clockOut = new Date(shift.clock_out);
+          const hours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
+          const breakHours = (shift.break_minutes || 0) / 60;
+          totalHours += Math.max(0, hours - breakHours);
+        }
+      });
+
+      const totalEarnings = totalHours * (emp.hourly_rate || 12);
+      const totalShifts = shifts?.length || 0;
+      const avgShiftLength = totalShifts > 0 ? totalHours / totalShifts : 0;
+
+      return {
+        id: emp.id,
+        name: emp.name,
+        role: emp.role,
+        totalShifts,
+        totalHours: Math.round(totalHours * 100) / 100,
+        totalEarnings: Math.round(totalEarnings * 100) / 100,
+        avgShiftLength: Math.round(avgShiftLength * 100) / 100,
+        tasksCompleted: tasks?.length || 0,
+      };
+    }));
+
+    // Sort by total hours descending
+    result.sort((a, b) => b.totalHours - a.totalHours);
+
+    return { data: result, error: null };
+  }
+
+  /**
+   * Get task statistics
+   */
+  async getTaskStats(params: {
+    startDate: string;
+    endDate: string;
+  }): Promise<{
+    data: {
+      total: number;
+      completed: number;
+      pending: number;
+      inProgress: number;
+      overdue: number;
+      completionRate: number;
+      byPriority: { priority: string; count: number }[];
+    };
+    error: Error | null;
+  }> {
+    const { data: tasks } = await supabase
+      .from('tasks')
+      .select('status, priority, due_date')
+      .eq('venue_id', this.venueId)
+      .gte('created_at', params.startDate)
+      .lte('created_at', params.endDate);
+
+    const now = new Date();
+    let completed = 0;
+    let pending = 0;
+    let inProgress = 0;
+    let overdue = 0;
+    const priorityMap = new Map<string, number>();
+
+    (tasks || []).forEach(task => {
+      if (task.status === 'completed' || task.status === 'approved') completed++;
+      else if (task.status === 'pending') pending++;
+      else if (task.status === 'in_progress') inProgress++;
+
+      if (task.due_date && new Date(task.due_date) < now && task.status !== 'completed' && task.status !== 'approved') {
+        overdue++;
+      }
+
+      const priority = task.priority || 'medium';
+      priorityMap.set(priority, (priorityMap.get(priority) || 0) + 1);
+    });
+
+    const total = tasks?.length || 0;
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return {
+      data: {
+        total,
+        completed,
+        pending,
+        inProgress,
+        overdue,
+        completionRate,
+        byPriority: Array.from(priorityMap.entries()).map(([priority, count]) => ({ priority, count })),
+      },
+      error: null,
+    };
+  }
+
+  /**
+   * Get inventory statistics
+   */
+  async getInventoryStats(): Promise<{
+    data: {
+      totalItems: number;
+      totalValue: number;
+      lowStockCount: number;
+      outOfStockCount: number;
+      categoryBreakdown: { category: string; count: number; value: number }[];
+    };
+    error: Error | null;
+  }> {
+    const { data: items } = await supabase
+      .from('inventory_items')
+      .select('*')
+      .eq('venue_id', this.venueId);
+
+    let totalValue = 0;
+    let lowStockCount = 0;
+    let outOfStockCount = 0;
+    const categoryMap = new Map<string, { count: number; value: number }>();
+
+    (items || []).forEach(item => {
+      const total = (item.storage_quantity || 0) + (item.bar_quantity || 0);
+      const value = total * (item.unit_price || 0);
+      totalValue += value;
+
+      if (total === 0) outOfStockCount++;
+      else if (total <= (item.min_stock_level || 0)) lowStockCount++;
+
+      const cat = item.category || 'Sonstige';
+      const existing = categoryMap.get(cat) || { count: 0, value: 0 };
+      categoryMap.set(cat, {
+        count: existing.count + 1,
+        value: existing.value + value,
+      });
+    });
+
+    return {
+      data: {
+        totalItems: items?.length || 0,
+        totalValue: Math.round(totalValue * 100) / 100,
+        lowStockCount,
+        outOfStockCount,
+        categoryBreakdown: Array.from(categoryMap.entries())
+          .map(([category, data]) => ({
+            category,
+            count: data.count,
+            value: Math.round(data.value * 100) / 100,
+          }))
+          .sort((a, b) => b.value - a.value),
+      },
+      error: null,
+    };
+  }
 }
 
 export const supabaseApi = new SupabaseApiService();
+
+// ============================================
+// PIN VERIFICATION (Secure Edge Functions)
+// ============================================
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://yyplbhrqtaeyzmcxpfli.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5cGxiaHJxdGFleXptY3hwZmxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NTMzMjcsImV4cCI6MjA4MDQyOTMyN30.qY10_JBCACxptGnrqS_ILhWsNsmMKgEitaXEtViBRQc';
+
+export const verifyEmployeePin = async (
+  employeeId: string,
+  pin: string
+): Promise<{ valid: boolean; employee?: { id: string; name: string; role: string }; error?: string }> => {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/verify-pin`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ employee_id: employeeId, pin }),
+      }
+    );
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('PIN verification error:', error);
+    return { valid: false, error: 'Verifizierung fehlgeschlagen' };
+  }
+};
+
+export const setEmployeePin = async (
+  employeeId: string,
+  newPin: string
+): Promise<{ success: boolean; message?: string; error?: string }> => {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/set-pin`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ employee_id: employeeId, new_pin: newPin }),
+      }
+    );
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Set PIN error:', error);
+    return { success: false, error: 'PIN konnte nicht gesetzt werden' };
+  }
+};
+
 export default supabaseApi;

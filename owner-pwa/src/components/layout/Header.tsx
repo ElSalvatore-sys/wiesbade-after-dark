@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { cn } from '../../lib/utils';
 import { ChevronDown, User, Settings, LogOut, Menu } from 'lucide-react';
 import { NotificationBell } from '../NotificationBell';
+import { LiveIndicator, LiveDot } from '../ui/LiveIndicator';
+import { useRealtimeStatus } from '../../hooks/useRealtimeStatus';
 import type { Notification } from '../../types';
 
 interface HeaderProps {
@@ -30,6 +32,7 @@ export function Header({
   isSidebarCollapsed,
 }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { isConnected, lastUpdate } = useRealtimeStatus();
 
   return (
     <header
@@ -55,6 +58,19 @@ export function Header({
           <p className="text-xs text-foreground-muted">
             Welcome back, {userName}
           </p>
+        </div>
+
+        {/* Live Indicator - Desktop */}
+        <LiveIndicator
+          isConnected={isConnected}
+          lastUpdate={lastUpdate}
+          showLabel={true}
+          className="hidden sm:flex"
+        />
+
+        {/* Live Dot - Mobile */}
+        <div className="sm:hidden">
+          <LiveDot isConnected={isConnected} />
         </div>
       </div>
 

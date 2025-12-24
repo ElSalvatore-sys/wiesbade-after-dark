@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Plus,
   Phone,
@@ -16,12 +16,17 @@ import {
   Sparkles,
   UserCog,
   Users,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { supabaseApi } from '../services/supabaseApi';
+import type { Employee as DbEmployee } from '../lib/supabase';
 
 // Granular roles for bar/club operations
 export type EmployeeRole = 'owner' | 'manager' | 'bartender' | 'waiter' | 'security' | 'dj' | 'cleaning';
 
+// UI-friendly employee interface (maps from database)
 interface Employee {
   id: string;
   name: string;
@@ -34,17 +39,18 @@ interface Employee {
   createdAt: string;
 }
 
-// Mock data with various roles
-const mockEmployees: Employee[] = [
-  { id: '1', name: 'Max Müller', role: 'owner', phone: '+49 611 1234567', email: 'max@daswohnzimmer.de', isActive: true, createdAt: '2024-01-01' },
-  { id: '2', name: 'Sarah Schmidt', role: 'manager', phone: '+49 611 2345678', email: 'sarah@daswohnzimmer.de', pin: '1234', hourlyRate: 20, isActive: true, createdAt: '2024-02-15' },
-  { id: '3', name: 'Tom Weber', role: 'bartender', phone: '+49 611 3456789', pin: '2345', hourlyRate: 15, isActive: true, createdAt: '2024-03-20' },
-  { id: '4', name: 'Lisa Fischer', role: 'bartender', email: 'lisa@daswohnzimmer.de', pin: '3456', hourlyRate: 15, isActive: true, createdAt: '2024-03-25' },
-  { id: '5', name: 'Anna Klein', role: 'waiter', phone: '+49 611 4567890', pin: '4567', hourlyRate: 13, isActive: true, createdAt: '2024-04-10' },
-  { id: '6', name: 'Marco Braun', role: 'security', phone: '+49 611 5678901', pin: '5678', hourlyRate: 18, isActive: true, createdAt: '2024-05-01' },
-  { id: '7', name: 'DJ Pulse', role: 'dj', email: 'pulse@djmail.de', isActive: true, createdAt: '2024-06-15' },
-  { id: '8', name: 'Hans Becker', role: 'cleaning', phone: '+49 611 6789012', pin: '6789', hourlyRate: 12, isActive: false, createdAt: '2024-01-15' },
-];
+// Map database employee to UI employee
+const mapDbToUi = (db: DbEmployee): Employee => ({
+  id: db.id,
+  name: db.name,
+  role: db.role,
+  phone: db.phone || undefined,
+  email: db.email || undefined,
+  pin: db.pin_hash || undefined,
+  hourlyRate: db.hourly_rate || undefined,
+  isActive: db.is_active,
+  createdAt: db.created_at,
+});
 
 // Role configuration with colors and icons
 const roleConfig: Record<EmployeeRole, { color: string; icon: React.ReactNode; label: string; permissions: string[] }> = {
@@ -95,7 +101,10 @@ const roleConfig: Record<EmployeeRole, { color: string; icon: React.ReactNode; l
 const roleOrder: EmployeeRole[] = ['owner', 'manager', 'bartender', 'waiter', 'security', 'dj', 'cleaning'];
 
 export function Employees() {
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -110,6 +119,26 @@ export function Employees() {
     pin: '',
     hourlyRate: '',
   });
+
+  // Fetch employees from Supabase
+  const fetchEmployees = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabaseApi.getEmployees(true); // Include inactive
+      if (error) throw error;
+      setEmployees((data || []).map(mapDbToUi));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Mitarbeiter');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Load employees on mount
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
 
   // Reset form
   const resetForm = () => {
@@ -138,54 +167,71 @@ export function Employees() {
   };
 
   // Save employee (add or update)
-  const saveEmployee = () => {
+  const saveEmployee = async () => {
     if (!formData.name.trim()) return;
+    setSaving(true);
 
-    if (editingEmployee) {
-      // Update existing
-      setEmployees(employees.map(e =>
-        e.id === editingEmployee.id
-          ? {
-              ...e,
-              name: formData.name,
-              role: formData.role,
-              phone: formData.phone || undefined,
-              email: formData.email || undefined,
-              pin: formData.pin || undefined,
-              hourlyRate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : undefined,
-            }
-          : e
-      ));
-    } else {
-      // Add new
-      setEmployees([...employees, {
-        id: Date.now().toString(),
-        name: formData.name,
-        role: formData.role,
-        phone: formData.phone || undefined,
-        email: formData.email || undefined,
-        pin: formData.pin || undefined,
-        hourlyRate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : undefined,
-        isActive: true,
-        createdAt: new Date().toISOString().split('T')[0],
-      }]);
+    try {
+      if (editingEmployee) {
+        // Update existing
+        const { error } = await supabaseApi.updateEmployee(editingEmployee.id, {
+          name: formData.name,
+          role: formData.role,
+          phone: formData.phone || null,
+          email: formData.email || null,
+          pin_hash: formData.pin || null,
+          hourly_rate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : 0,
+        });
+        if (error) throw error;
+      } else {
+        // Add new
+        const { error } = await supabaseApi.createEmployee({
+          name: formData.name,
+          role: formData.role,
+          phone: formData.phone || null,
+          email: formData.email || null,
+          pin_hash: formData.pin || null,
+          hourly_rate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : 0,
+        });
+        if (error) throw error;
+      }
+
+      await fetchEmployees(); // Refresh list
+      setShowModal(false);
+      resetForm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Speichern');
+    } finally {
+      setSaving(false);
     }
-
-    setShowModal(false);
-    resetForm();
   };
 
   // Toggle active status
-  const toggleActive = (id: string) => {
-    setEmployees(employees.map(e =>
-      e.id === id ? { ...e, isActive: !e.isActive } : e
-    ));
+  const toggleActive = async (id: string) => {
+    const employee = employees.find(e => e.id === id);
+    if (!employee) return;
+
+    try {
+      const { error } = await supabaseApi.updateEmployee(id, {
+        is_active: !employee.isActive,
+      });
+      if (error) throw error;
+      await fetchEmployees();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren');
+    }
   };
 
-  // Delete employee
-  const deleteEmployee = (id: string) => {
-    setEmployees(employees.filter(e => e.id !== id));
-    setShowDeleteConfirm(null);
+  // Delete employee (soft delete)
+  const deleteEmployee = async (id: string) => {
+    try {
+      const { error } = await supabaseApi.deleteEmployee(id);
+      if (error) throw error;
+      await fetchEmployees();
+      setShowDeleteConfirm(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Löschen');
+    }
   };
 
   // Generate random PIN
@@ -211,20 +257,41 @@ export function Employees() {
   const activeCount = employees.filter(e => e.isActive).length;
   const totalHourlyRate = employees.filter(e => e.isActive && e.hourlyRate).reduce((sum, e) => sum + (e.hourlyRate || 0), 0);
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+        <span className="ml-3 text-foreground-muted">Lade Mitarbeiter...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+      {/* Error Banner */}
+      {error && (
+        <div className="flex items-center gap-3 p-4 bg-error/10 border border-error/30 rounded-xl text-error">
+          <AlertCircle size={20} />
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-error/20 rounded">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Team</h1>
-          <p className="text-foreground-muted">{activeCount} active members</p>
+          <p className="text-foreground-muted">{activeCount} aktive Mitarbeiter</p>
         </div>
         <button
           onClick={openAddModal}
           className="flex items-center gap-2 px-4 py-2 bg-gradient-primary text-white rounded-xl hover:opacity-90 transition-all shadow-glow-sm"
         >
           <Plus size={18} />
-          <span>Add</span>
+          <span>Hinzufügen</span>
         </button>
       </div>
 
@@ -236,7 +303,7 @@ export function Employees() {
             onChange={(e) => setFilterRole(e.target.value as EmployeeRole | 'all')}
             className="appearance-none pl-4 pr-10 py-2 bg-white/5 border border-border rounded-xl text-foreground focus:outline-none focus:border-primary-500"
           >
-            <option value="all">All Roles</option>
+            <option value="all">Alle Rollen</option>
             {roleOrder.map(role => (
               <option key={role} value={role}>{roleConfig[role].label}</option>
             ))}
@@ -251,7 +318,7 @@ export function Employees() {
             onChange={(e) => setShowInactive(e.target.checked)}
             className="w-4 h-4 rounded border-border bg-white/5 text-primary-500 focus:ring-primary-500"
           />
-          Show inactive
+          Inaktive anzeigen
         </label>
       </div>
 
@@ -259,15 +326,15 @@ export function Employees() {
       <div className="grid grid-cols-3 gap-3">
         <div className="glass-card p-3 rounded-xl text-center">
           <p className="text-2xl font-bold text-foreground">{activeCount}</p>
-          <p className="text-xs text-foreground-muted">Active</p>
+          <p className="text-xs text-foreground-muted">Aktiv</p>
         </div>
         <div className="glass-card p-3 rounded-xl text-center">
           <p className="text-2xl font-bold text-foreground">{employees.length - activeCount}</p>
-          <p className="text-xs text-foreground-muted">Inactive</p>
+          <p className="text-xs text-foreground-muted">Inaktiv</p>
         </div>
         <div className="glass-card p-3 rounded-xl text-center">
           <p className="text-2xl font-bold text-foreground">€{totalHourlyRate}</p>
-          <p className="text-xs text-foreground-muted">Total/hr</p>
+          <p className="text-xs text-foreground-muted">Gesamt/Std</p>
         </div>
       </div>
 
@@ -376,8 +443,8 @@ export function Employees() {
       {filteredEmployees.length === 0 && (
         <div className="text-center py-12 glass-card rounded-xl">
           <Users size={48} className="mx-auto mb-3 text-foreground-dim opacity-50" />
-          <p className="text-foreground-muted">No team members found</p>
-          <p className="text-foreground-dim text-sm">Adjust filters or add new members</p>
+          <p className="text-foreground-muted">Keine Mitarbeiter gefunden</p>
+          <p className="text-foreground-dim text-sm">Filter anpassen oder neue Mitarbeiter hinzufügen</p>
         </div>
       )}
 
@@ -388,7 +455,7 @@ export function Employees() {
           <div className="relative w-full max-w-md glass-card p-5 animate-scale-in space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">
-                {editingEmployee ? 'Edit Team Member' : 'Add Team Member'}
+                {editingEmployee ? 'Mitarbeiter bearbeiten' : 'Neuer Mitarbeiter'}
               </h2>
               <button onClick={() => setShowModal(false)} className="p-1 text-foreground-muted hover:text-foreground">
                 <X size={20} />
@@ -526,16 +593,18 @@ export function Employees() {
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-3 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all"
+                disabled={saving}
+                className="flex-1 px-4 py-3 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all disabled:opacity-50"
               >
-                Cancel
+                Abbrechen
               </button>
               <button
                 onClick={saveEmployee}
-                disabled={!formData.name.trim()}
-                className="flex-1 px-4 py-3 bg-gradient-primary text-white rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!formData.name.trim() || saving}
+                className="flex-1 px-4 py-3 bg-gradient-primary text-white rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {editingEmployee ? 'Save Changes' : 'Add Member'}
+                {saving && <Loader2 size={16} className="animate-spin" />}
+                {editingEmployee ? 'Speichern' : 'Hinzufügen'}
               </button>
             </div>
           </div>
@@ -547,22 +616,22 @@ export function Employees() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(null)} />
           <div className="relative w-full max-w-sm glass-card p-5 animate-scale-in space-y-4">
-            <h2 className="text-lg font-bold text-foreground">Delete Team Member?</h2>
+            <h2 className="text-lg font-bold text-foreground">Mitarbeiter deaktivieren?</h2>
             <p className="text-foreground-muted">
-              This action cannot be undone. The employee's shift history will be preserved.
+              Der Mitarbeiter wird als inaktiv markiert. Die Schichthistorie bleibt erhalten.
             </p>
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setShowDeleteConfirm(null)}
                 className="flex-1 px-4 py-3 bg-white/10 text-foreground rounded-xl hover:bg-white/20 transition-all"
               >
-                Cancel
+                Abbrechen
               </button>
               <button
                 onClick={() => deleteEmployee(showDeleteConfirm)}
                 className="flex-1 px-4 py-3 bg-error text-white rounded-xl hover:opacity-90 transition-all"
               >
-                Delete
+                Deaktivieren
               </button>
             </div>
           </div>

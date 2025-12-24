@@ -93,4 +93,21 @@ export interface InventoryTransfer {
   notes: string | null;
 }
 
+export interface VenueBooking {
+  id: string;
+  venue_id: string;
+  user_id: string | null;
+  user_name: string;
+  user_phone: string;
+  user_email: string | null;
+  date: string;
+  time: string;
+  party_size: number;
+  table_number: string | null;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export default supabase;

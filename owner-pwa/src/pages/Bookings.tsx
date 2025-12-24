@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { cn } from '../lib/utils';
 import {
   Search,
@@ -13,172 +13,40 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarDays,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { BookingModal } from '../components/BookingModal';
+import { supabaseApi } from '../services/supabaseApi';
+import type { VenueBooking as DbBooking } from '../lib/supabase';
 import type { Booking, BookingStatus } from '../types';
-
-// Mock bookings data with more dates for calendar demo
-const mockBookings: Booking[] = [
-  {
-    id: '1',
-    venueId: '1',
-    userId: '1',
-    userName: 'Anna Schmidt',
-    userPhone: '+49 170 1234567',
-    userEmail: 'anna@example.com',
-    date: '2024-12-15',
-    time: '20:00',
-    partySize: 4,
-    tableNumber: 'VIP-1',
-    status: 'confirmed',
-    notes: 'Birthday celebration, need cake',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    venueId: '1',
-    userId: '2',
-    userName: 'Max Müller',
-    userPhone: '+49 171 9876543',
-    userEmail: 'max@example.com',
-    date: '2024-12-15',
-    time: '21:00',
-    partySize: 6,
-    tableNumber: 'T-5',
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    venueId: '1',
-    userId: '3',
-    userName: 'Sophie Weber',
-    userPhone: '+49 172 5555555',
-    userEmail: 'sophie@example.com',
-    date: '2024-12-15',
-    time: '19:30',
-    partySize: 2,
-    tableNumber: 'T-2',
-    status: 'confirmed',
-    notes: 'Anniversary dinner',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    venueId: '1',
-    userId: '4',
-    userName: 'Thomas Fischer',
-    userPhone: '+49 173 4444444',
-    userEmail: 'thomas@example.com',
-    date: '2024-12-16',
-    time: '22:00',
-    partySize: 8,
-    tableNumber: 'VIP-2',
-    status: 'pending',
-    notes: 'Corporate event',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    venueId: '1',
-    userId: '5',
-    userName: 'Lisa Braun',
-    userPhone: '+49 174 3333333',
-    userEmail: 'lisa@example.com',
-    date: '2024-12-14',
-    time: '20:30',
-    partySize: 3,
-    status: 'cancelled',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '6',
-    venueId: '1',
-    userId: '6',
-    userName: 'Michael Koch',
-    userPhone: '+49 175 2222222',
-    userEmail: 'michael@example.com',
-    date: '2024-12-20',
-    time: '21:00',
-    partySize: 5,
-    tableNumber: 'T-8',
-    status: 'confirmed',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '7',
-    venueId: '1',
-    userId: '7',
-    userName: 'Julia Becker',
-    userPhone: '+49 176 1111111',
-    userEmail: 'julia@example.com',
-    date: '2024-12-20',
-    time: '19:00',
-    partySize: 2,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '8',
-    venueId: '1',
-    userId: '8',
-    userName: 'David Hoffmann',
-    userPhone: '+49 177 0000000',
-    userEmail: 'david@example.com',
-    date: '2024-12-21',
-    time: '20:00',
-    partySize: 4,
-    tableNumber: 'VIP-3',
-    status: 'confirmed',
-    notes: 'VIP guest - champagne on arrival',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '9',
-    venueId: '1',
-    userId: '9',
-    userName: 'Emma Schulz',
-    userPhone: '+49 178 9999999',
-    userEmail: 'emma@example.com',
-    date: '2024-12-28',
-    time: '22:00',
-    partySize: 10,
-    tableNumber: 'VIP-1',
-    status: 'confirmed',
-    notes: 'New Year preparation party',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '10',
-    venueId: '1',
-    userId: '10',
-    userName: 'Felix Wagner',
-    userPhone: '+49 179 8888888',
-    userEmail: 'felix@example.com',
-    date: '2024-12-20',
-    time: '20:30',
-    partySize: 4,
-    tableNumber: 'T-3',
-    status: 'confirmed',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
 
 type FilterStatus = 'all' | BookingStatus;
 type ViewMode = 'list' | 'calendar';
 
+// Map database booking to UI booking
+const mapDbToUi = (db: DbBooking): Booking => ({
+  id: db.id,
+  venueId: db.venue_id,
+  userId: db.user_id || '',
+  userName: db.user_name,
+  userPhone: db.user_phone,
+  userEmail: db.user_email || '',
+  date: db.date,
+  time: db.time,
+  partySize: db.party_size,
+  tableNumber: db.table_number || undefined,
+  status: db.status as BookingStatus,
+  notes: db.notes || undefined,
+  createdAt: db.created_at,
+  updatedAt: db.updated_at,
+});
+
 export function Bookings() {
-  const [bookings, setBookings] = useState<Booking[]>(mockBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchQuery, setSearchQuery] = useState('');
@@ -186,30 +54,77 @@ export function Bookings() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
 
-  // Calendar state
-  const [currentDate, setCurrentDate] = useState(new Date(2024, 11, 1)); // December 2024
+  // Calendar state - use current month
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
+
+  // Fetch bookings from Supabase
+  const fetchBookings = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabaseApi.getBookings();
+      if (error) throw error;
+      setBookings((data || []).map(mapDbToUi));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Reservierungen');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   const filteredBookings = bookings.filter((booking) => {
     const matchesFilter = filter === 'all' || booking.status === filter;
     const matchesSearch = booking.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       booking.userPhone.includes(searchQuery) ||
-      booking.userEmail.toLowerCase().includes(searchQuery.toLowerCase());
+      (booking.userEmail && booking.userEmail.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCalendarDate = selectedCalendarDate ? booking.date === selectedCalendarDate : true;
     return matchesFilter && matchesSearch && matchesCalendarDate;
   });
 
-  const handleStatusChange = (bookingId: string, newStatus: BookingStatus) => {
-    setBookings(bookings.map((b) =>
-      b.id === bookingId ? { ...b, status: newStatus } : b
-    ));
-    setMenuOpen(null);
+  const handleStatusChange = async (bookingId: string, newStatus: BookingStatus) => {
+    setSaving(true);
+    try {
+      const { error } = await supabaseApi.updateBooking(bookingId, { status: newStatus });
+      if (error) throw error;
+      setBookings(bookings.map((b) =>
+        b.id === bookingId ? { ...b, status: newStatus } : b
+      ));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren des Status');
+    } finally {
+      setSaving(false);
+      setMenuOpen(null);
+    }
   };
 
-  const handleSaveBooking = (updatedBooking: Partial<Booking>) => {
-    setBookings(bookings.map((b) =>
-      b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b
-    ));
+  const handleSaveBooking = async (updatedBooking: Partial<Booking>) => {
+    setSaving(true);
+    try {
+      if (updatedBooking.id) {
+        const { error } = await supabaseApi.updateBooking(updatedBooking.id, {
+          user_name: updatedBooking.userName,
+          user_phone: updatedBooking.userPhone,
+          user_email: updatedBooking.userEmail || null,
+          date: updatedBooking.date,
+          time: updatedBooking.time,
+          party_size: updatedBooking.partySize,
+          table_number: updatedBooking.tableNumber || null,
+          status: updatedBooking.status,
+          notes: updatedBooking.notes || null,
+        });
+        if (error) throw error;
+        await fetchBookings();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Speichern der Reservierung');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openBookingDetails = (booking: Booking) => {
@@ -218,11 +133,11 @@ export function Bookings() {
   };
 
   const statusConfig: Record<BookingStatus, { label: string; color: string; bg: string }> = {
-    pending: { label: 'Pending', color: 'text-warning', bg: 'bg-warning/20' },
-    confirmed: { label: 'Confirmed', color: 'text-success', bg: 'bg-success/20' },
-    cancelled: { label: 'Cancelled', color: 'text-error', bg: 'bg-error/20' },
-    completed: { label: 'Completed', color: 'text-accent-cyan', bg: 'bg-accent-cyan/20' },
-    no_show: { label: 'No Show', color: 'text-foreground-dim', bg: 'bg-foreground-dim/20' },
+    pending: { label: 'Ausstehend', color: 'text-warning', bg: 'bg-warning/20' },
+    confirmed: { label: 'Bestätigt', color: 'text-success', bg: 'bg-success/20' },
+    cancelled: { label: 'Storniert', color: 'text-error', bg: 'bg-error/20' },
+    completed: { label: 'Abgeschlossen', color: 'text-accent-cyan', bg: 'bg-accent-cyan/20' },
+    no_show: { label: 'Nicht erschienen', color: 'text-foreground-dim', bg: 'bg-foreground-dim/20' },
   };
 
   const formatDate = (dateStr: string) => {
@@ -231,8 +146,8 @@ export function Bookings() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    if (date.toDateString() === today.toDateString()) return 'Today';
-    if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+    if (date.toDateString() === today.toDateString()) return 'Heute';
+    if (date.toDateString() === tomorrow.toDateString()) return 'Morgen';
 
     return date.toLocaleDateString('de-DE', {
       weekday: 'short',
@@ -247,11 +162,11 @@ export function Bookings() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-    const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const dayName = date.toLocaleDateString('de-DE', { weekday: 'short' });
+    const monthDay = date.toLocaleDateString('de-DE', { month: 'short', day: 'numeric' });
 
-    if (date.toDateString() === today.toDateString()) return `Today - ${monthDay}`;
-    if (date.toDateString() === tomorrow.toDateString()) return `Tomorrow - ${monthDay}`;
+    if (date.toDateString() === today.toDateString()) return `Heute - ${monthDay}`;
+    if (date.toDateString() === tomorrow.toDateString()) return `Morgen - ${monthDay}`;
 
     return `${dayName}, ${monthDay}`;
   };
@@ -300,7 +215,7 @@ export function Bookings() {
 
   const daysInMonth = getDaysInMonth(currentDate);
   const firstDayOfMonth = getFirstDayOfMonth(currentDate);
-  const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const weekDays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
   // Get bookings for selected date in calendar view
   const selectedDateBookings = selectedCalendarDate
@@ -309,19 +224,60 @@ export function Bookings() {
         const matchesFilter = filter === 'all' || b.status === filter;
         const matchesSearch = b.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           b.userPhone.includes(searchQuery) ||
-          b.userEmail.toLowerCase().includes(searchQuery.toLowerCase());
+          (b.userEmail && b.userEmail.toLowerCase().includes(searchQuery.toLowerCase()));
         return matchesDate && matchesFilter && matchesSearch;
       })
     : [];
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 size={40} className="animate-spin text-primary-400 mx-auto mb-4" />
+          <p className="text-foreground-secondary">Reservierungen werden geladen...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && bookings.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <AlertCircle size={40} className="text-error mx-auto mb-4" />
+          <p className="text-foreground-secondary">{error}</p>
+          <button
+            onClick={fetchBookings}
+            className="mt-4 px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600"
+          >
+            Erneut versuchen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Error Toast */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-error/10 border border-error/20 text-error">
+          <AlertCircle size={18} />
+          <span className="text-sm">{error}</span>
+          <button onClick={() => setError(null)} className="ml-auto">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Bookings</h1>
+          <h1 className="text-2xl font-bold text-foreground">Reservierungen</h1>
           <p className="text-foreground-secondary mt-1">
-            Manage reservations and guest requests
+            Tischreservierungen und Gästeanfragen verwalten
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -361,7 +317,7 @@ export function Bookings() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by guest name, phone, or email..."
+            placeholder="Suche nach Name, Telefon oder E-Mail..."
             className="input-field pl-11 w-full"
           />
         </div>
@@ -371,13 +327,13 @@ export function Bookings() {
               key={status}
               onClick={() => setFilter(status)}
               className={cn(
-                'px-4 py-2.5 rounded-xl text-sm font-medium capitalize whitespace-nowrap transition-all',
+                'px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all',
                 filter === status
                   ? 'bg-gradient-primary text-white shadow-glow-sm'
                   : 'bg-card border border-border text-foreground-secondary hover:border-border-light'
               )}
             >
-              {status === 'all' ? 'All' : status}
+              {status === 'all' ? 'Alle' : statusConfig[status].label}
             </button>
           ))}
         </div>
@@ -398,7 +354,7 @@ export function Bookings() {
                   <ChevronLeft size={18} />
                 </button>
                 <h3 className="text-sm font-semibold text-foreground">
-                  {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  {currentDate.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
                 </h3>
                 <button
                   onClick={goToNextMonth}
@@ -486,11 +442,11 @@ export function Bookings() {
               <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-white/5">
                 <div className="flex items-center gap-1.5 text-[10px] text-foreground-muted">
                   <span className="w-2 h-2 rounded-full bg-success" />
-                  Confirmed
+                  Bestätigt
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] text-foreground-muted">
                   <span className="w-2 h-2 rounded-full bg-warning" />
-                  Pending
+                  Ausstehend
                 </div>
               </div>
             </div>
@@ -511,7 +467,7 @@ export function Bookings() {
                         {formatSelectedDate(selectedCalendarDate)}
                       </h3>
                       <p className="text-sm text-foreground-muted">
-                        {selectedDateBookings.length} booking{selectedDateBookings.length !== 1 ? 's' : ''}
+                        {selectedDateBookings.length} Reservierung{selectedDateBookings.length !== 1 ? 'en' : ''}
                       </p>
                     </div>
                   </div>
@@ -519,7 +475,7 @@ export function Bookings() {
                     onClick={() => setSelectedCalendarDate(null)}
                     className="text-xs text-foreground-muted hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-white/5"
                   >
-                    Clear
+                    Zurücksetzen
                   </button>
                 </div>
 
@@ -537,15 +493,16 @@ export function Bookings() {
                           onOpenDetails={openBookingDetails}
                           menuOpen={menuOpen}
                           setMenuOpen={setMenuOpen}
+                          saving={saving}
                         />
                       ))}
                   </div>
                 ) : (
                   <div className="glass-card p-8 text-center">
                     <Users size={32} className="mx-auto text-foreground-dim mb-3" />
-                    <p className="text-foreground-secondary">No bookings for this day</p>
+                    <p className="text-foreground-secondary">Keine Reservierungen für diesen Tag</p>
                     <p className="text-sm text-foreground-muted mt-1">
-                      {filter !== 'all' ? 'Try changing the filter' : 'This day is free'}
+                      {filter !== 'all' ? 'Versuchen Sie einen anderen Filter' : 'Dieser Tag ist frei'}
                     </p>
                   </div>
                 )}
@@ -555,9 +512,9 @@ export function Bookings() {
                 <div className="p-4 rounded-2xl bg-gradient-primary/10 mb-4">
                   <Calendar size={40} className="text-primary-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">Select a date</h3>
+                <h3 className="text-lg font-semibold text-foreground">Datum auswählen</h3>
                 <p className="text-foreground-muted mt-1 max-w-xs">
-                  Click on any day in the calendar to view its bookings
+                  Klicken Sie auf einen Tag im Kalender, um die Reservierungen anzuzeigen
                 </p>
               </div>
             )}
@@ -588,6 +545,7 @@ export function Bookings() {
                       onOpenDetails={openBookingDetails}
                       menuOpen={menuOpen}
                       setMenuOpen={setMenuOpen}
+                      saving={saving}
                     />
                   ))}
                 </div>
@@ -596,9 +554,9 @@ export function Bookings() {
           ) : (
             <div className="text-center py-12">
               <Users size={48} className="mx-auto text-foreground-dim mb-4" />
-              <h3 className="text-lg font-semibold text-foreground">No bookings found</h3>
+              <h3 className="text-lg font-semibold text-foreground">Keine Reservierungen gefunden</h3>
               <p className="text-foreground-muted mt-1">
-                {searchQuery ? 'Try a different search' : 'No bookings match this filter'}
+                {searchQuery ? 'Versuchen Sie eine andere Suche' : 'Keine Reservierungen entsprechen diesem Filter'}
               </p>
             </div>
           )}
@@ -620,10 +578,11 @@ export function Bookings() {
 interface BookingCardProps {
   booking: Booking;
   statusConfig: Record<BookingStatus, { label: string; color: string; bg: string }>;
-  onStatusChange: (bookingId: string, newStatus: BookingStatus) => void;
+  onStatusChange: (bookingId: string, newStatus: BookingStatus) => Promise<void>;
   onOpenDetails: (booking: Booking) => void;
   menuOpen: string | null;
   setMenuOpen: (id: string | null) => void;
+  saving: boolean;
 }
 
 function BookingCard({
@@ -633,6 +592,7 @@ function BookingCard({
   onOpenDetails,
   menuOpen,
   setMenuOpen,
+  saving,
 }: BookingCardProps) {
   return (
     <div
@@ -664,10 +624,10 @@ function BookingCard({
               </span>
               <span className="flex items-center gap-1">
                 <Users size={12} />
-                {booking.partySize}
+                {booking.partySize} Gäste
               </span>
               {booking.tableNumber && (
-                <span>Table {booking.tableNumber}</span>
+                <span>Tisch {booking.tableNumber}</span>
               )}
             </div>
           </div>
@@ -678,15 +638,17 @@ function BookingCard({
             <>
               <button
                 onClick={() => onStatusChange(booking.id, 'confirmed')}
-                className="p-2 rounded-lg text-success hover:bg-success/10 transition-colors"
-                title="Confirm"
+                disabled={saving}
+                className="p-2 rounded-lg text-success hover:bg-success/10 transition-colors disabled:opacity-50"
+                title="Bestätigen"
               >
                 <Check size={18} />
               </button>
               <button
                 onClick={() => onStatusChange(booking.id, 'cancelled')}
-                className="p-2 rounded-lg text-error hover:bg-error/10 transition-colors"
-                title="Cancel"
+                disabled={saving}
+                className="p-2 rounded-lg text-error hover:bg-error/10 transition-colors disabled:opacity-50"
+                title="Stornieren"
               >
                 <X size={18} />
               </button>
@@ -695,7 +657,7 @@ function BookingCard({
           <a
             href={`tel:${booking.userPhone}`}
             className="p-2 rounded-lg text-foreground-muted hover:text-foreground hover:bg-white/5 transition-colors"
-            title="Call"
+            title="Anrufen"
           >
             <Phone size={18} />
           </a>
@@ -717,8 +679,9 @@ function BookingCard({
                     <button
                       key={status}
                       onClick={() => onStatusChange(booking.id, status)}
+                      disabled={saving}
                       className={cn(
-                        'w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors',
+                        'w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors disabled:opacity-50',
                         booking.status === status
                           ? 'bg-white/5 text-foreground'
                           : 'text-foreground-secondary hover:bg-white/5 hover:text-foreground'
@@ -740,7 +703,7 @@ function BookingCard({
 
       {booking.notes && (
         <p className="mt-3 text-sm text-foreground-muted pl-14 line-clamp-1">
-          Note: {booking.notes}
+          Notiz: {booking.notes}
         </p>
       )}
     </div>

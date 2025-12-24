@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -8,20 +8,23 @@ import {
   ChevronLeft,
   ChevronRight,
   BarChart3,
-  PieChart,
   Users,
-  ArrowUpRight,
-  ArrowDownRight,
+  Loader2,
+  AlertCircle,
+  Info,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { supabaseApi } from '../services/supabaseApi';
 
 type DateRange = 'week' | 'month' | 'quarter';
 
-interface RevenueDataPoint {
+interface DailyStats {
   date: string;
-  label: string;
-  revenue: number;
-  costs: number;
+  shifts: number;
+  hoursWorked: number;
+  laborCost: number;
+  tasksCompleted: number;
+  bookings: number;
 }
 
 interface PeakHour {
@@ -38,37 +41,54 @@ interface TopProduct {
   trend: number;
 }
 
-// Generate mock data for revenue chart
-const generateRevenueData = (range: DateRange): RevenueDataPoint[] => {
-  const data: RevenueDataPoint[] = [];
-  const today = new Date();
-  const days = range === 'week' ? 7 : range === 'month' ? 30 : 90;
+interface LaborCostByRole {
+  role: string;
+  totalHours: number;
+  totalCost: number;
+  shiftCount: number;
+}
 
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
+interface TaskStats {
+  total: number;
+  completed: number;
+  pending: number;
+  inProgress: number;
+  overdue: number;
+  completionRate: number;
+}
 
-    // Simulate higher revenue on weekends
-    const dayOfWeek = date.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
-    const baseRevenue = isWeekend ? 2500 : 1200;
-    const revenue = baseRevenue + Math.random() * (isWeekend ? 1500 : 800);
-    const costs = revenue * (0.25 + Math.random() * 0.1); // 25-35% costs
+interface EmployeePerformance {
+  id: string;
+  name: string;
+  role: string;
+  totalShifts: number;
+  totalHours: number;
+  totalEarnings: number;
+  avgShiftLength: number;
+  tasksCompleted: number;
+}
 
-    data.push({
-      date: date.toISOString().split('T')[0],
-      label: range === 'week'
-        ? date.toLocaleDateString('de-DE', { weekday: 'short' })
-        : date.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' }),
-      revenue: Math.round(revenue),
-      costs: Math.round(costs),
-    });
-  }
-
-  return data;
+// Role name translations
+const roleNames: Record<string, string> = {
+  owner: 'Inhaber',
+  manager: 'Manager',
+  bartender: 'Barkeeper',
+  waiter: 'Kellner',
+  security: 'Security',
+  dj: 'DJ',
+  cleaning: 'Reinigung',
+  unknown: 'Sonstige',
 };
 
-// Mock peak hours data
+// Format date for chart label
+const formatDateLabel = (dateStr: string, range: DateRange): string => {
+  const date = new Date(dateStr);
+  return range === 'week'
+    ? date.toLocaleDateString('de-DE', { weekday: 'short' })
+    : date.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+};
+
+// Simulated peak hours (would come from POS/orders data)
 const mockPeakHours: PeakHour[] = [
   { hour: '18:00', customers: 25, revenue: 450, percentage: 40 },
   { hour: '19:00', customers: 42, revenue: 820, percentage: 67 },
@@ -81,7 +101,7 @@ const mockPeakHours: PeakHour[] = [
   { hour: '02:00', customers: 15, revenue: 320, percentage: 24 },
 ];
 
-// Mock top products
+// Simulated top products (would come from POS/orders data)
 const mockTopProducts: TopProduct[] = [
   { name: 'Aperol Spritz', sold: 245, revenue: 2205, trend: 12 },
   { name: 'Gin Tonic', sold: 198, revenue: 1980, trend: 8 },
@@ -94,31 +114,109 @@ const mockTopProducts: TopProduct[] = [
 export function Analytics() {
   const [dateRange, setDateRange] = useState<DateRange>('week');
   const [weekOffset, setWeekOffset] = useState(0);
+  const [laborCosts, setLaborCosts] = useState<LaborCostByRole[]>([]);
+  const [realLaborTotal, setRealLaborTotal] = useState<number>(0);
+  const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
+  const [taskStats, setTaskStats] = useState<TaskStats | null>(null);
+  // Employee performance data - reserved for future Employee section
+  const [_employeePerformance, setEmployeePerformance] = useState<EmployeePerformance[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Generate revenue data based on selected range
-  const revenueData = useMemo(() => generateRevenueData(dateRange), [dateRange]);
+  // Get date range for API calls
+  const getDateParams = useCallback(() => {
+    const today = new Date();
+    let startDate: Date;
+    let endDate: Date = new Date(today);
 
-  // Calculate summary stats
-  const stats = useMemo(() => {
-    const totalRevenue = revenueData.reduce((sum, d) => sum + d.revenue, 0);
-    const totalCosts = revenueData.reduce((sum, d) => sum + d.costs, 0);
-    const avgDailyRevenue = totalRevenue / revenueData.length;
-    const profitMargin = ((totalRevenue - totalCosts) / totalRevenue) * 100;
+    if (dateRange === 'week') {
+      startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - 7 * (1 + weekOffset));
+      endDate = new Date(today);
+      endDate.setDate(endDate.getDate() - 7 * weekOffset);
+    } else if (dateRange === 'month') {
+      startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - 30);
+    } else {
+      startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - 90);
+    }
 
     return {
-      totalRevenue,
-      totalCosts,
-      avgDailyRevenue,
-      profitMargin,
-      // Mock comparison data
-      revenueChange: 12.5,
-      costChange: -3.2,
-      customerChange: 8.7,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
     };
-  }, [revenueData]);
+  }, [dateRange, weekOffset]);
 
-  // Calculate max revenue for chart scaling
-  const maxRevenue = Math.max(...revenueData.map(d => d.revenue));
+  // Fetch all analytics data
+  const fetchAnalyticsData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = getDateParams();
+
+      // Fetch all data in parallel
+      const [laborResult, dailyResult, taskResult, employeeResult] = await Promise.all([
+        supabaseApi.getLaborCostsByRole(params),
+        supabaseApi.getDailyStats(params),
+        supabaseApi.getTaskStats(params),
+        supabaseApi.getEmployeePerformance(params),
+      ]);
+
+      // Set labor costs
+      if (laborResult.error) throw laborResult.error;
+      setLaborCosts(laborResult.data || []);
+      setRealLaborTotal(laborResult.data?.reduce((sum, item) => sum + item.totalCost, 0) || 0);
+
+      // Set daily stats
+      if (dailyResult.error) throw dailyResult.error;
+      setDailyStats(dailyResult.data || []);
+
+      // Set task stats
+      if (taskResult.error) throw taskResult.error;
+      setTaskStats(taskResult.data);
+
+      // Set employee performance
+      if (employeeResult.error) throw employeeResult.error;
+      setEmployeePerformance(employeeResult.data || []);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Daten');
+    } finally {
+      setLoading(false);
+    }
+  }, [getDateParams]);
+
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [fetchAnalyticsData]);
+
+  // Calculate summary stats from real data
+  const stats = useMemo(() => {
+    const totalHoursWorked = dailyStats.reduce((sum, d) => sum + d.hoursWorked, 0);
+    const totalShifts = dailyStats.reduce((sum, d) => sum + d.shifts, 0);
+    const totalTasksCompleted = dailyStats.reduce((sum, d) => sum + d.tasksCompleted, 0);
+    const totalBookings = dailyStats.reduce((sum, d) => sum + d.bookings, 0);
+    const avgDailyHours = dailyStats.length > 0 ? totalHoursWorked / dailyStats.length : 0;
+
+    return {
+      totalHoursWorked: Math.round(totalHoursWorked * 10) / 10,
+      totalShifts,
+      totalLaborCost: realLaborTotal,
+      totalTasksCompleted,
+      totalBookings,
+      avgDailyHours: Math.round(avgDailyHours * 10) / 10,
+      taskCompletionRate: taskStats?.completionRate || 0,
+      overdueTasksCount: taskStats?.overdue || 0,
+    };
+  }, [dailyStats, realLaborTotal, taskStats]);
+
+  // Calculate max values for chart scaling
+  const maxHoursWorked = Math.max(...dailyStats.map(d => d.hoursWorked), 1);
+
+  // Calculate total labor hours and max cost for percentage
+  const totalLaborHours = laborCosts.reduce((sum, item) => sum + item.totalHours, 0);
+  const maxLaborCost = Math.max(...laborCosts.map(item => item.totalCost), 1);
 
   // Date range navigation
   const getRangeLabel = () => {
@@ -130,16 +228,30 @@ export function Analytics() {
       end.setDate(end.getDate() - 7 * weekOffset);
       return `${start.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })} - ${end.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}`;
     }
-    return dateRange === 'month' ? 'Last 30 Days' : 'Last Quarter';
+    return dateRange === 'month' ? 'Letzte 30 Tage' : 'Letztes Quartal';
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-        <p className="text-foreground-muted">Business insights & reports</p>
+        <h1 className="text-2xl font-bold text-foreground">Analysen</h1>
+        <p className="text-foreground-muted">Geschäftseinblicke & Berichte</p>
       </div>
+
+      {/* Data Source Info */}
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-accent-cyan/10 border border-accent-cyan/20 text-accent-cyan text-sm">
+        <Info size={16} />
+        <span>Personalkosten: Echte Daten | Umsatz & Produkte: Simuliert (Kassensystem-Integration ausstehend)</span>
+      </div>
+
+      {/* Error Toast */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-error/10 border border-error/20 text-error">
+          <AlertCircle size={18} />
+          <span className="text-sm">{error}</span>
+        </div>
+      )}
 
       {/* Date Range Selector */}
       <div className="flex items-center justify-between">
@@ -152,13 +264,13 @@ export function Analytics() {
                 setWeekOffset(0);
               }}
               className={cn(
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize',
+                'px-4 py-2 rounded-lg text-sm font-medium transition-all',
                 dateRange === range
                   ? 'bg-primary-500 text-white'
                   : 'text-foreground-muted hover:text-foreground'
               )}
             >
-              {range}
+              {range === 'week' ? 'Woche' : range === 'month' ? 'Monat' : 'Quartal'}
             </button>
           ))}
         </div>
@@ -189,108 +301,133 @@ export function Analytics() {
       <div className="grid grid-cols-2 gap-3">
         <div className="glass-card p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-success/20 rounded-lg">
-              <DollarSign size={16} className="text-success" />
+            <div className="p-2 bg-primary-500/20 rounded-lg">
+              <Clock size={16} className="text-primary-400" />
             </div>
-            <span className="text-foreground-muted text-sm">Revenue</span>
+            <span className="text-foreground-muted text-sm">Arbeitsstunden</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/20 text-success">Live</span>
           </div>
           <p className="text-2xl font-bold text-foreground">
-            €{stats.totalRevenue.toLocaleString('de-DE')}
+            {stats.totalHoursWorked}h
           </p>
-          <div className={cn(
-            'flex items-center gap-1 text-xs mt-1',
-            stats.revenueChange >= 0 ? 'text-success' : 'text-error'
-          )}>
-            {stats.revenueChange >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-            <span>{Math.abs(stats.revenueChange)}% vs prev period</span>
-          </div>
+          <p className="text-xs text-foreground-muted mt-1">
+            {stats.totalShifts} Schichten
+          </p>
         </div>
 
         <div className="glass-card p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <div className="p-2 bg-error/20 rounded-lg">
-              <TrendingDown size={16} className="text-error" />
+              <DollarSign size={16} className="text-error" />
             </div>
-            <span className="text-foreground-muted text-sm">Labor Costs</span>
+            <span className="text-foreground-muted text-sm">Personalkosten</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/20 text-success">Live</span>
           </div>
           <p className="text-2xl font-bold text-foreground">
-            €{stats.totalCosts.toLocaleString('de-DE')}
+            €{stats.totalLaborCost.toLocaleString('de-DE')}
           </p>
-          <div className={cn(
-            'flex items-center gap-1 text-xs mt-1',
-            stats.costChange <= 0 ? 'text-success' : 'text-error'
-          )}>
-            {stats.costChange <= 0 ? <ArrowDownRight size={12} /> : <ArrowUpRight size={12} />}
-            <span>{Math.abs(stats.costChange)}% vs prev period</span>
+          <p className="text-xs text-foreground-muted mt-1">
+            Ø €{stats.totalHoursWorked > 0 ? Math.round(stats.totalLaborCost / stats.totalHoursWorked) : 0}/h
+          </p>
+        </div>
+
+        <div className="glass-card p-4 rounded-xl">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 bg-success/20 rounded-lg">
+              <TrendingUp size={16} className="text-success" />
+            </div>
+            <span className="text-foreground-muted text-sm">Aufgaben</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/20 text-success">Live</span>
           </div>
+          <p className="text-2xl font-bold text-foreground">
+            {stats.totalTasksCompleted}
+          </p>
+          <p className="text-xs text-foreground-muted mt-1">
+            {stats.taskCompletionRate}% erledigt
+          </p>
         </div>
 
         <div className="glass-card p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <div className="p-2 bg-accent-cyan/20 rounded-lg">
-              <BarChart3 size={16} className="text-accent-cyan" />
+              <Users size={16} className="text-accent-cyan" />
             </div>
-            <span className="text-foreground-muted text-sm">Avg Daily</span>
+            <span className="text-foreground-muted text-sm">Buchungen</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/20 text-success">Live</span>
           </div>
           <p className="text-2xl font-bold text-foreground">
-            €{Math.round(stats.avgDailyRevenue).toLocaleString('de-DE')}
+            {stats.totalBookings}
           </p>
-        </div>
-
-        <div className="glass-card p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-primary-500/20 rounded-lg">
-              <PieChart size={16} className="text-primary-400" />
-            </div>
-            <span className="text-foreground-muted text-sm">Profit Margin</span>
-          </div>
-          <p className="text-2xl font-bold text-foreground">
-            {stats.profitMargin.toFixed(1)}%
+          <p className="text-xs text-foreground-muted mt-1">
+            Im Zeitraum
           </p>
         </div>
       </div>
 
-      {/* Revenue Chart */}
+      {/* Daily Activity Chart */}
       <div className="glass-card p-4 rounded-xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-foreground">Revenue vs Costs</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-foreground">Tägliche Aktivität</h3>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/20 text-success">Live</span>
+          </div>
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm bg-primary-500" />
-              <span className="text-foreground-muted">Revenue</span>
+              <span className="text-foreground-muted">Stunden</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm bg-error/60" />
-              <span className="text-foreground-muted">Costs</span>
+              <div className="w-3 h-3 rounded-sm bg-warning" />
+              <span className="text-foreground-muted">Kosten</span>
             </div>
           </div>
         </div>
 
         {/* Bar Chart */}
-        <div className="flex items-end gap-1 h-40">
-          {revenueData.slice(-14).map((data, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div className="w-full flex flex-col items-center gap-0.5" style={{ height: '130px' }}>
-                {/* Revenue bar */}
-                <div
-                  className="w-full bg-gradient-to-t from-primary-500 to-primary-400 rounded-t-sm transition-all hover:opacity-80"
-                  style={{ height: `${(data.revenue / maxRevenue) * 100}%` }}
-                  title={`€${data.revenue.toLocaleString('de-DE')}`}
-                />
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 size={24} className="animate-spin text-primary-400" />
+          </div>
+        ) : dailyStats.length > 0 ? (
+          <div className="flex items-end gap-1 h-40">
+            {dailyStats.slice(-14).map((data, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div className="w-full flex flex-col items-center gap-0.5" style={{ height: '130px' }}>
+                  {/* Hours worked bar */}
+                  <div
+                    className="w-full bg-gradient-to-t from-primary-500 to-primary-400 rounded-t-sm transition-all hover:opacity-80"
+                    style={{ height: `${(data.hoursWorked / maxHoursWorked) * 100}%` }}
+                    title={`${data.hoursWorked}h · €${data.laborCost.toLocaleString('de-DE')}`}
+                  />
+                </div>
+                <span className="text-[10px] text-foreground-dim truncate">
+                  {formatDateLabel(data.date, dateRange)}
+                </span>
               </div>
-              <span className="text-[10px] text-foreground-dim truncate">
-                {data.label}
-              </span>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-40 text-foreground-muted">
+            <div className="text-center">
+              <BarChart3 size={32} className="mx-auto mb-2 opacity-50" />
+              <p>Keine Daten im ausgewählten Zeitraum</p>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {dailyStats.length > 0 && (
+          <p className="text-xs text-foreground-dim mt-3 text-center">
+            Ø {stats.avgDailyHours}h pro Tag · {stats.totalShifts} Schichten insgesamt
+          </p>
+        )}
       </div>
 
       {/* Peak Hours */}
       <div className="glass-card p-4 rounded-xl">
         <div className="flex items-center gap-2 mb-4">
           <Clock size={18} className="text-accent-cyan" />
-          <h3 className="text-sm font-medium text-foreground">Peak Hours</h3>
+          <h3 className="text-sm font-medium text-foreground">Stoßzeiten</h3>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/20 text-warning">Simuliert</span>
         </div>
 
         <div className="space-y-2">
@@ -318,7 +455,7 @@ export function Analytics() {
         </div>
 
         <p className="text-xs text-foreground-dim mt-3 text-center">
-          Peak time: <span className="text-accent-pink font-medium">21:00</span> with 62 customers
+          Stoßzeit: <span className="text-accent-pink font-medium">21:00</span> mit 62 Gästen
         </p>
       </div>
 
@@ -326,7 +463,8 @@ export function Analytics() {
       <div className="glass-card p-4 rounded-xl">
         <div className="flex items-center gap-2 mb-4">
           <ShoppingBag size={18} className="text-accent-pink" />
-          <h3 className="text-sm font-medium text-foreground">Top Products</h3>
+          <h3 className="text-sm font-medium text-foreground">Top Produkte</h3>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/20 text-warning">Simuliert</span>
         </div>
 
         <div className="space-y-3">
@@ -337,7 +475,7 @@ export function Analytics() {
               </span>
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">{product.name}</p>
-                <p className="text-xs text-foreground-dim">{product.sold} sold</p>
+                <p className="text-xs text-foreground-dim">{product.sold} verkauft</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-medium text-foreground">€{product.revenue.toLocaleString('de-DE')}</p>
@@ -354,62 +492,84 @@ export function Analytics() {
         </div>
       </div>
 
-      {/* Labor Cost Breakdown */}
+      {/* Labor Cost Breakdown - REAL DATA */}
       <div className="glass-card p-4 rounded-xl">
         <div className="flex items-center gap-2 mb-4">
           <Users size={18} className="text-warning" />
-          <h3 className="text-sm font-medium text-foreground">Labor Cost Breakdown</h3>
+          <h3 className="text-sm font-medium text-foreground">Personalkosten nach Rolle</h3>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/20 text-success">Live</span>
         </div>
 
-        <div className="space-y-3">
-          {[
-            { role: 'Bartenders', hours: 156, cost: 2340, percentage: 45 },
-            { role: 'Security', hours: 84, cost: 1680, percentage: 32 },
-            { role: 'Management', hours: 48, cost: 960, percentage: 18 },
-            { role: 'Cleaning', hours: 21, cost: 252, percentage: 5 },
-          ].map((item, i) => (
-            <div key={i}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-foreground">{item.role}</span>
-                <span className="text-sm text-foreground-muted">{item.hours}h · €{item.cost.toLocaleString('de-DE')}</span>
-              </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-warning to-warning/60 rounded-full"
-                  style={{ width: `${item.percentage}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 size={24} className="animate-spin text-primary-400" />
+          </div>
+        ) : laborCosts.length > 0 ? (
+          <div className="space-y-3">
+            {laborCosts.map((item, i) => {
+              const percentage = (item.totalCost / maxLaborCost) * 100;
+              return (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-foreground">{roleNames[item.role] || item.role}</span>
+                    <span className="text-sm text-foreground-muted">
+                      {item.totalHours}h · €{item.totalCost.toLocaleString('de-DE')}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-warning to-warning/60 rounded-full"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-foreground-muted">
+            <Users size={32} className="mx-auto mb-2 opacity-50" />
+            <p>Keine abgeschlossenen Schichten im ausgewählten Zeitraum</p>
+          </div>
+        )}
 
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-          <span className="text-sm font-medium text-foreground">Total Labor Cost</span>
-          <span className="text-lg font-bold text-foreground">€{stats.totalCosts.toLocaleString('de-DE')}</span>
-        </div>
+        {laborCosts.length > 0 && (
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+            <span className="text-sm font-medium text-foreground">Gesamte Personalkosten</span>
+            <span className="text-lg font-bold text-foreground">
+              €{realLaborTotal.toLocaleString('de-DE')}
+            </span>
+          </div>
+        )}
+
+        {laborCosts.length > 0 && (
+          <p className="text-xs text-foreground-dim mt-2 text-center">
+            Gesamt: {totalLaborHours.toFixed(1)} Stunden in {laborCosts.reduce((sum, l) => sum + l.shiftCount, 0)} Schichten
+          </p>
+        )}
       </div>
 
       {/* Quick Insights */}
       <div className="glass-card p-4 rounded-xl bg-gradient-to-br from-primary-500/10 to-accent-pink/10 border-primary-500/20">
         <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-          <span className="text-lg">💡</span> Quick Insights
+          <span className="text-lg">💡</span> Schnelle Einblicke
         </h3>
         <ul className="space-y-2 text-sm text-foreground-muted">
           <li className="flex items-start gap-2">
             <span className="text-success">✓</span>
-            <span>Weekend revenue is <strong className="text-foreground">2.1x higher</strong> than weekdays</span>
+            <span>Wochenendumsatz ist <strong className="text-foreground">2,1x höher</strong> als an Wochentagen</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-success">✓</span>
-            <span><strong className="text-foreground">Espresso Martini</strong> has the highest growth (+45%)</span>
+            <span><strong className="text-foreground">Espresso Martini</strong> hat das höchste Wachstum (+45%)</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-warning">!</span>
-            <span>Labor costs peaked on <strong className="text-foreground">Friday</strong> - consider scheduling adjustments</span>
+            <span>Personalkosten erreichten Spitzenwert am <strong className="text-foreground">Freitag</strong> - Schichtplanung überprüfen</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-accent-cyan">→</span>
-            <span>Best ROI hour: <strong className="text-foreground">21:00-22:00</strong> with €22/customer</span>
+            <span>Beste ROI-Stunde: <strong className="text-foreground">21:00-22:00</strong> mit €22/Gast</span>
           </li>
         </ul>
       </div>
