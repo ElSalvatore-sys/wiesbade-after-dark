@@ -1,4 +1,5 @@
 import { NotificationSettings } from '../components/NotificationSettings';
+import { ThemeNotice } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { User, Building, Shield } from 'lucide-react';
 
@@ -61,6 +62,9 @@ export function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Dark Mode Notice */}
+      <ThemeNotice />
 
       {/* Notifications Section */}
       <NotificationSettings />

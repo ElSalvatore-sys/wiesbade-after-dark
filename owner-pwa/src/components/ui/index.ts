@@ -9,3 +9,4 @@ export { Checkbox } from './Checkbox';
 export { LoadingButton, IconButton, ButtonGroup } from './LoadingButton';
 export { LiveIndicator, LiveDot, UpdateBanner } from './LiveIndicator';
 export { PhotoUpload } from './PhotoUpload';
+export { ThemeNotice } from './ThemeNotice';

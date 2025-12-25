@@ -111,3 +111,31 @@
 5. [ ] Document barcode scanner testing procedure
 6. [ ] Test mobile navigation (requires device)
 ---
+
+## Task 3 (Enhancement): Dark Mode Notice Component ✅ ADDED
+**Completed:** December 25, 2025
+
+### What was done:
+1. ✅ Created ThemeNotice component
+   - Informative notice explaining dark-mode-only design
+   - German text: "Diese App verwendet ausschließlich den Dark Mode..."
+   - Moon icon with purple accent
+   - Clean card design matching app style
+
+2. ✅ Added ThemeNotice to Settings page
+   - Placed where theme toggle used to be
+   - Between Venue section and Notifications
+   - Provides context to users
+
+3. ✅ Build successful (3.06s)
+
+### Files modified:
+- owner-pwa/src/components/ui/ThemeNotice.tsx (NEW)
+- owner-pwa/src/components/ui/index.ts
+- owner-pwa/src/pages/Settings.tsx
+
+### Result:
+✅ Users now see clear explanation for dark-only design
+   - "Dark Mode für optimale Lesbarkeit in Bar- und Club-Umgebungen"
+   - Professional UX - feature, not limitation
+---
