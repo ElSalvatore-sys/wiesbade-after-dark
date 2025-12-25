@@ -16,6 +16,7 @@ interface HeaderProps {
   onClearNotifications: () => void;
   onLogout: () => void;
   onMenuClick: () => void;
+  onNavigate?: (page: string) => void;
   isSidebarCollapsed: boolean;
 }
 
@@ -29,10 +30,30 @@ export function Header({
   onClearNotifications,
   onLogout,
   onMenuClick,
+  onNavigate,
   isSidebarCollapsed,
 }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { isConnected, lastUpdate } = useRealtimeStatus();
+
+  const handleProfileClick = () => {
+    setShowUserMenu(false);
+    if (onNavigate) {
+      onNavigate('settings'); // Navigate to settings for profile
+    }
+  };
+
+  const handleSettingsClick = () => {
+    setShowUserMenu(false);
+    if (onNavigate) {
+      onNavigate('settings');
+    }
+  };
+
+  const handleLogoutClick = () => {
+    setShowUserMenu(false);
+    onLogout();
+  };
 
   return (
     <header
@@ -82,6 +103,7 @@ export function Header({
           onMarkAsRead={onMarkAsRead}
           onMarkAllAsRead={onMarkAllAsRead}
           onClearAll={onClearNotifications}
+          onNavigate={onNavigate}
         />
 
         {/* User menu */}
@@ -122,23 +144,29 @@ export function Header({
                 className="fixed inset-0 z-40"
                 onClick={() => setShowUserMenu(false)}
               />
-              <div className="absolute right-0 top-full mt-2 w-48 glass-card overflow-hidden animate-fade-in z-50">
+              <div className="absolute right-0 top-full mt-2 w-48 glass-card overflow-hidden animate-slide-down z-50">
                 <div className="px-4 py-3 border-b border-white/5">
                   <p className="text-sm font-medium text-foreground">{userName}</p>
                   <p className="text-xs text-foreground-muted">Owner</p>
                 </div>
                 <div className="py-1">
-                  <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-secondary hover:text-foreground hover:bg-white/5 transition-colors">
+                  <button
+                    onClick={handleProfileClick}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-secondary hover:text-foreground hover:bg-white/5 transition-all duration-200 active:scale-95"
+                  >
                     <User size={16} />
                     Profile
                   </button>
-                  <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-secondary hover:text-foreground hover:bg-white/5 transition-colors">
+                  <button
+                    onClick={handleSettingsClick}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-secondary hover:text-foreground hover:bg-white/5 transition-all duration-200 active:scale-95"
+                  >
                     <Settings size={16} />
                     Settings
                   </button>
                   <button
-                    onClick={onLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-error hover:bg-error/10 transition-colors"
+                    onClick={handleLogoutClick}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-error hover:bg-error/10 transition-all duration-200 active:scale-95"
                   >
                     <LogOut size={16} />
                     Logout

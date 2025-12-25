@@ -165,6 +165,7 @@ export function DashboardLayout({
         onMarkAllAsRead={handleMarkAllAsRead}
         onClearNotifications={handleClearNotifications}
         onLogout={onLogout}
+        onNavigate={onNavigate}
         onMenuClick={() => setIsMobileSidebarOpen(true)}
         isSidebarCollapsed={isSidebarCollapsed}
       />

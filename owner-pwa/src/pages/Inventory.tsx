@@ -82,7 +82,16 @@ export function Inventory() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [viewMode, setViewMode] = useState<'all' | 'storage' | 'bar' | 'low'>('all');
+  // Check sessionStorage for initial viewMode (e.g., from Dashboard navigation)
+  const [viewMode, setViewMode] = useState<'all' | 'storage' | 'bar' | 'low'>(() => {
+    const storedMode = sessionStorage.getItem('inventoryViewMode');
+    if (storedMode === 'low' || storedMode === 'storage' || storedMode === 'bar') {
+      // Clear it after reading so it doesn't persist on next visit
+      sessionStorage.removeItem('inventoryViewMode');
+      return storedMode;
+    }
+    return 'all';
+  });
   const [showScanner, setShowScanner] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);

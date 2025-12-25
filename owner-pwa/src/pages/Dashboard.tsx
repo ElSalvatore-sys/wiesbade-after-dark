@@ -15,6 +15,7 @@ import {
   Users,
   Clock,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { DashboardStats } from '../types';
 import { supabaseApi } from '../services/supabaseApi';
 import { SkeletonStatCard, Skeleton } from '../components/Skeleton';
@@ -42,9 +43,11 @@ interface StatCardProps {
   trend?: { value: number; isPositive: boolean };
   gradient: 'purple' | 'pink' | 'cyan' | 'green' | 'orange';
   delay?: number;
+  onClick?: () => void;
+  clickable?: boolean;
 }
 
-function StatCard({ title, value, icon, trend, gradient, delay = 0 }: StatCardProps) {
+function StatCard({ title, value, icon, trend, gradient, delay = 0, onClick, clickable = false }: StatCardProps) {
   const gradients = {
     purple: 'from-accent-purple/20 via-accent-purple/5 to-transparent border-accent-purple/20',
     pink: 'from-accent-pink/20 via-accent-pink/5 to-transparent border-accent-pink/20',
@@ -61,22 +64,30 @@ function StatCard({ title, value, icon, trend, gradient, delay = 0 }: StatCardPr
     orange: 'bg-warning/20 text-warning',
   };
 
+  const CardWrapper = clickable ? motion.button : motion.div;
+
   return (
-    <div
+    <CardWrapper
+      onClick={clickable ? onClick : undefined}
       className={cn(
-        'stat-card bg-gradient-to-br',
-        gradients[gradient]
+        'stat-card bg-gradient-to-br text-left w-full group',
+        gradients[gradient],
+        clickable && 'cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]'
       )}
       style={{ animationDelay: `${delay}ms` }}
+      whileHover={clickable ? { y: -4 } : {}}
+      whileTap={clickable ? { scale: 0.98 } : {}}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
       {/* Glow effect */}
       <div className={cn(
-        'absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-30',
+        'absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-30 transition-opacity duration-300',
         gradient === 'purple' && 'bg-accent-purple',
         gradient === 'pink' && 'bg-accent-pink',
         gradient === 'cyan' && 'bg-accent-cyan',
         gradient === 'green' && 'bg-success',
-        gradient === 'orange' && 'bg-warning'
+        gradient === 'orange' && 'bg-warning',
+        clickable && 'group-hover:opacity-50'
       )} />
 
       <div className="relative flex items-start justify-between">
@@ -97,7 +108,14 @@ function StatCard({ title, value, icon, trend, gradient, delay = 0 }: StatCardPr
           {icon}
         </div>
       </div>
-    </div>
+
+      {/* Click indicator for clickable cards */}
+      {clickable && (
+        <div className="absolute top-3 right-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <ArrowUpRight size={16} className="text-foreground-secondary" />
+        </div>
+      )}
+    </CardWrapper>
   );
 }
 
@@ -287,6 +305,12 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           icon={<Package size={24} />}
           gradient="orange"
           delay={100}
+          clickable
+          onClick={() => {
+            // Set filter in sessionStorage for Inventory page to pick up
+            sessionStorage.setItem('inventoryViewMode', 'low');
+            onNavigate('inventory');
+          }}
         />
         <StatCard
           title="Pending Tasks"
@@ -306,6 +330,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           trend={{ value: 12, isPositive: true }}
           gradient="green"
           delay={200}
+          clickable
+          onClick={() => onNavigate('bookings')}
         />
         <StatCard
           title="Active Events"
@@ -313,6 +339,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           icon={<Calendar size={24} />}
           gradient="pink"
           delay={250}
+          clickable
+          onClick={() => onNavigate('events')}
         />
         <StatCard
           title="Today's Revenue"
