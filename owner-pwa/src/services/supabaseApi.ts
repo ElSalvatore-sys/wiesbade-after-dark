@@ -1077,6 +1077,35 @@ class SupabaseApiService {
   }
 }
 
+// ============================================
+// BOOKING CONFIRMATION EMAILS
+// ============================================
+
+export const sendBookingConfirmation = async (
+  bookingId: string,
+  action: 'accepted' | 'rejected' | 'reminder'
+): Promise<{ success: boolean; message?: string; error?: string }> => {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-booking-confirmation`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ booking_id: bookingId, action }),
+      }
+    );
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Booking confirmation error:', error);
+    return { success: false, error: 'Bestätigungs-E-Mail konnte nicht gesendet werden' };
+  }
+};
+
 export const supabaseApi = new SupabaseApiService();
 
 // ============================================

@@ -17,7 +17,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { BookingModal } from '../components/BookingModal';
-import { supabaseApi } from '../services/supabaseApi';
+import { supabaseApi, sendBookingConfirmation } from '../services/supabaseApi';
 import type { VenueBooking as DbBooking } from '../lib/supabase';
 import type { Booking, BookingStatus } from '../types';
 
@@ -91,6 +91,20 @@ export function Bookings() {
     try {
       const { error } = await supabaseApi.updateBooking(bookingId, { status: newStatus });
       if (error) throw error;
+
+      // Send confirmation/rejection email based on status
+      if (newStatus === 'confirmed') {
+        const emailResult = await sendBookingConfirmation(bookingId, 'accepted');
+        if (!emailResult.success) {
+          console.warn('Confirmation email failed:', emailResult.error);
+        }
+      } else if (newStatus === 'cancelled') {
+        const emailResult = await sendBookingConfirmation(bookingId, 'rejected');
+        if (!emailResult.success) {
+          console.warn('Rejection email failed:', emailResult.error);
+        }
+      }
+
       setBookings(bookings.map((b) =>
         b.id === bookingId ? { ...b, status: newStatus } : b
       ));
