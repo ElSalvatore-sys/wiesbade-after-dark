@@ -1,6 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { X, Loader2 } from 'lucide-react';
+/**
+ * BarcodeScanner Component
+ * Robust implementation using html5-qrcode
+ * Supports: EAN-13, EAN-8, UPC-A, UPC-E, Code-128, Code-39, QR
+ */
+
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
+import { X, Camera, Keyboard, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface BarcodeScannerProps {
@@ -9,109 +15,144 @@ interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
 }
 
-export function BarcodeScanner({ isOpen, onClose, onScan }: BarcodeScannerProps) {
-  const [isScanning, setIsScanning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [scanSuccess, setScanSuccess] = useState(false);
+export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
+  isOpen,
+  onClose,
+  onScan,
+}) => {
+  const [status, setStatus] = useState<'loading' | 'scanning' | 'success' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [scannedCode, setScannedCode] = useState<string>('');
+  const [manualInput, setManualInput] = useState('');
+  const [showManual, setShowManual] = useState(false);
+
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerIdRef = useRef(`scanner-${Date.now()}`);
+
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        const state = scannerRef.current.getState();
+        if (state === 2) { // SCANNING
+          await scannerRef.current.stop();
+        }
+        scannerRef.current.clear();
+      } catch (err) {
+        console.log('Stop scanner error (safe to ignore):', err);
+      }
+      scannerRef.current = null;
+    }
+  }, []);
+
+  const startScanner = useCallback(async () => {
+    setStatus('loading');
+    setErrorMessage('');
+
+    // Wait for container to be in DOM
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const container = document.getElementById(containerIdRef.current);
+    if (!container) {
+      setStatus('error');
+      setErrorMessage('Scanner-Container nicht gefunden');
+      return;
+    }
+
+    try {
+      // Create scanner instance
+      scannerRef.current = new Html5Qrcode(containerIdRef.current, {
+        verbose: false,
+      });
+
+      // Get cameras
+      const cameras = await Html5Qrcode.getCameras();
+
+      if (!cameras || cameras.length === 0) {
+        throw new Error('Keine Kamera gefunden');
+      }
+
+      // Prefer back camera
+      const backCamera = cameras.find(c =>
+        c.label.toLowerCase().includes('back') ||
+        c.label.toLowerCase().includes('rear') ||
+        c.label.toLowerCase().includes('environment')
+      ) || cameras[cameras.length - 1]; // Last camera is usually back on mobile
+
+      // Start scanning
+      await scannerRef.current.start(
+        backCamera.id,
+        {
+          fps: 10,
+          qrbox: { width: 280, height: 150 },
+        },
+        (decodedText) => {
+          // Success!
+          console.log('Barcode scanned:', decodedText);
+          setScannedCode(decodedText);
+          setStatus('success');
+
+          // Vibrate on success
+          if (navigator.vibrate) {
+            navigator.vibrate([100, 50, 100]);
+          }
+
+          // Stop scanner and return result after short delay
+          setTimeout(() => {
+            stopScanner();
+            onScan(decodedText);
+            onClose();
+          }, 1000);
+        },
+        () => {
+          // Error callback - ignore, just means no barcode in view
+        }
+      );
+
+      setStatus('scanning');
+
+    } catch (err: any) {
+      console.error('Scanner error:', err);
+      setStatus('error');
+
+      if (err.message?.includes('Permission denied') || err.name === 'NotAllowedError') {
+        setErrorMessage('Kamera-Zugriff verweigert. Bitte erlauben Sie den Zugriff in den Browser-Einstellungen.');
+      } else if (err.message?.includes('Keine Kamera')) {
+        setErrorMessage('Keine Kamera gefunden. Bitte stellen Sie sicher, dass Ihr Gerät eine Kamera hat.');
+      } else if (err.message?.includes('NotReadableError') || err.message?.includes('in use')) {
+        setErrorMessage('Kamera wird bereits verwendet. Bitte schließen Sie andere Apps, die die Kamera nutzen.');
+      } else {
+        setErrorMessage(err.message || 'Kamera konnte nicht gestartet werden');
+      }
+    }
+  }, [onScan, onClose, stopScanner]);
 
   useEffect(() => {
-    if (isOpen && !scannerRef.current) {
-      initScanner();
+    if (isOpen) {
+      startScanner();
     }
 
     return () => {
       stopScanner();
     };
-  }, [isOpen]);
+  }, [isOpen, startScanner, stopScanner]);
 
-  const initScanner = async () => {
-    try {
-      setError(null);
-      setIsScanning(false);
-      setScanSuccess(false);
-
-      // Create scanner with supported formats configuration
-      const scanner = new Html5Qrcode('barcode-reader', {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.QR_CODE,
-        ],
-        verbose: false,
-      });
-      scannerRef.current = scanner;
-
-      // Start scanning with camera configuration
-      await scanner.start(
-        { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 280, height: 150 },
-          aspectRatio: 1.777,
-        },
-        (decodedText) => {
-          // Success callback
-          setScanSuccess(true);
-
-          // Vibrate on success (if supported)
-          if (navigator.vibrate) {
-            navigator.vibrate([100, 50, 100]);
-          }
-
-          // Small delay to show success animation
-          setTimeout(() => {
-            onScan(decodedText);
-            stopScanner();
-            onClose();
-          }, 500);
-        },
-        () => {
-          // Error callback (ignore scan errors - these are continuous scanning errors)
-        }
-      );
-
-      setIsScanning(true);
-    } catch (err) {
-      console.error('Scanner error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-
-      if (errorMessage.includes('Permission') || errorMessage.includes('NotAllowedError')) {
-        setError('Kamerazugriff verweigert. Bitte erlauben Sie den Kamerazugriff in den Browser-Einstellungen.');
-      } else if (errorMessage.includes('NotFoundError') || errorMessage.includes('No camera')) {
-        setError('Keine Kamera gefunden. Bitte stellen Sie sicher, dass Ihr Gerät eine Kamera hat.');
-      } else {
-        setError('Kamera konnte nicht gestartet werden. Bitte versuchen Sie es erneut.');
-      }
-
-      setIsScanning(false);
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (manualInput.trim()) {
+      stopScanner();
+      onScan(manualInput.trim());
+      onClose();
     }
-  };
-
-  const stopScanner = async () => {
-    if (scannerRef.current) {
-      try {
-        if (scannerRef.current.isScanning) {
-          await scannerRef.current.stop();
-        }
-        scannerRef.current.clear();
-      } catch (err) {
-        console.error('Stop scanner error:', err);
-      }
-      scannerRef.current = null;
-    }
-    setIsScanning(false);
-    setScanSuccess(false);
   };
 
   const handleClose = () => {
     stopScanner();
     onClose();
+  };
+
+  const handleRetry = () => {
+    setShowManual(false);
+    startScanner();
   };
 
   if (!isOpen) return null;
@@ -122,183 +163,154 @@ export function BarcodeScanner({ isOpen, onClose, onScan }: BarcodeScannerProps)
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black"
+        className="fixed inset-0 z-50 bg-black flex flex-col"
       >
         {/* Header */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent"
-        >
-          <h2 className="text-lg font-semibold text-white">Barcode Scannen</h2>
+        <div className="flex items-center justify-between p-4 bg-black/80">
+          <h2 className="text-white font-semibold text-lg">
+            {showManual ? 'Manuelle Eingabe' : 'Barcode scannen'}
+          </h2>
           <button
             onClick={handleClose}
-            className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
           >
-            <X size={24} />
+            <X className="w-6 h-6 text-white" />
           </button>
-        </motion.div>
-
-        {/* Scanner container */}
-        <div className="absolute inset-0 flex items-center justify-center" ref={containerRef}>
-          <div id="barcode-reader" className="w-full h-full" />
-
-          {/* Scanning overlay */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* Dark overlay with cutout */}
-            <div className="absolute inset-0 bg-black/50" />
-
-            {/* Scanning frame */}
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-40"
-            >
-              {/* Clear area */}
-              <div className="absolute inset-0 bg-transparent" style={{
-                boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)'
-              }} />
-
-              {/* Corner markers with animation */}
-              <motion.div
-                animate={scanSuccess ? { borderColor: '#10b981', scale: 1.1 } : {}}
-                transition={{ duration: 0.3 }}
-                className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-accent-purple rounded-tl-lg"
-              />
-              <motion.div
-                animate={scanSuccess ? { borderColor: '#10b981', scale: 1.1 } : {}}
-                transition={{ duration: 0.3 }}
-                className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-accent-purple rounded-tr-lg"
-              />
-              <motion.div
-                animate={scanSuccess ? { borderColor: '#10b981', scale: 1.1 } : {}}
-                transition={{ duration: 0.3 }}
-                className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-accent-purple rounded-bl-lg"
-              />
-              <motion.div
-                animate={scanSuccess ? { borderColor: '#10b981', scale: 1.1 } : {}}
-                transition={{ duration: 0.3 }}
-                className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-accent-purple rounded-br-lg"
-              />
-
-              {/* Scanning line animation */}
-              {isScanning && !scanSuccess && (
-                <motion.div
-                  animate={{
-                    y: ['-40px', '40px', '-40px'],
-                    opacity: [0.5, 1, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                  className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-accent-purple to-transparent"
-                />
-              )}
-
-              {/* Success overlay */}
-              {scanSuccess && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="absolute inset-0 flex items-center justify-center bg-green-500/20 rounded-lg"
-                >
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200 }}
-                    className="text-green-500 text-4xl"
-                  >
-                    ✓
-                  </motion.div>
-                </motion.div>
-              )}
-            </motion.div>
-          </div>
         </div>
 
-        {/* Bottom info */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent"
-        >
-          {error ? (
-            <div className="text-center">
-              <p className="text-error mb-4">{error}</p>
-              <button
-                onClick={initScanner}
-                className="btn-primary"
-              >
-                Erneut Versuchen
-              </button>
+        {/* Main content */}
+        <div className="flex-1 relative">
+          {showManual ? (
+            // Manual input form
+            <div className="absolute inset-0 flex items-center justify-center p-6">
+              <form onSubmit={handleManualSubmit} className="w-full max-w-sm space-y-4">
+                <div>
+                  <label className="block text-white text-sm mb-2">
+                    Barcode-Nummer eingeben:
+                  </label>
+                  <input
+                    type="text"
+                    value={manualInput}
+                    onChange={(e) => setManualInput(e.target.value)}
+                    placeholder="z.B. 4012345678901"
+                    autoFocus
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowManual(false)}
+                    className="flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+                  >
+                    Zurück zum Scanner
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!manualInput.trim()}
+                    className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    Bestätigen
+                  </button>
+                </div>
+              </form>
             </div>
           ) : (
-            <div className="text-center">
-              {isScanning ? (
-                scanSuccess ? (
-                  <motion.p
-                    initial={{ scale: 0.9 }}
-                    animate={{ scale: 1 }}
-                    className="text-green-500 font-semibold"
-                  >
-                    Barcode erfolgreich gescannt!
-                  </motion.p>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-white/80 font-medium">
-                      Barcode im Rahmen positionieren
-                    </p>
-                    <p className="text-white/50 text-sm">
-                      Unterstützt: EAN-13, UPC-A, CODE-128, QR-Code
-                    </p>
+            <>
+              {/* Scanner container */}
+              <div
+                id={containerIdRef.current}
+                className="w-full h-full"
+              />
+
+              {/* Overlay states */}
+              {status === 'loading' && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                  <div className="text-center text-white">
+                    <Camera className="w-12 h-12 mx-auto mb-4 animate-pulse" />
+                    <p>Kamera wird gestartet...</p>
                   </div>
-                )
-              ) : (
-                <div className="flex items-center justify-center gap-2 text-white/60">
-                  <Loader2 size={20} className="animate-spin" />
-                  <span>Kamera wird initialisiert...</span>
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Manual entry hint */}
-          {!scanSuccess && (
-            <p className="text-center text-white/40 text-sm mt-4">
-              Scannen nicht möglich? Barcode manuell im Formular eingeben
+              {status === 'success' && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="text-center text-white"
+                  >
+                    <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-400" />
+                    <p className="text-xl font-semibold mb-2">Erfolgreich!</p>
+                    <p className="text-gray-300 font-mono">{scannedCode}</p>
+                  </motion.div>
+                </div>
+              )}
+
+              {status === 'error' && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/90 p-6">
+                  <div className="text-center text-white max-w-sm">
+                    <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+                    <p className="mb-6 text-gray-300">{errorMessage}</p>
+                    <div className="flex flex-col gap-3">
+                      <button
+                        onClick={handleRetry}
+                        className="px-6 py-3 bg-purple-600 rounded-lg hover:bg-purple-700"
+                      >
+                        Erneut versuchen
+                      </button>
+                      <button
+                        onClick={() => setShowManual(true)}
+                        className="px-6 py-3 bg-gray-700 rounded-lg hover:bg-gray-600"
+                      >
+                        Manuell eingeben
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Scanning frame overlay */}
+              {status === 'scanning' && (
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div className="relative w-72 h-40">
+                    {/* Corner markers */}
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-purple-500 rounded-tl-lg" />
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-purple-500 rounded-tr-lg" />
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-purple-500 rounded-bl-lg" />
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-purple-500 rounded-br-lg" />
+
+                    {/* Scanning line */}
+                    <motion.div
+                      className="absolute left-4 right-4 h-0.5 bg-purple-500"
+                      animate={{ top: ['10%', '90%', '10%'] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        {!showManual && status === 'scanning' && (
+          <div className="p-6 bg-black/80">
+            <p className="text-center text-gray-300 text-sm mb-4">
+              Halten Sie den Barcode in den Rahmen
             </p>
-          )}
-        </motion.div>
-
-        {/* Custom styles for scanner */}
-        <style>{`
-          #barcode-reader {
-            border: none !important;
-          }
-          #barcode-reader video {
-            object-fit: cover !important;
-            width: 100% !important;
-            height: 100% !important;
-          }
-          #barcode-reader__scan_region {
-            display: none !important;
-          }
-          #barcode-reader__dashboard {
-            display: none !important;
-          }
-          #barcode-reader__dashboard_section {
-            display: none !important;
-          }
-          #barcode-reader__header_message {
-            display: none !important;
-          }
-        `}</style>
+            <button
+              onClick={() => setShowManual(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
+            >
+              <Keyboard className="w-5 h-5" />
+              Manuell eingeben
+            </button>
+          </div>
+        )}
       </motion.div>
     </AnimatePresence>
   );
-}
+};
+
+export default BarcodeScanner;
