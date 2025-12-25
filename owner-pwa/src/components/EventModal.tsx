@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
-import { X, Calendar, Clock, Users, Euro, Sparkles, ImagePlus, Upload, Trash2 } from 'lucide-react';
+import { X, Calendar, Clock, Users, Euro, Sparkles } from 'lucide-react';
 import { AIImageGenerator } from './AIImageGenerator';
+import { PhotoUpload } from './ui';
 import type { Event } from '../types';
 
 interface EventModalProps {
@@ -18,7 +19,6 @@ const pointsMultipliers = [
 ];
 
 export function EventModal({ isOpen, onClose, onSave, event }: EventModalProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -62,35 +62,6 @@ export function EventModal({ isOpen, onClose, onSave, event }: EventModalProps) 
       setImagePreview(null);
     }
   }, [event, isOpen]);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
-        return;
-      }
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image must be less than 5MB');
-        return;
-      }
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
 
   const handleAIImageGenerated = (imageUrl: string) => {
     setImagePreview(imageUrl);
@@ -145,56 +116,19 @@ export function EventModal({ isOpen, onClose, onSave, event }: EventModalProps) 
                 Event Image
               </label>
 
-              {imagePreview ? (
-                <div className="relative aspect-video rounded-xl overflow-hidden group">
-                  <img
-                    src={imagePreview}
-                    alt="Event preview"
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Overlay with actions */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-3 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-colors"
-                      title="Replace image"
-                    >
-                      <Upload size={20} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="p-3 rounded-xl bg-error/20 text-error hover:bg-error/30 transition-colors"
-                      title="Remove image"
-                    >
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="relative aspect-video rounded-xl bg-card border-2 border-dashed border-border hover:border-primary-500/50 transition-colors cursor-pointer group"
-                >
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                    <div className="p-3 rounded-xl bg-primary-500/10 text-primary-400 group-hover:scale-110 transition-transform">
-                      <ImagePlus size={24} />
-                    </div>
-                    <p className="text-sm text-foreground-muted">Click to upload event image</p>
-                    <p className="text-xs text-foreground-dim">JPG, PNG up to 5MB</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
+              {/* Photo Upload Component */}
+              <div className="flex justify-center">
+                <PhotoUpload
+                  currentPhotoUrl={imagePreview}
+                  onUpload={(url) => setImagePreview(url)}
+                  onRemove={() => setImagePreview(null)}
+                  bucket="photos"
+                  folder="events"
+                  size="lg"
+                  shape="square"
+                  label="Event-Bild hochladen"
+                />
+              </div>
 
               {/* AI Generate Button */}
               <button
@@ -203,7 +137,7 @@ export function EventModal({ isOpen, onClose, onSave, event }: EventModalProps) 
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-accent-purple/20 to-accent-pink/20 border border-accent-purple/30 text-accent-purple hover:from-accent-purple/30 hover:to-accent-pink/30 transition-all"
               >
                 <Sparkles size={18} />
-                <span className="font-medium">Generate with AI</span>
+                <span className="font-medium">Mit AI generieren</span>
               </button>
             </div>
 

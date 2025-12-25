@@ -24,6 +24,7 @@ import { cn } from '../lib/utils';
 import { supabaseApi } from '../services/supabaseApi';
 import type { Employee as DbEmployee } from '../lib/supabase';
 import { exportEmployeesCSV } from '../lib/exportUtils';
+import { PhotoUpload } from '../components/ui';
 
 // Granular roles for bar/club operations
 export type EmployeeRole = 'owner' | 'manager' | 'bartender' | 'waiter' | 'security' | 'dj' | 'cleaning';
@@ -37,6 +38,7 @@ interface Employee {
   email?: string;
   pin?: string; // 4-digit PIN for clock-in
   hourlyRate?: number;
+  photoUrl?: string; // Photo URL from Supabase Storage
   isActive: boolean;
   createdAt: string;
 }
@@ -50,6 +52,7 @@ const mapDbToUi = (db: DbEmployee): Employee => ({
   email: db.email || undefined,
   pin: db.pin_hash || undefined,
   hourlyRate: db.hourly_rate || undefined,
+  photoUrl: (db as any).photo_url || undefined,
   isActive: db.is_active,
   createdAt: db.created_at,
 });
@@ -120,6 +123,7 @@ export function Employees() {
     email: '',
     pin: '',
     hourlyRate: '',
+    photoUrl: '',
   });
 
   // Fetch employees from Supabase
@@ -144,7 +148,7 @@ export function Employees() {
 
   // Reset form
   const resetForm = () => {
-    setFormData({ name: '', role: 'bartender', phone: '', email: '', pin: '', hourlyRate: '' });
+    setFormData({ name: '', role: 'bartender', phone: '', email: '', pin: '', hourlyRate: '', photoUrl: '' });
     setEditingEmployee(null);
   };
 
@@ -164,6 +168,7 @@ export function Employees() {
       email: employee.email || '',
       pin: employee.pin || '',
       hourlyRate: employee.hourlyRate?.toString() || '',
+      photoUrl: employee.photoUrl || '',
     });
     setShowModal(true);
   };
@@ -183,7 +188,8 @@ export function Employees() {
           email: formData.email || null,
           pin_hash: formData.pin || null,
           hourly_rate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : 0,
-        });
+          photo_url: formData.photoUrl || null,
+        } as any);
         if (error) throw error;
       } else {
         // Add new
@@ -194,7 +200,8 @@ export function Employees() {
           email: formData.email || null,
           pin_hash: formData.pin || null,
           hourly_rate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : 0,
-        });
+          photo_url: formData.photoUrl || null,
+        } as any);
         if (error) throw error;
       }
 
@@ -388,12 +395,20 @@ export function Employees() {
                   <div className="flex items-center gap-4 p-4">
                     {/* Avatar */}
                     <div className={cn(
-                      'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg',
+                      'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg overflow-hidden',
                       employee.isActive
                         ? 'bg-gradient-to-br from-primary-500 to-accent-pink'
                         : 'bg-gray-500'
                     )}>
-                      {employee.name.split(' ').map(n => n[0]).join('')}
+                      {employee.photoUrl ? (
+                        <img
+                          src={employee.photoUrl}
+                          alt={employee.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>{employee.name.split(' ').map(n => n[0]).join('')}</span>
+                      )}
                     </div>
 
                     {/* Info */}
@@ -485,6 +500,21 @@ export function Employees() {
               <button onClick={() => setShowModal(false)} className="p-1 text-foreground-muted hover:text-foreground">
                 <X size={20} />
               </button>
+            </div>
+
+            {/* Photo Upload */}
+            <div className="flex justify-center py-2">
+              <PhotoUpload
+                currentPhotoUrl={formData.photoUrl}
+                onUpload={(url) => setFormData({ ...formData, photoUrl: url })}
+                onRemove={() => setFormData({ ...formData, photoUrl: '' })}
+                bucket="photos"
+                folder="employees"
+                size="lg"
+                shape="circle"
+                label="Mitarbeiterfoto"
+                disabled={saving}
+              />
             </div>
 
             {/* Name */}
