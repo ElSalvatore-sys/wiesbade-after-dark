@@ -1,11 +1,9 @@
 import { NotificationSettings } from '../components/NotificationSettings';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { User, Building, Shield, Palette, Moon, Sun, Monitor } from 'lucide-react';
+import { User, Building, Shield } from 'lucide-react';
 
 export function Settings() {
   const { user } = useAuth();
-  const { theme, setTheme } = useTheme();
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
@@ -61,54 +59,6 @@ export function Settings() {
             <span className="text-gray-400">Venue ID</span>
             <span className="text-white font-mono text-sm">{user?.venueId || 'demo'}</span>
           </div>
-        </div>
-      </div>
-
-      {/* Theme Section */}
-      <div className="glass-card p-5 rounded-xl">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-            <Palette className="text-purple-400" size={24} />
-          </div>
-          <div>
-            <h2 className="font-semibold text-white">Erscheinungsbild</h2>
-            <p className="text-sm text-gray-400">Farbschema der App anpassen</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <button
-            onClick={() => setTheme('light')}
-            className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-              theme === 'light'
-                ? 'border-purple-500 bg-purple-500/20 text-purple-400'
-                : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'
-            }`}
-          >
-            <Sun size={24} />
-            <span className="text-sm">Hell</span>
-          </button>
-          <button
-            onClick={() => setTheme('dark')}
-            className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-              theme === 'dark'
-                ? 'border-purple-500 bg-purple-500/20 text-purple-400'
-                : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'
-            }`}
-          >
-            <Moon size={24} />
-            <span className="text-sm">Dunkel</span>
-          </button>
-          <button
-            onClick={() => setTheme('system')}
-            className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-              theme === 'system'
-                ? 'border-purple-500 bg-purple-500/20 text-purple-400'
-                : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'
-            }`}
-          >
-            <Monitor size={24} />
-            <span className="text-sm">System</span>
-          </button>
         </div>
       </div>
 

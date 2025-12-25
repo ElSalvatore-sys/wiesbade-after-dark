@@ -77,3 +77,37 @@
 5. [ ] Test password reset email
 6. [ ] Test mobile navigation
 ---
+
+## Task 3: Remove Light Theme (Dark-Only App) ✅ COMPLETE
+**Completed:** December 25, 2025
+
+### What was done:
+1. ✅ Removed theme toggle from Settings page
+   - Removed "Erscheinungsbild" section with Light/Dark/System buttons
+   - Removed unused imports (Palette, Moon, Sun, Monitor icons)
+   - Removed useTheme hook usage
+
+2. ✅ Simplified ThemeContext to dark-only
+   - Theme is always 'dark' (hardcoded)
+   - setTheme and toggleTheme are no-op functions (backward compatibility)
+   - Always applies 'dark' class to document root
+   - Removed localStorage theme persistence
+   - Removed system theme detection
+
+3. ✅ Build successful (2.77s)
+
+### Files modified:
+- owner-pwa/src/pages/Settings.tsx
+- owner-pwa/src/contexts/ThemeContext.tsx
+
+### Result:
+✅ App is now **dark-only** by design
+   - No theme toggle in UI
+   - Dark mode always enforced
+   - Light theme incomplete/broken issue resolved
+
+### Next Tasks:
+4. [ ] Configure & test password reset email
+5. [ ] Document barcode scanner testing procedure
+6. [ ] Test mobile navigation (requires device)
+---
