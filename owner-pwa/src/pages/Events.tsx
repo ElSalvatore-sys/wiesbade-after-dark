@@ -69,6 +69,7 @@ const transformEvent = (backendEvent: BackendEvent): Event => ({
   category: mapEventTypeToCategory(backendEvent.event_type),
   isActive: backendEvent.status !== 'cancelled',
   isFeatured: backendEvent.is_featured,
+  pointsMultiplier: backendEvent.bonus_points_multiplier,
   createdAt: backendEvent.created_at,
   updatedAt: backendEvent.updated_at || backendEvent.created_at,
 });
@@ -185,7 +186,7 @@ export function Events() {
         ticket_price: eventData.ticketPrice,
         is_free: eventData.ticketPrice === 0 || eventData.ticketPrice === undefined,
         is_featured: eventData.isFeatured,
-        points_multiplier: eventData.pointsMultiplier,
+        bonus_points_multiplier: eventData.pointsMultiplier,
       });
 
       if (result.error) {
@@ -205,7 +206,7 @@ export function Events() {
         ticket_price: eventData.ticketPrice || 0,
         is_free: !eventData.ticketPrice || eventData.ticketPrice === 0,
         is_featured: eventData.isFeatured || false,
-        points_multiplier: eventData.pointsMultiplier || 1,
+        bonus_points_multiplier: eventData.pointsMultiplier || 1,
       });
 
       if (result.error) {

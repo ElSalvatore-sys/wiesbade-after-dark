@@ -184,7 +184,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
       // Count today's events
       const today = new Date().toISOString().split('T')[0];
-      const todayEvents = eventsResult.data?.filter((event: any) => {
+      const todayEvents = eventsResult.data?.events?.filter((event: any) => {
         const eventDate = event.start_time?.split('T')[0];
         return eventDate === today;
       }) || [];
@@ -210,7 +210,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       setPendingTasks(tasksResult.data?.length ?? 0);
 
       // Set recent activity (limit to 5 most recent)
-      setRecentActivity(auditLogs.data?.slice(0, 5) || []);
+      setRecentActivity(auditLogs?.slice(0, 5) || []);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

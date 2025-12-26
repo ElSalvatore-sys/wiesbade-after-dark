@@ -59,6 +59,7 @@ export interface Event {
   category: EventCategory;
   isActive: boolean;
   isFeatured: boolean;
+  pointsMultiplier?: number;
   createdAt: string;
   updatedAt: string;
 }
