@@ -66,9 +66,11 @@
    - Current database: Good venue info + 10+ inventory items with barcodes
    - Needs: Update 7 employee names, delete 5 demo tasks, add 6 recurring tasks
 
-3. **Final Testing** (30 min)
-   - Test on mobile device
-   - Verify all features
+3. **Mobile Testing** (10-40 min) - ✅ GUIDES READY
+   - Quick Checklist: MOBILE_QUICK_CHECKLIST.md (10 min, 10 tests)
+   - Complete Guide: MOBILE_TESTING_COMPLETE_GUIDE.md (30-40 min, 11 detailed tests)
+   - Critical tests: Barcode scanner, Clock in/out, Dashboard, Offline mode
+   - Awaiting: Physical device testing (iOS/Android)
 
 **Total Time Needed:** ~1 hour (15 min SMTP + 10 min data + 30 min testing)
 
