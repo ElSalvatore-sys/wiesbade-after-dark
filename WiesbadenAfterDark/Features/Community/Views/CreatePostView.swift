@@ -318,17 +318,40 @@ struct CreatePostView: View {
     }
 
     private func postContent() {
-        // TODO: Post to backend with image
-        // In production: Upload image to storage, get URL, create post with imageURL
+        Task {
+            do {
+                var imageURL: String? = nil
 
-        if let image = selectedImage {
-            print("📸 [CreatePostView] Posting with image: \(image.size)")
-            // For now, just log the image size
-            // Real implementation would upload to backend
+                // Upload image if present
+                if let image = selectedImage {
+                    print("📸 [CreatePostView] Uploading image...")
+                    imageURL = try await WiesbadenAPIService.shared.uploadImage(image)
+                    print("✅ [CreatePostView] Image uploaded: \(imageURL ?? "nil")")
+                }
+
+                // Create post with image URL
+                let post = try await WiesbadenAPIService.shared.createPost(
+                    content: content,
+                    type: postType.rawValue,
+                    venueId: nil, // TODO: Get venue ID from selectedVenueName
+                    imageURL: imageURL
+                )
+
+                print("✅ [CreatePostView] Post created successfully: \(post.id)")
+
+                await MainActor.run {
+                    HapticManager.shared.success()
+                    dismiss()
+                }
+
+            } catch {
+                print("❌ [CreatePostView] Failed to create post: \(error.localizedDescription)")
+                await MainActor.run {
+                    HapticManager.shared.error()
+                    // TODO: Show error alert to user
+                }
+            }
         }
-
-        HapticManager.shared.success()
-        dismiss()
     }
 }
 
