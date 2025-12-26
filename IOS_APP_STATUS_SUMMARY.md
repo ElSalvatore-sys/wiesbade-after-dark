@@ -8,12 +8,13 @@
 
 ## 🎯 Executive Summary
 
-The iOS app is **code-complete and builds successfully**. Only the €99 Apple Developer account stands between you and App Store submission.
+The iOS app **builds successfully** but has critical gaps before App Store submission. A harsh reality check reveals it's 60% production-ready, not 95%.
 
 **Build Result:** ✅ BUILD SUCCESSFUL
 **Files:** 172 Swift files
-**Features:** 100% implemented
-**Blockers:** €99 Apple Developer Program enrollment
+**Features:** 100% UI, 40% API integration
+**Blockers:** NFC simulation (not real), Stripe mock, untested, €99 account
+**Reality Check:** See `IOS_HARSH_REALITY_REPORT.md` for full details
 
 ---
 
@@ -383,11 +384,18 @@ The app builds and runs on:
 - ✅ Backend: Production APIs configured
 - ⏳ €99: Only blocker to App Store
 
-**Confidence Level:** 95% ready for App Store
-**Time to Live:** 7-14 days after €99 payment
+**Confidence Level:** 60% ready for App Store (down from claimed 95%)
+**Time to Live:** 3-4 weeks after completing NFC, Stripe, testing
 
-**Recommendation:** Launch Owner PWA first (Jan 1), then submit iOS app mid-January with real user feedback incorporated.
+**Critical Issues Found:**
+- ❌ NFC is simulated, not real CoreNFC
+- ❌ Payments use mock service, no Stripe SDK
+- ❌ 11 TODOs in critical code paths
+- ❌ No testing on real devices
+- ❌ Backend endpoints incomplete
+
+**Recommendation:** Launch Owner PWA first (Jan 1), complete iOS app properly with 2-4 weeks additional work, then submit to App Store in late January/February with real user feedback incorporated.
 
 ---
 
-*The iOS app is production-ready and waiting for your €99 Apple Developer account! 🎉*
+*The iOS app has solid architecture and UI but needs 2-4 weeks of work on NFC, Stripe, testing, and backend integration before it's truly production-ready. See IOS_HARSH_REALITY_REPORT.md for details.*
