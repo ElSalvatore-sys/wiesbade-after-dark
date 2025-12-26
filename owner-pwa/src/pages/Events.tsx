@@ -185,6 +185,7 @@ export function Events() {
         ticket_price: eventData.ticketPrice,
         is_free: eventData.ticketPrice === 0 || eventData.ticketPrice === undefined,
         is_featured: eventData.isFeatured,
+        points_multiplier: eventData.pointsMultiplier,
       });
 
       if (result.error) {
@@ -204,6 +205,7 @@ export function Events() {
         ticket_price: eventData.ticketPrice || 0,
         is_free: !eventData.ticketPrice || eventData.ticketPrice === 0,
         is_featured: eventData.isFeatured || false,
+        points_multiplier: eventData.pointsMultiplier || 1,
       });
 
       if (result.error) {
@@ -212,7 +214,7 @@ export function Events() {
       }
     }
 
-    // Refresh events list and close modal
+    // Only close modal if save succeeded
     setIsModalOpen(false);
     fetchEvents();
   };

@@ -20,6 +20,7 @@ import { BookingModal } from '../components/BookingModal';
 import { supabaseApi, sendBookingConfirmation } from '../services/supabaseApi';
 import type { VenueBooking as DbBooking } from '../lib/supabase';
 import type { Booking, BookingStatus } from '../types';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 
 type FilterStatus = 'all' | BookingStatus;
 type ViewMode = 'list' | 'calendar';
@@ -76,6 +77,16 @@ export function Bookings() {
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
+
+  // Realtime subscription for live updates
+  useRealtimeSubscription({
+    subscriptions: [
+      { table: 'bookings', event: '*' },
+    ],
+    onDataChange: fetchBookings,
+    enabled: !loading,
+    debounceMs: 500,
+  });
 
   const filteredBookings = bookings.filter((booking) => {
     const matchesFilter = filter === 'all' || booking.status === filter;

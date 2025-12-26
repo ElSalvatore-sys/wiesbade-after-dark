@@ -18,6 +18,7 @@ import {
 import { motion } from 'framer-motion';
 import type { DashboardStats } from '../types';
 import { supabaseApi } from '../services/supabaseApi';
+import { api } from '../services/api';
 import { SkeletonStatCard, Skeleton } from '../components/Skeleton';
 import { useRealtimeSubscription } from '../hooks';
 
@@ -164,26 +165,37 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     employeesOnBreak: 0,
   });
   const [pendingTasks, setPendingTasks] = useState(0);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
   const fetchDashboard = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
-      // Fetch real data from Supabase in parallel
-      const [lowStockResult, shiftSummary, tasksResult] = await Promise.all([
+      // Fetch real data from Supabase and Railway API in parallel
+      const [lowStockResult, shiftSummary, tasksResult, bookingsSummary, eventsResult, auditLogs] = await Promise.all([
         supabaseApi.getLowStockItems(),
         supabaseApi.getShiftsSummary(),
         supabaseApi.getTasks({ status: 'pending' }),
+        supabaseApi.getBookingsSummary(),
+        api.getEvents({ status: 'upcoming', limit: 100 }),
+        supabaseApi.getAuditLogs(),
       ]);
 
-      // Update stats with real data where available
+      // Count today's events
+      const today = new Date().toISOString().split('T')[0];
+      const todayEvents = eventsResult.data?.filter((event: any) => {
+        const eventDate = event.start_time?.split('T')[0];
+        return eventDate === today;
+      }) || [];
+
+      // Update stats with real data
       setStats(prev => ({
         ...prev,
         lowStockItems: lowStockResult.data?.length ?? defaultStats.lowStockItems,
-        // Keep other stats as defaults until we have those tables
-        todaysBookings: defaultStats.todaysBookings,
-        activeEvents: defaultStats.activeEvents,
+        todaysBookings: bookingsSummary.total,
+        activeEvents: todayEvents.length,
+        // Keep revenue stats as defaults (no revenue tracking yet)
         todaysRevenue: defaultStats.todaysRevenue,
         weeklyRevenue: defaultStats.weeklyRevenue,
         monthlyRevenue: defaultStats.monthlyRevenue,
@@ -196,6 +208,9 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
       // Set pending tasks count
       setPendingTasks(tasksResult.data?.length ?? 0);
+
+      // Set recent activity (limit to 5 most recent)
+      setRecentActivity(auditLogs.data?.slice(0, 5) || []);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -410,25 +425,32 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         <div className="glass-card p-6">
           <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
           <div className="space-y-3">
-            {[
-              { type: 'booking', message: 'New booking: Table for 6 at 9 PM', time: '5 min ago' },
-              { type: 'event', message: 'DJ Night event updated', time: '1 hour ago' },
-              { type: 'inventory', message: 'Stock updated: Hendricks Gin', time: '2 hours ago' },
-              { type: 'booking', message: 'Booking confirmed: VIP Table', time: '3 hours ago' },
-            ].map((activity, i) => (
-              <div key={i} className="flex items-start gap-3 py-2">
-                <div className={cn(
-                  'w-2 h-2 rounded-full mt-2 flex-shrink-0',
-                  activity.type === 'booking' && 'bg-accent-purple',
-                  activity.type === 'event' && 'bg-accent-pink',
-                  activity.type === 'inventory' && 'bg-accent-cyan'
-                )} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground truncate">{activity.message}</p>
-                  <p className="text-xs text-foreground-dim">{activity.time}</p>
+            {recentActivity.length > 0 ? (
+              recentActivity.map((log, i) => (
+                <div key={log.id || i} className="flex items-start gap-3 py-2">
+                  <div className={cn(
+                    'w-2 h-2 rounded-full mt-2 flex-shrink-0',
+                    log.entity_type === 'booking' && 'bg-accent-purple',
+                    log.entity_type === 'event' && 'bg-accent-pink',
+                    log.entity_type === 'inventory' && 'bg-accent-cyan',
+                    log.entity_type === 'task' && 'bg-success'
+                  )} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground truncate">{log.description}</p>
+                    <p className="text-xs text-foreground-dim">
+                      {new Date(log.created_at).toLocaleString('de-DE', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: '2-digit'
+                      })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-foreground-muted text-center py-4">No recent activity</p>
+            )}
           </div>
         </div>
       </div>
