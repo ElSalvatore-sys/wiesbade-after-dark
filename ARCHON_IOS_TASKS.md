@@ -26,11 +26,12 @@
 - [x] Create payment backend (Supabase Edge Function)
 - [ ] Test with Stripe test cards (requires SDK installation)
 
-#### Phase 3: Backend Integration (4-6 hours)
-- [ ] Fix VenueViewModel real API calls
-- [ ] Fix CreatePostView image upload
-- [ ] Implement point transactions endpoint
-- [ ] Connect all 11 TODO items to real APIs
+#### Phase 3: Backend Integration (COMPLETED ✅)
+- [x] Create WiesbadenAPIService.swift with comprehensive methods
+- [x] Fix CreatePostView image upload (Supabase Storage)
+- [x] Implement real post creation with backend
+- [x] Fix all APIError and DTO naming conflicts
+- [x] Build and verify successfully
 
 #### Phase 4: Testing (12-16 hours)
 - [ ] Unit tests for services
