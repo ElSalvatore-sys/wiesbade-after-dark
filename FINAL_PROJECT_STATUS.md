@@ -59,16 +59,18 @@
    - Test script ready: ./test-smtp.sh
    - Awaiting: Manual configuration in Supabase dashboard
 
-2. **Data Import** (30 min)
-   - Replace placeholder employees
-   - Delete demo tasks
-   - Add real inventory
+2. **Data Import** (5-10 min) - ✅ TOOLS READY
+   - Files created: DATA_IMPORT_README.md, QUICK_DATA_UPDATE.sql, DATA_CLEANUP_GUIDE.md
+   - SQL script ready for execution
+   - Awaiting: User to edit employee names in QUICK_DATA_UPDATE.sql and run in Supabase
+   - Current database: Good venue info + 10+ inventory items with barcodes
+   - Needs: Update 7 employee names, delete 5 demo tasks, add 6 recurring tasks
 
 3. **Final Testing** (30 min)
    - Test on mobile device
    - Verify all features
 
-**Total Time Needed:** ~1.5 hours
+**Total Time Needed:** ~1 hour (15 min SMTP + 10 min data + 30 min testing)
 
 ---
 
@@ -89,6 +91,12 @@ WiesbadenAfterDark/
 ├── FINAL_PROJECT_STATUS.md
 ├── ARCHON_PROJECT_SUMMARY.md
 ├── SMTP_SETUP_GUIDE.md
+├── SMTP_CONFIGURATION_CHECKLIST.md
+├── SMTP_SETUP_SUMMARY.md
+├── test-smtp.sh
+├── DATA_IMPORT_README.md
+├── QUICK_DATA_UPDATE.sql
+├── DATA_CLEANUP_GUIDE.md
 ├── MOBILE_TESTING_GUIDE.md
 └── TEST_ALL_FEATURES.sh
 
