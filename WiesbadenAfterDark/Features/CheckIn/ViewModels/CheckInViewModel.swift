@@ -3,10 +3,12 @@
 //  WiesbadenAfterDark
 //
 //  ViewModel managing check-in flow and NFC operations
+//  Updated: December 26, 2025 - Real NFC integration
 //
 
 import Foundation
 import SwiftData
+import CoreNFC
 
 /// Check-in flow states
 enum CheckInState: Equatable {
@@ -42,6 +44,7 @@ final class CheckInViewModel {
 
     private let checkInService: CheckInServiceProtocol
     private let walletPassService: WalletPassServiceProtocol
+    private let nfcReader = RealNFCReaderService()
     private let modelContext: ModelContext?
 
     // MARK: - Published State
@@ -106,21 +109,26 @@ final class CheckInViewModel {
         membership: VenueMembership,
         event: Event? = nil
     ) async {
+        // Check if NFC is available
+        guard nfcReader.isNFCAvailable else {
+            errorMessage = "NFC wird auf diesem Gerät nicht unterstützt"
+            checkInState = .error("NFC wird auf diesem Gerät nicht unterstützt")
+            return
+        }
+
         checkInState = .scanning
         isLoading = true
         errorMessage = nil
 
         do {
-            // 1. Simulate NFC scan
-            let payload = try await checkInService.simulateNFCScan(for: venue)
+            // 1. Real NFC scan ✅
+            let scannedVenueId = try await nfcReader.startScanning()
 
             checkInState = .validating
 
-            // 2. Validate payload
-            let isValid = try await checkInService.validateNFCPayload(payload)
-
-            guard isValid else {
-                throw CheckInError.invalidNFCPayload
+            // 2. Validate scanned venue matches expected venue
+            guard scannedVenueId == venue.id.uuidString else {
+                throw CheckInError.wrongVenue
             }
 
             // 3. Perform check-in
@@ -132,6 +140,19 @@ final class CheckInViewModel {
                 event: event
             )
 
+        } catch let error as RealNFCReaderService.NFCError {
+            // Handle NFC-specific errors
+            switch error {
+            case .userCancelled:
+                // User cancelled - just reset state
+                checkInState = .idle
+                isLoading = false
+                return
+            default:
+                errorMessage = error.localizedDescription
+                checkInState = .error(error.localizedDescription)
+                isLoading = false
+            }
         } catch {
             errorMessage = error.localizedDescription
             checkInState = .error(error.localizedDescription)

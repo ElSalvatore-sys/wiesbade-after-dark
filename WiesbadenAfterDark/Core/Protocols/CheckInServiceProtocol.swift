@@ -124,6 +124,7 @@ enum CheckInError: LocalizedError {
     case alreadyCheckedInToday
     case networkError
     case unauthorized
+    case wrongVenue  // Scanned wrong venue's NFC tag
 
     var errorDescription: String? {
         switch self {
@@ -139,6 +140,8 @@ enum CheckInError: LocalizedError {
             return "Network error. Please check your connection."
         case .unauthorized:
             return "Unauthorized. Please log in again."
+        case .wrongVenue:
+            return "Das ist nicht der richtige Venue. Bitte scanne den richtigen NFC-Tag."
         }
     }
 }

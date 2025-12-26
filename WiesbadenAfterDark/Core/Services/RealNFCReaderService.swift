@@ -29,7 +29,7 @@ final class RealNFCReaderService: NSObject, ObservableObject {
         case error(NFCError)
     }
 
-    enum NFCError: Error, LocalizedError {
+    enum NFCError: Error, LocalizedError, Equatable {
         case notSupported
         case sessionInvalidated
         case tagReadFailed
@@ -54,6 +54,22 @@ final class RealNFCReaderService: NSObject, ObservableObject {
                 return "Scan abgebrochen"
             case .unknown(let message):
                 return message
+            }
+        }
+
+        static func == (lhs: NFCError, rhs: NFCError) -> Bool {
+            switch (lhs, rhs) {
+            case (.notSupported, .notSupported),
+                 (.sessionInvalidated, .sessionInvalidated),
+                 (.tagReadFailed, .tagReadFailed),
+                 (.invalidPayload, .invalidPayload),
+                 (.noVenueIdFound, .noVenueIdFound),
+                 (.userCancelled, .userCancelled):
+                return true
+            case (.unknown(let lhsMsg), .unknown(let rhsMsg)):
+                return lhsMsg == rhsMsg
+            default:
+                return false
             }
         }
     }
