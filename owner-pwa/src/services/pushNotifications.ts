@@ -399,13 +399,13 @@ export function setupRealtimeNotifications(
         async (payload) => {
           const shift = payload.new as {
             employee_id: string;
-            clock_out: string | null;
+            ended_at: string | null;
             actual_hours: number | null;
           };
-          const oldShift = payload.old as { clock_out: string | null };
+          const oldShift = payload.old as { ended_at: string | null };
 
           // Shift ended
-          if (shift.clock_out && !oldShift.clock_out) {
+          if (shift.ended_at && !oldShift.ended_at) {
             const { data: employee } = await supabase
               .from('employees')
               .select('name')

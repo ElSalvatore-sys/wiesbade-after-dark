@@ -52,38 +52,38 @@ function formatTime(date: Date | string): string {
 
 // Convert database shift to UI active shift
 function toActiveShift(shift: Shift & { employee: Employee }): ActiveShift {
-  const clockIn = new Date(shift.clock_in);
+  const clockIn = new Date(shift.started_at);
   const now = new Date();
   const elapsedMinutes = Math.floor((now.getTime() - clockIn.getTime()) / 60000);
 
   return {
     id: shift.id,
     employeeId: shift.employee_id,
-    employeeName: shift.employee?.name || 'Unknown',
-    employeeRole: shift.employee?.role || 'staff',
-    startedAt: shift.clock_in,
+    employeeName: shift.employee_name,
+    employeeRole: shift.employee_role,
+    startedAt: shift.started_at,
     expectedHours: shift.expected_hours,
     elapsedMinutes,
     isOnBreak: !!shift.break_start,
-    totalBreakMinutes: shift.break_minutes || 0,
+    totalBreakMinutes: shift.total_break_minutes || 0,
     status: shift.break_start ? 'on_break' : (shift.status as ShiftStatus),
   };
 }
 
 // Convert database shift to export format
 function toShiftRecord(shift: Shift & { employee: Employee }): ShiftRecord {
-  const clockIn = new Date(shift.clock_in);
-  const clockOut = shift.clock_out ? new Date(shift.clock_out) : null;
+  const clockIn = new Date(shift.started_at);
+  const clockOut = shift.ended_at ? new Date(shift.ended_at) : null;
 
   return {
     id: shift.id,
     employeeId: shift.employee_id,
-    employeeName: shift.employee?.name || 'Unknown',
-    employeeRole: shift.employee?.role || 'staff',
+    employeeName: shift.employee_name,
+    employeeRole: shift.employee_role,
     date: clockIn.toISOString().split('T')[0],
     clockIn: clockIn.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
     clockOut: clockOut?.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) || '',
-    breakMinutes: shift.break_minutes || 0,
+    breakMinutes: shift.total_break_minutes || 0,
     totalHours: shift.actual_hours || 0,
     overtime: Math.floor((shift.overtime_minutes || 0) / 60),
   };
@@ -247,7 +247,7 @@ export function Shifts() {
           employeeId: employee.id,
           employeeName: employee.name,
           employeeRole: employee.role,
-          startedAt: shift.clock_in,
+          startedAt: shift.started_at,
           expectedHours: shift.expected_hours,
           elapsedMinutes: 0,
           isOnBreak: false,

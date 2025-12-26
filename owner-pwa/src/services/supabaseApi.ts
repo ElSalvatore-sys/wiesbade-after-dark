@@ -108,7 +108,7 @@ class SupabaseApiService {
       `)
       .eq('venue_id', this.venueId)
       .eq('status', 'active')
-      .order('clock_in', { ascending: false });
+      .order('started_at', { ascending: false });
 
     return { data: data as (Shift & { employee: Employee })[] | null, error: error as Error | null };
   }
@@ -126,13 +126,13 @@ class SupabaseApiService {
         employee:employees(*)
       `)
       .eq('venue_id', this.venueId)
-      .order('clock_in', { ascending: false });
+      .order('started_at', { ascending: false });
 
     if (params?.startDate) {
-      query = query.gte('clock_in', params.startDate);
+      query = query.gte('started_at', params.startDate);
     }
     if (params?.endDate) {
-      query = query.lte('clock_in', params.endDate);
+      query = query.lte('started_at', params.endDate);
     }
     if (params?.employeeId) {
       query = query.eq('employee_id', params.employeeId);
@@ -151,9 +151,9 @@ class SupabaseApiService {
       .insert({
         venue_id: this.venueId,
         employee_id: employeeId,
-        clock_in: new Date().toISOString(),
+        started_at: new Date().toISOString(),
         expected_hours: expectedHours,
-        break_minutes: 0,
+        total_break_minutes: 0,
         overtime_minutes: 0,
         status: 'active',
       })
@@ -167,7 +167,7 @@ class SupabaseApiService {
     // First get the shift to calculate actual hours
     const { data: shift } = await supabase
       .from('shifts')
-      .select('clock_in, break_minutes, expected_hours')
+      .select('started_at, total_break_minutes, expected_hours')
       .eq('id', shiftId)
       .single();
 
@@ -176,16 +176,16 @@ class SupabaseApiService {
     }
 
     const clockOut = new Date();
-    const clockIn = new Date(shift.clock_in);
+    const clockIn = new Date(shift.started_at);
     const totalMinutes = Math.floor((clockOut.getTime() - clockIn.getTime()) / 60000);
-    const workingMinutes = totalMinutes - (shift.break_minutes || 0);
+    const workingMinutes = totalMinutes - (shift.total_break_minutes || 0);
     const actualHours = workingMinutes / 60;
     const overtimeMinutes = Math.max(0, workingMinutes - (shift.expected_hours * 60));
 
     const { data, error } = await supabase
       .from('shifts')
       .update({
-        clock_out: clockOut.toISOString(),
+        ended_at: clockOut.toISOString(),
         actual_hours: parseFloat(actualHours.toFixed(2)),
         overtime_minutes: overtimeMinutes,
         status: 'completed',
@@ -215,7 +215,7 @@ class SupabaseApiService {
     // Get current shift to calculate break duration
     const { data: shift } = await supabase
       .from('shifts')
-      .select('break_start, break_minutes')
+      .select('break_start, total_break_minutes')
       .eq('id', shiftId)
       .single();
 
@@ -226,13 +226,13 @@ class SupabaseApiService {
     const breakEnd = new Date();
     const breakStart = new Date(shift.break_start);
     const breakDuration = Math.floor((breakEnd.getTime() - breakStart.getTime()) / 60000);
-    const totalBreakMinutes = (shift.break_minutes || 0) + breakDuration;
+    const totalBreakMinutes = (shift.total_break_minutes || 0) + breakDuration;
 
     const { data, error } = await supabase
       .from('shifts')
       .update({
         break_start: null,
-        break_minutes: totalBreakMinutes,
+        total_break_minutes: totalBreakMinutes,
       })
       .eq('id', shiftId)
       .select()
@@ -260,7 +260,7 @@ class SupabaseApiService {
       .from('shifts')
       .select('*')
       .eq('venue_id', this.venueId)
-      .gte('clock_in', today.toISOString());
+      .gte('started_at', today.toISOString());
 
     let totalHoursToday = 0;
     let totalOvertimeToday = 0;
@@ -268,10 +268,10 @@ class SupabaseApiService {
 
     if (activeShifts) {
       for (const shift of activeShifts) {
-        const clockIn = new Date(shift.clock_in);
+        const clockIn = new Date(shift.started_at);
         const now = new Date();
         const totalMinutes = Math.floor((now.getTime() - clockIn.getTime()) / 60000);
-        const workingMinutes = totalMinutes - (shift.break_minutes || 0);
+        const workingMinutes = totalMinutes - (shift.total_break_minutes || 0);
         totalHoursToday += workingMinutes / 60;
 
         if (workingMinutes > shift.expected_hours * 60) {
@@ -599,10 +599,10 @@ class SupabaseApiService {
       .eq('status', 'completed');
 
     if (params?.startDate) {
-      query = query.gte('clock_in', params.startDate);
+      query = query.gte('started_at', params.startDate);
     }
     if (params?.endDate) {
-      query = query.lte('clock_in', params.endDate);
+      query = query.lte('started_at', params.endDate);
     }
 
     const { data, error } = await query;
@@ -665,10 +665,10 @@ class SupabaseApiService {
       .eq('status', 'completed');
 
     if (params?.startDate) {
-      shiftQuery = shiftQuery.gte('clock_in', params.startDate);
+      shiftQuery = shiftQuery.gte('started_at', params.startDate);
     }
     if (params?.endDate) {
-      shiftQuery = shiftQuery.lte('clock_in', params.endDate);
+      shiftQuery = shiftQuery.lte('started_at', params.endDate);
     }
 
     const { data: shifts } = await shiftQuery;
@@ -742,10 +742,10 @@ class SupabaseApiService {
     // Get shifts with employee rates
     const { data: shifts } = await supabase
       .from('shifts')
-      .select('clock_in, clock_out, break_minutes, employee:employees(hourly_rate)')
+      .select('started_at, ended_at, total_break_minutes, employee:employees(hourly_rate)')
       .eq('venue_id', this.venueId)
-      .gte('clock_in', params.startDate)
-      .lte('clock_in', params.endDate);
+      .gte('started_at', params.startDate)
+      .lte('started_at', params.endDate);
 
     // Get completed tasks
     const { data: tasks } = await supabase
@@ -794,18 +794,18 @@ class SupabaseApiService {
 
     // Aggregate shifts
     (shifts || []).forEach(shift => {
-      if (!shift.clock_in) return;
-      const dateKey = shift.clock_in.split('T')[0];
+      if (!shift.started_at) return;
+      const dateKey = shift.started_at.split('T')[0];
       const stats = dailyMap.get(dateKey);
       if (!stats) return;
 
       stats.shifts++;
 
-      if (shift.clock_out) {
-        const clockIn = new Date(shift.clock_in);
-        const clockOut = new Date(shift.clock_out);
+      if (shift.ended_at) {
+        const clockIn = new Date(shift.started_at);
+        const clockOut = new Date(shift.ended_at);
         const hours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
-        const breakHours = (shift.break_minutes || 0) / 60;
+        const breakHours = (shift.total_break_minutes || 0) / 60;
         const netHours = Math.max(0, hours - breakHours);
         stats.hoursWorked += netHours;
 
@@ -873,10 +873,10 @@ class SupabaseApiService {
       // Get shifts for this employee
       const { data: shifts } = await supabase
         .from('shifts')
-        .select('clock_in, clock_out, break_minutes')
+        .select('started_at, ended_at, total_break_minutes')
         .eq('employee_id', emp.id)
-        .gte('clock_in', params.startDate)
-        .lte('clock_in', params.endDate);
+        .gte('started_at', params.startDate)
+        .lte('started_at', params.endDate);
 
       // Get tasks completed by this employee
       const { data: tasks } = await supabase
@@ -889,11 +889,11 @@ class SupabaseApiService {
 
       let totalHours = 0;
       (shifts || []).forEach(shift => {
-        if (shift.clock_in && shift.clock_out) {
-          const clockIn = new Date(shift.clock_in);
-          const clockOut = new Date(shift.clock_out);
+        if (shift.started_at && shift.ended_at) {
+          const clockIn = new Date(shift.started_at);
+          const clockOut = new Date(shift.ended_at);
           const hours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
-          const breakHours = (shift.break_minutes || 0) / 60;
+          const breakHours = (shift.total_break_minutes || 0) / 60;
           totalHours += Math.max(0, hours - breakHours);
         }
       });

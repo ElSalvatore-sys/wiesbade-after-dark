@@ -25,10 +25,12 @@ export interface Shift {
   id: string;
   venue_id: string;
   employee_id: string;
-  clock_in: string;
-  clock_out: string | null;
+  employee_name: string;
+  employee_role: string;
+  started_at: string;
+  ended_at: string | null;
   break_start: string | null;
-  break_minutes: number;
+  total_break_minutes: number;
   expected_hours: number;
   actual_hours: number | null;
   overtime_minutes: number;
