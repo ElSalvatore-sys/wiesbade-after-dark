@@ -6,7 +6,9 @@
 ## ✅ PRODUCTION READY
 
 ### Owner PWA: 95% Complete
-**Live URL:** https://owner-1657yl0si-l3lim3d-2348s-projects.vercel.app
+**Live URL:** https://owner-2cdhiojw3-l3lim3d-2348s-projects.vercel.app
+**Previous URL:** https://owner-1657yl0si-l3lim3d-2348s-projects.vercel.app (deprecated)
+**Latest Deploy:** December 26, 2025 (TypeScript fixes + production build)
 
 | Feature | Status | Notes |
 |---------|--------|-------|
