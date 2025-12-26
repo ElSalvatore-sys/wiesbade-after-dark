@@ -53,9 +53,11 @@
 
 ## ⏳ Remaining (Before Pilot)
 
-1. **SMTP Configuration** (30 min)
-   - Follow: SMTP_SETUP_GUIDE.md
-   - Use: Resend (free)
+1. **SMTP Configuration** (15 min) - 🔄 IN PROGRESS
+   - Guides ready: SMTP_SETUP_SUMMARY.md, SMTP_CONFIGURATION_CHECKLIST.md
+   - Browser tabs opened: Resend + Supabase
+   - Test script ready: ./test-smtp.sh
+   - Awaiting: Manual configuration in Supabase dashboard
 
 2. **Data Import** (30 min)
    - Replace placeholder employees
