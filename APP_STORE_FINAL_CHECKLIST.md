@@ -49,7 +49,7 @@
 - [ ] Verify privacy URL is accessible
 - [ ] Test on mobile device (German + English)
 
-**Privacy URL:** `https://elsalvatore-sys.github.io/wiesbaden-after-dark/`
+**Privacy URL:** `https://eldiaploo.github.io/wiesbade-after-dark/`
 
 **Steps to enable GitHub Pages:**
 1. Go to repo Settings → Pages
@@ -65,7 +65,7 @@
 - [ ] Support URL added to App Store listing
 - [ ] Support email active: `support@wiesbadenafterdark.de`
 
-**Support URL:** `https://elsalvatore-sys.github.io/wiesbaden-after-dark/support.html`
+**Support URL:** `https://eldiaploo.github.io/wiesbade-after-dark/support.html`
 
 ---
 
@@ -320,8 +320,8 @@ Bei Fragen: support@wiesbadenafterdark.de
 |----------|-----|
 | Apple Developer | https://developer.apple.com |
 | App Store Connect | https://appstoreconnect.apple.com |
-| Privacy Policy | https://elsalvatore-sys.github.io/wiesbaden-after-dark/ |
-| Support | https://elsalvatore-sys.github.io/wiesbaden-after-dark/support.html |
+| Privacy Policy | https://eldiaploo.github.io/wiesbade-after-dark/ |
+| Support | https://eldiaploo.github.io/wiesbade-after-dark/support.html |
 | Supabase Dashboard | https://app.supabase.com |
 
 ---
