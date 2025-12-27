@@ -1,0 +1,207 @@
+#!/bin/bash
+
+echo "=== CREATING PRINTABLE HTML GUIDES ==="
+echo ""
+
+# Create output directory
+mkdir -p launch-pdfs
+
+# Convert LAUNCH_DAY_CHECKLIST.md to HTML
+echo "📋 Converting LAUNCH_DAY_CHECKLIST.md..."
+pandoc LAUNCH_DAY_CHECKLIST.md \
+  -o launch-pdfs/LAUNCH_DAY_CHECKLIST.html \
+  --standalone \
+  --toc \
+  --toc-depth=2 \
+  --css=print-style.css \
+  --metadata title="Launch Day Checklist - Das Wohnzimmer"
+
+if [ -f "launch-pdfs/LAUNCH_DAY_CHECKLIST.html" ]; then
+  echo "✅ LAUNCH_DAY_CHECKLIST.html created"
+else
+  echo "❌ Failed"
+fi
+
+# Convert STAFF_QUICK_START_GUIDE.md to HTML
+echo ""
+echo "📱 Converting STAFF_QUICK_START_GUIDE.md..."
+pandoc STAFF_QUICK_START_GUIDE.md \
+  -o launch-pdfs/STAFF_QUICK_START_GUIDE.html \
+  --standalone \
+  --css=print-style.css \
+  --metadata title="Staff Quick Start Guide"
+
+if [ -f "launch-pdfs/STAFF_QUICK_START_GUIDE.html" ]; then
+  echo "✅ STAFF_QUICK_START_GUIDE.html created"
+else
+  echo "❌ Failed"
+fi
+
+# Convert MANAGER_LAUNCH_GUIDE.md to HTML
+echo ""
+echo "👔 Converting MANAGER_LAUNCH_GUIDE.md..."
+pandoc MANAGER_LAUNCH_GUIDE.md \
+  -o launch-pdfs/MANAGER_LAUNCH_GUIDE.html \
+  --standalone \
+  --toc \
+  --toc-depth=2 \
+  --css=print-style.css \
+  --metadata title="Manager Launch Guide"
+
+if [ -f "launch-pdfs/MANAGER_LAUNCH_GUIDE.html" ]; then
+  echo "✅ MANAGER_LAUNCH_GUIDE.html created"
+else
+  echo "❌ Failed"
+fi
+
+# Create CSS file for print styling
+cat > launch-pdfs/print-style.css << 'CSS_EOF'
+@page {
+    size: A4;
+    margin: 2.5cm;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #333;
+    max-width: 21cm;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    color: #1a1a1a;
+    border-bottom: 3px solid #7C3AED;
+    padding-bottom: 10px;
+    margin-top: 30px;
+    page-break-before: auto;
+}
+
+h2 {
+    color: #333;
+    border-bottom: 2px solid #EC4899;
+    padding-bottom: 8px;
+    margin-top: 25px;
+    page-break-after: avoid;
+}
+
+h3 {
+    color: #444;
+    margin-top: 20px;
+    page-break-after: avoid;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 15px 0;
+    page-break-inside: avoid;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #7C3AED;
+    color: white;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+code {
+    background-color: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 10pt;
+}
+
+pre {
+    background-color: #f4f4f4;
+    padding: 12px;
+    border-radius: 5px;
+    overflow-x: auto;
+    page-break-inside: avoid;
+}
+
+ul, ol {
+    margin: 10px 0;
+    padding-left: 30px;
+}
+
+li {
+    margin: 5px 0;
+}
+
+blockquote {
+    border-left: 4px solid #7C3AED;
+    padding-left: 15px;
+    margin: 15px 0;
+    color: #666;
+    font-style: italic;
+}
+
+hr {
+    border: none;
+    border-top: 2px solid #eee;
+    margin: 25px 0;
+}
+
+a {
+    color: #7C3AED;
+    text-decoration: none;
+}
+
+#TOC {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 5px;
+}
+
+#TOC ul {
+    list-style-type: none;
+}
+
+@media print {
+    body {
+        padding: 0;
+    }
+    
+    h1, h2, h3 {
+        page-break-after: avoid;
+    }
+    
+    table, figure, pre {
+        page-break-inside: avoid;
+    }
+    
+    a[href]:after {
+        content: none !important;
+    }
+}
+CSS_EOF
+
+echo ""
+echo "=== HTML CONVERSION COMPLETE ====="
+echo ""
+echo "Files created in: launch-pdfs/"
+ls -lh launch-pdfs/*.html
+echo ""
+echo "📄 To create PDFs:"
+echo "  1. Open each HTML file in Safari or Chrome"
+echo "  2. Press Cmd+P (Print)"
+echo "  3. Select 'Save as PDF'"
+echo "  4. Save to launch-pdfs/ directory"
+echo ""
+echo "Files are ready for printing!"
+

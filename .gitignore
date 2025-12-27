@@ -336,3 +336,7 @@ WiesbadenAfterDark/LICENSE*
 # Example:
 # CustomSecrets/
 # PrivateAssets/
+
+# Launch PDFs (HTML files are tracked, but PDFs are gitignored)
+launch-pdfs/*.pdf
+
